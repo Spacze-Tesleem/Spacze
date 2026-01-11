@@ -1,256 +1,251 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import {
-  motion,
-  useScroll,
-  useTransform,
-  useSpring,
-  useInView,
-  AnimatePresence,
-  useMotionValue,
-} from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { ArrowRight, Search, Code2, Activity, ShieldCheck, Cpu } from 'lucide-react';
 
-// --- Theme Configuration ---
-const theme = {
-  colors: {
-    green: '#00D67D',
-    greenLight: '#05FF96',
-    greenDark: '#00A35F',
-    silver: '#C0C0C0',
-    silverLight: '#E8E8E8',
-    silverDark: '#7A7A7A',
-    text: '#0F172A',
-    textMuted: '#64748B',
-    bg: '#FFFFFF',
-  },
-  easing: [0.19, 1, 0.22, 1], // Custom sophisticated expo-out easing
+// --- Sub-Component: Minimalist Typewriter Input ---
+const ProjectInput = () => {
+    const [text, setText] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [loopNum, setLoopNum] = useState(0);
+    const [typingSpeed, setTypingSpeed] = useState(150);
+
+    const phrases = [
+        "Cloud Infrastructure...",
+        "SaaS Platform...",
+        "AI Dashboard...",
+        "Fintech App..."
+    ];
+
+    useEffect(() => {
+        const handleTyping = () => {
+            const i = loopNum % phrases.length;
+            const fullText = phrases[i];
+
+            setText(isDeleting 
+                ? fullText.substring(0, text.length - 1) 
+                : fullText.substring(0, text.length + 1)
+            );
+
+            setTypingSpeed(isDeleting ? 30 : 100);
+
+            if (!isDeleting && text === fullText) {
+                setTimeout(() => setIsDeleting(true), 2000); // Longer pause at end
+            } else if (isDeleting && text === '') {
+                setIsDeleting(false);
+                setLoopNum(loopNum + 1);
+            }
+        };
+
+        const timer = setTimeout(handleTyping, typingSpeed);
+        return () => clearTimeout(timer);
+    }, [text, isDeleting, loopNum, typingSpeed, phrases]);
+
+    return (
+        <div className="w-full max-w-lg">
+            <div className="mb-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">
+                Launch Your Idea
+            </div>
+            
+            {/* Input Container - Clean, No Shadow, Darker */}
+            <div className="relative bg-[#080808] border border-white/10 rounded-xl p-1.5 flex items-center justify-between transition-colors focus-within:border-white/20">
+                
+                {/* Left: Icon & Typing Text */}
+                <div className="flex items-center gap-3 flex-1 overflow-hidden px-3">
+                    <Search className="text-slate-600" size={18} />
+                    <div className="font-mono text-sm sm:text-base text-slate-300 whitespace-nowrap flex items-center">
+                        <span className="opacity-50 mr-2">build_</span>
+                        {text}
+                        <span className="ml-1 w-1.5 h-4 bg-[#00D67D] animate-pulse" />
+                    </div>
+                </div>
+
+                {/* Right: Flat Button (No Shadow) */}
+                <button className="flex-shrink-0 bg-[#fff] text-black px-6 py-3 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-[#00c06e] transition-colors duration-200">
+                    <span>Build With Us</span>
+                    <ArrowRight size={16} />
+                </button>
+            </div>
+        </div>
+    );
 };
 
-// --- Components ---
-
-const InteractiveGrid = () => {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [mouseX, mouseY]);
-
-  const maskImage = useTransform(
-    [mouseX, mouseY],
-    ([x, y]) => `radial-gradient(600px circle at ${x}px ${y}px, black, transparent)`
-  );
-
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      <div 
-        className="absolute inset-0 opacity-[0.15]" 
-        style={{ 
-          backgroundImage: `linear-gradient(${theme.colors.silver} 1px, transparent 1px), linear-gradient(90deg, ${theme.colors.silver} 1px, transparent 1px)`,
-          backgroundSize: '64px 64px'
-        }} 
-      />
-      <motion.div 
-        className="absolute inset-0 opacity-[0.4]" 
-        style={{ 
-          backgroundImage: `linear-gradient(${theme.colors.green} 1px, transparent 1px), linear-gradient(90deg, ${theme.colors.green} 1px, transparent 1px)`,
-          backgroundSize: '64px 64px',
-          WebkitMaskImage: maskImage,
-          maskImage: maskImage
-        }} 
-      />
-    </div>
-  );
-};
-
-const MagneticButton = ({ children, variant = 'primary' }: { children: React.ReactNode, variant?: 'primary' | 'secondary' }) => {
-  const ref = useRef<HTMLButtonElement>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!ref.current) return;
-    const { clientX, clientY } = e;
-    const { width, height, left, top } = ref.current.getBoundingClientRect();
-    const x = clientX - (left + width / 2);
-    const y = clientY - (top + height / 2);
-    setPosition({ x: x * 0.3, y: y * 0.3 });
-  };
-
-  const handleMouseLeave = () => setPosition({ x: 0, y: 0 });
-
-  const isPrimary = variant === 'primary';
-
-  return (
-    <motion.button
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      animate={{ x: position.x, y: position.y }}
-      transition={{ type: 'spring', stiffness: 150, damping: 15, mass: 0.6 }}
-      className={`
-        relative px-8 py-4 rounded-full font-bold text-sm tracking-tight overflow-hidden transition-shadow duration-500
-        ${isPrimary ? 'bg-black text-white' : 'bg-transparent border border-slate-200 text-slate-600'}
-      `}
-      style={{ boxShadow: isPrimary ? '0 20px 40px -12px rgba(0,214,125,0.25)' : 'none' }}
+// --- Sub-Component: Tech Card (Floating Element) ---
+const TechCard = ({ icon: Icon, label, value, color, delay }: any) => (
+    <motion.div 
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay, duration: 0.5 }}
+        className="flex items-center gap-3 bg-[#0A0A0A]/80 backdrop-blur-md border border-white/10 p-3 rounded-xl shadow-xl w-fit"
     >
-      <motion.div 
-        className="absolute inset-0 z-0 bg-gradient-to-r from-green-400 to-emerald-500"
-        initial={{ y: '100%' }}
-        whileHover={{ y: '0%' }}
-        transition={{ duration: 0.4, ease: theme.easing }}
-      />
-      <span className="relative z-10 flex items-center gap-2">
-        {children}
-      </span>
-    </motion.button>
-  );
-};
-
-const HeroCharacter = ({ char, index }: { char: string, index: number }) => (
-  <motion.span
-    initial={{ y: 100, opacity: 0 }}
-    animate={{ y: 0, opacity: 1 }}
-    transition={{
-      delay: index * 0.02,
-      duration: 0.8,
-      ease: theme.easing
-    }}
-    className="inline-block"
-  >
-    {char === ' ' ? '\u00A0' : char}
-  </motion.span>
+        <div className={`p-2 rounded-lg bg-white/5 ${color}`}>
+            <Icon size={16} />
+        </div>
+        <div>
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider">{label}</div>
+            <div className="text-xs font-bold text-white font-mono">{value}</div>
+        </div>
+    </motion.div>
 );
 
 const Hero = () => {
-  const containerRef = useRef<HTMLElement>(null);
-  const { scrollY } = useScroll();
-  
-  // Parallax calculations
-  const textY = useTransform(scrollY, [0, 500], [0, 100]);
-  const glowY = useTransform(scrollY, [0, 500], [0, -50]);
-  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
-
-  const stats = [
-    { label: 'Revenue Boost', value: '45%' },
-    { label: 'Active Users', value: '1.2M' },
-    { label: 'Market Cap', value: '$2B+' }
-  ];
-
   return (
-    <section 
-      ref={containerRef}
-      className="relative min-h-[110vh] w-full flex flex-col items-center justify-center overflow-hidden bg-white selection:bg-emerald-100"
-    >
-      <InteractiveGrid />
+    <section className="relative w-full min-h-screen mt-10 bg-[#020202] text-white overflow-hidden flex items-center justify-center py-20 lg:py-0">
       
-      {/* Dynamic Background Glows */}
-      <motion.div 
-        style={{ y: glowY }}
-        className="absolute top-1/4 -left-20 w-[600px] h-[600px] rounded-full bg-emerald-50/50 blur-[120px] pointer-events-none" 
-      />
-      <motion.div 
-        style={{ y: glowY, scale: 1.2 }}
-        className="absolute bottom-0 -right-20 w-[500px] h-[500px] rounded-full bg-slate-50 blur-[100px] pointer-events-none" 
-      />
-
-      {/* Main Content Area */}
-      <motion.div 
-        style={{ y: textY, opacity }}
-        className="relative z-20 flex flex-col items-center max-w-7xl px-6 text-center"
-      >
-        {/* Modern Chip */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-10 flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-100 bg-emerald-50/30 backdrop-blur-sm"
-        >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">
-            Evolutionizing Digital Products
-          </span>
-        </motion.div>
-
-        {/* Headline with Masking Effect */}
-        <h1 className="text-6xl md:text-8xl lg:text-[100px] font-bold tracking-[-0.04em] leading-[0.9] text-slate-900 mb-8">
-          <div className="overflow-hidden py-2">
-            {"Impactful Design".split("").map((c, i) => (
-              <HeroCharacter key={i} char={c} index={i} />
-            ))}
-          </div>
-          <div className="overflow-hidden py-2 text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 via-emerald-400 to-slate-400">
-            {"For The Bold.".split("").map((c, i) => (
-              <HeroCharacter key={i} char={c} index={i + 15} />
-            ))}
-          </div>
-        </h1>
-
-        {/* Subcopy */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.8 }}
-          className="max-w-xl text-lg md:text-xl text-slate-500 leading-relaxed mb-12"
-        >
-          Spacze bridges the gap between <span className="text-slate-900 font-medium">visionary ideas</span> and 
-          <span className="text-emerald-600 font-medium"> market-leading reality</span>. We build the interfaces of tomorrow.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.8 }}
-          className="flex flex-col sm:flex-row items-center gap-6"
-        >
-          <MagneticButton variant="primary">
-            Start Your Transformation
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14m-7-7 7 7-7 7"/>
-            </svg>
-          </MagneticButton>
+      {/* --- Background --- */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+          {/* Subtle Grid */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]" />
           
-          <MagneticButton variant="secondary">
-            View Case Studies
-          </MagneticButton>
-        </motion.div>
+          {/* Deep Ambient Glows (Blue & Green) */}
+          <div className="absolute top-[-20%] left-[-10%] w-[700px] h-[700px] bg-blue-900/10 blur-[120px] rounded-full" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-[#00D67D]/5 blur-[120px] rounded-full" />
+      </div>
 
-        {/* Trust Stats */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.4, duration: 1 }}
-          className="mt-24 grid grid-cols-3 gap-12 md:gap-24 border-t border-slate-100 pt-12"
-        >
-          {stats.map((stat, i) => (
-            <div key={i} className="flex flex-col items-center">
-              <span className="text-3xl md:text-4xl font-bold text-slate-900 mb-1">{stat.value}</span>
-              <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400">{stat.label}</span>
-            </div>
-          ))}
-        </motion.div>
-      </motion.div>
+      <div className="max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-[1.1fr_0.9fr] gap-16 lg:gap-24 items-center relative z-10">
+        
+        {/* === LEFT COLUMN === */}
+        <div className="flex flex-col items-start text-left z-20">
+           
+           {/* Technical Badge */}
+           <motion.div 
+             initial={{ opacity: 0, x: -20 }}
+             animate={{ opacity: 1, x: 0 }}
+             transition={{ duration: 0.5 }}
+             className="mb-8 flex items-center gap-3 text-xs font-mono text-[#00D67D]"
+           >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00D67D] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00D67D]"></span>
+              </span>
+              <span className="tracking-widest opacity-80">SYSTEMS ONLINE v2.4</span>
+           </motion.div>
 
-      {/* Modern Grain Overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-multiply bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+           {/* Headline - REDUCED FONT SIZE */}
+           <motion.h1 
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ duration: 0.8, delay: 0.1 }}
+             className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tighter leading-[1.1] mb-8"
+           >
+             Spacze builds <br />
+             <span className="text-white relative inline-block">
+                intelligent
+                {/* Decorative underline */}
+                <motion.span 
+                    initial={{ width: 0 }}
+                    animate={{ width: "100%" }}
+                    transition={{ delay: 0.8, duration: 1 }}
+                    className="absolute bottom-2 left-0 h-1 bg-blue-600/50 -z-10"
+                />
+             </span> <br/>
+             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-[#00D67D]">software systems </span> <br />
+             <span className="text-slate-200">for modern businesses.</span>
+           </motion.h1>
 
-      {/* Scroll Indicator */}
-      <motion.div
-        animate={{ y: [0, 10, 0] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
-      >
-        <div className="w-[1px] h-12 bg-gradient-to-b from-emerald-400 to-transparent" />
-      </motion.div>
+           {/* Subtext */}
+           <motion.p 
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ duration: 0.8, delay: 0.2 }}
+             className="text-lg text-slate-400 max-w-lg mb-12 leading-relaxed font-light"
+           >
+             From <span className="text-blue-400 font-medium">secure platforms</span> to <span className="text-[#00D67D] font-medium">automated workflows</span>, we help teams design, build, and scale technology that works.
+           </motion.p>
+
+           {/* Input Component */}
+           <motion.div 
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ duration: 0.8, delay: 0.3 }}
+             className="w-full"
+           >
+              <ProjectInput />
+           </motion.div>
+
+           {/* Trust/Stack Line */}
+           <motion.div 
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             transition={{ delay: 0.6 }}
+             className="mt-12 pt-8 border-t border-white/5 w-full max-w-lg flex items-center gap-6"
+           >
+              <span className="text-[10px] text-slate-600 uppercase tracking-widest">Built With</span>
+              <div className="flex gap-4 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+                  {/* Icons replaced with color blocks for demonstration */}
+                  <div className="h-5 w-5 bg-white rounded-sm" title="Next.js" />
+                  <div className="h-5 w-5 bg-blue-500 rounded-sm" title="React" />
+                  <div className="h-5 w-5 bg-[#00D67D] rounded-sm" title="Node" />
+                  <div className="h-5 w-5 bg-purple-500 rounded-sm" title="AWS" />
+              </div>
+           </motion.div>
+        </div>
+
+        {/* === RIGHT COLUMN: Layered Visuals === */}
+        <div className="relative h-[600px] w-full hidden lg:flex items-center justify-center perspective-[2000px]">
+            
+            {/* 1. Base Layer: The "Platform" */}
+            <motion.div 
+                initial={{ opacity: 0, rotateX: 20, rotateY: -20 }}
+                animate={{ opacity: 1, rotateX: 5, rotateY: -5 }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+                className="relative z-10 w-[450px] h-[550px] bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+            >
+                {/* Image with subtle overlay */}
+                <div className="absolute inset-0 bg-blue-900/10 z-10" />
+                <img 
+                    src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop" 
+                    alt="Dashboard" 
+                    className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-1000"
+                />
+                
+                {/* Decorative Grid Overlay */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] z-20 pointer-events-none" />
+
+                {/* Scanning Line */}
+                <motion.div 
+                    animate={{ top: ['0%', '100%'] }}
+                    transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                    className="absolute left-0 w-full h-[2px] bg-[#00D67D]/50 shadow-[0_0_20px_#00D67D] z-30"
+                />
+            </motion.div>
+
+            {/* 2. Floating Code Card (Top Left) */}
+            <motion.div 
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-24 left-10 z-30"
+            >
+                <div className="bg-[#050505]/90 backdrop-blur border border-white/10 p-4 rounded-xl shadow-2xl min-w-[200px]">
+                    <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
+                        <Code2 size={14} className="text-blue-400" />
+                        <span className="text-[10px] text-slate-500 font-mono">core.config.ts</span>
+                    </div>
+                    <div className="space-y-1 font-mono text-[10px] leading-relaxed">
+                         <div className="text-purple-400">export const <span className="text-white">Config</span> = {'{'}</div>
+                         <div className="pl-3 text-slate-400">security: <span className="text-[#00D67D]">'AES-256'</span>,</div>
+                         <div className="pl-3 text-slate-400">mode: <span className="text-blue-400">'scale'</span>,</div>
+                         <div className="text-purple-400">{'}'};</div>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* 3. Floating Stats (Bottom Right) */}
+            <motion.div 
+                animate={{ y: [0, 15, 0] }}
+                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                className="absolute bottom-32 -right-4 z-40 space-y-3"
+            >
+                <TechCard icon={Activity} label="Latency" value="14ms" color="text-[#00D67D]" delay={0.8} />
+                <TechCard icon={ShieldCheck} label="Status" value="Secure" color="text-blue-400" delay={1} />
+            </motion.div>
+
+            {/* Background Abstract Blur behind Image */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[600px] bg-blue-600/10 blur-[100px] rounded-full -z-10" />
+
+        </div>
+      </div>
     </section>
   );
 };
