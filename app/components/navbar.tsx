@@ -13,7 +13,7 @@ import {
 
 // Navigation Data
 const navLinks = [
-  { name: 'Services', href: '#services' },
+  { name: 'Services', href: 'services' },
   { name: 'Benefits', href: '#benefits' },
   { name: 'Pricing', href: '#pricing' },
   { name: 'Contact', href: '#contact' },
