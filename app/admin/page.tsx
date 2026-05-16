@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Eye, EyeOff, Shield } from 'lucide-react';
 import AdminDashboard from './AdminDashboard';
 
-const ADMIN_PASSWORD = 'spacze@admin2024';
 const SESSION_KEY = 'spacze_admin_auth';
 
 export default function AdminPage() {
@@ -14,6 +13,7 @@ export default function AdminPage() {
   const [show, setShow] = useState(false);
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem(SESSION_KEY);
@@ -21,15 +21,28 @@ export default function AdminPage() {
     setChecking(false);
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem(SESSION_KEY, 'true');
-      setAuthed(true);
-      setError('');
-    } else {
-      setError('Incorrect password.');
-      setPassword('');
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) {
+        sessionStorage.setItem(SESSION_KEY, 'true');
+        setAuthed(true);
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Incorrect password.');
+        setPassword('');
+      }
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -95,9 +108,10 @@ export default function AdminPage() {
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-white text-black font-bold text-sm hover:bg-[#00D67D] transition-colors duration-200"
+            disabled={submitting}
+            className="w-full py-3 rounded-xl bg-white text-black font-bold text-sm hover:bg-[#00D67D] transition-colors duration-200 disabled:opacity-60"
           >
-            Access Dashboard
+            {submitting ? 'Verifying...' : 'Access Dashboard'}
           </button>
         </form>
 
