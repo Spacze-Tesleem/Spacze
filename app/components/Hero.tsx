@@ -129,9 +129,9 @@ const Hero = () => {
              transition={{ duration: 0.8, delay: 0.1 }}
              className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight leading-[1.15] mb-6"
            >
-             We build{' '}
-             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-[#00D67D]">software</span>{' '}
-             <span className="text-slate-300">that works.</span>
+             Stop guessing,{' '}
+             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-[#00D67D]">start using</span>{' '}
+             <span className="text-slate-300">Spacze.</span>
            </motion.h1>
 
            {/* Subtext */}
