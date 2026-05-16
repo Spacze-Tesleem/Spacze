@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import { ArrowUpRight, Github, ExternalLink, Zap, AlertCircle, Code2, ArrowLeft, ArrowRight, Terminal } from 'lucide-react';
 
@@ -134,15 +135,36 @@ const ProjectCard = ({ project, index }: { project: any, index: number }) => {
                             <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Result</span>
                             <div className="text-base font-bold text-white">{project.result}</div>
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[#00D67D] group-hover:text-black transition-colors">
+                        <a
+                            href={project.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[#00D67D] group-hover:text-black transition-colors"
+                        >
                             <ArrowUpRight size={16} />
-                        </div>
+                        </a>
                     </div>
                 </div>
 
                 {/* RIGHT: Visual Mockup (Hidden on small mobiles to save space, visible on tablet+) */}
-                <div className="hidden md:block relative h-full bg-[#050505]">
-                    <TechInterface color={project.color} isHovered={isHovered} />
+                <div className="hidden md:flex flex-col relative h-full bg-[#050505]">
+                    {/* Project Thumbnail */}
+                    {project.image && (
+                        <div className="relative w-full h-[160px] overflow-hidden border-b border-white/5 flex-shrink-0">
+                            <Image
+                                src={project.image}
+                                alt={`${project.title} screenshot`}
+                                fill
+                                className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                            />
+                            {/* Subtle overlay so it blends with the dark card */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#050505]/60 pointer-events-none" />
+                        </div>
+                    )}
+                    {/* Terminal animation below the thumbnail */}
+                    <div className="flex-1 min-h-0">
+                        <TechInterface color={project.color} isHovered={isHovered} />
+                    </div>
                 </div>
             </div>
         </motion.div>
@@ -156,40 +178,59 @@ const PortfolioSlider = () => {
 
     const projects = [
         {
-            title: "FinDash Analytics",
-            category: "Fintech Data Visualization",
-            tags: ["Next.js", "Python", "AWS Lambda"],
-            problem: "Data fragmented across 4 disparate sources causing reporting delays.",
-            solution: "Centralized dashboard aggregating real-time streams via serverless architecture.",
-            result: "Saved 15+ hrs/week",
-            color: "blue"
+            title: "Jannah Vizora",
+            category: "Real Estate Marketing Website",
+            tags: ["Next.js", "Tailwind CSS", "Framer Motion"],
+            problem: "No digital presence to showcase premium properties to high-intent buyers.",
+            solution: "Conversion-focused marketing site with immersive property listings and lead capture.",
+            result: "Live & Converting",
+            color: "green",
+            image: "/jannah-vizora.png",
+            url: "https://jannah-vizora.vercel.app/"
         },
         {
-            title: "SecureMed Portal",
-            category: "Healthcare Compliance",
+            title: "Livana",
+            category: "Property Management Platform",
             tags: ["React", "Node.js", "PostgreSQL"],
-            problem: "HIPAA compliance risks due to unsecured email file transfers.",
-            solution: "E2E encrypted document portal with 2FA and auto-expiring links.",
-            result: "100% Compliance",
-            color: "green"
+            problem: "Landlords managing tenants, payments, and maintenance across spreadsheets.",
+            solution: "Full-stack web app centralising tenant records, rent tracking, and maintenance requests.",
+            result: "End-to-End Automation",
+            color: "blue",
+            image: "/livana.png",
+            url: "https://property-manager-property-manager.vercel.app/"
         },
         {
-            title: "Velocite E-Com",
-            category: "High-Performance Commerce",
-            tags: ["Shopify Hydrogen", "Redis", "Edge"],
-            problem: "Legacy storefront crashing during high-traffic Black Friday spikes.",
-            solution: "Headless architecture with Redis edge caching for 10x load.",
-            result: "99.99% Uptime",
-            color: "purple"
+            title: "MoverSpadi",
+            category: "Moving & Logistics Platform",
+            tags: ["Next.js", "Tailwind CSS", "REST API"],
+            problem: "Customers had no reliable way to book and track moving services online.",
+            solution: "Booking platform with real-time job tracking and instant mover quotes.",
+            result: "Seamless Bookings",
+            color: "purple",
+            image: "/moverspadi.png",
+            url: "https://moverspadi.vercel.app/"
         },
         {
-            title: "AeroStream IO",
-            category: "Logistics Tracking",
-            tags: ["Vue", "Go", "WebSockets"],
-            problem: "Manual fleet tracking leading to 20% fuel inefficiency.",
-            solution: "Real-time socket-based telemetry dashboard for 500+ vehicles.",
-            result: "12% Cost Reduction",
-            color: "blue"
+            title: "DMS",
+            category: "Digital Marketing Website",
+            tags: ["HTML", "CSS", "JavaScript"],
+            problem: "Agency lacked a professional web presence to attract and convert clients.",
+            solution: "Clean, fast marketing site communicating services and driving enquiries.",
+            result: "Brand Established",
+            color: "blue",
+            image: "/dms.png",
+            url: "https://dmsv1.netlify.app"
+        },
+        {
+            title: "Mumtaazah",
+            category: "E-Commerce & Brand Website",
+            tags: ["Next.js", "Tailwind CSS", "Stripe"],
+            problem: "Fashion brand selling exclusively via social DMs with no scalable storefront.",
+            solution: "Branded e-commerce site with product catalogue, cart, and secure checkout.",
+            result: "Store Live",
+            color: "green",
+            image: "/mumtaazah.png",
+            url: "https://mumtaazah.vercel.app/"
         }
     ];
 
