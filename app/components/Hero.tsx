@@ -129,18 +129,9 @@ const Hero = () => {
              transition={{ duration: 0.8, delay: 0.1 }}
              className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight leading-[1.15] mb-6"
            >
-             Spacze builds{' '}
-             <span className="text-white relative inline-block">
-                intelligent
-                <motion.span 
-                    initial={{ width: 0 }}
-                    animate={{ width: "100%" }}
-                    transition={{ delay: 0.8, duration: 1 }}
-                    className="absolute bottom-1 left-0 h-[3px] bg-blue-600/50 -z-10"
-                />
-             </span>{' '}
-             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-[#00D67D]">software systems</span>{' '}
-             <span className="text-slate-300">for modern businesses.</span>
+             We build{' '}
+             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-[#00D67D]">software</span>{' '}
+             <span className="text-slate-300">that works.</span>
            </motion.h1>
 
            {/* Subtext */}
