@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Mail, CheckCircle2, Calendar, Zap, ArrowRight, TrendingUp } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
@@ -22,14 +21,15 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-      if (!data) return;
+      const res = await fetch('/api/leads');
+      const data = await res.json();
+      if (!Array.isArray(data)) return;
       setStats({
         total: data.length,
-        emailSent: data.filter(d => d.email_sent).length,
-        replied: data.filter(d => d.reply_received).length,
-        meetings: data.filter(d => d.meeting_booked).length,
-        pending: data.filter(d => d.outreach_status === 'Pending').length,
+        emailSent: data.filter((d: any) => d.email_sent).length,
+        replied: data.filter((d: any) => d.reply_received).length,
+        meetings: data.filter((d: any) => d.meeting_booked).length,
+        pending: data.filter((d: any) => d.outreach_status === 'Pending').length,
       });
       setRecent(data.slice(0, 5));
       setLoading(false);
@@ -38,24 +38,20 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
   }, []);
 
   const cards = [
-    { label: 'Total Leads',     value: stats.total,     icon: Users,         color: 'text-blue-400',    bg: 'bg-blue-500/10' },
-    { label: 'Emails Sent',     value: stats.emailSent, icon: Mail,          color: 'text-[#00D67D]',   bg: 'bg-[#00D67D]/10' },
-    { label: 'Replies',         value: stats.replied,   icon: CheckCircle2,  color: 'text-purple-400',  bg: 'bg-purple-500/10' },
-    { label: 'Meetings Booked', value: stats.meetings,  icon: Calendar,      color: 'text-yellow-400',  bg: 'bg-yellow-500/10' },
+    { label: 'Total Leads',     value: stats.total,     icon: Users,        color: 'text-blue-400',   bg: 'bg-blue-500/10' },
+    { label: 'Emails Sent',     value: stats.emailSent, icon: Mail,         color: 'text-[#00D67D]',  bg: 'bg-[#00D67D]/10' },
+    { label: 'Replies',         value: stats.replied,   icon: CheckCircle2, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    { label: 'Meetings Booked', value: stats.meetings,  icon: Calendar,     color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
   ];
 
   return (
     <div className="space-y-5">
 
-      {/* Stat cards — 2 cols on mobile, 4 on desktop */}
+      {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         {cards.map((c, i) => (
-          <motion.div
-            key={i}
-            {...fadeUp}
-            transition={{ delay: i * 0.07 }}
-            className="p-4 lg:p-5 rounded-2xl bg-[#0A0A0A] border border-white/5"
-          >
+          <motion.div key={i} {...fadeUp} transition={{ delay: i * 0.07 }}
+            className="p-4 lg:p-5 rounded-2xl bg-[#0A0A0A] border border-white/5">
             <div className={`w-8 h-8 lg:w-9 lg:h-9 rounded-xl ${c.bg} flex items-center justify-center mb-3`}>
               <c.icon size={16} className={c.color} />
             </div>
@@ -65,9 +61,10 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
         ))}
       </div>
 
-      {/* Conversion rate bar */}
+      {/* Conversion bar */}
       {!loading && stats.total > 0 && (
-        <motion.div {...fadeUp} transition={{ delay: 0.28 }} className="p-4 lg:p-5 rounded-2xl bg-[#0A0A0A] border border-white/5">
+        <motion.div {...fadeUp} transition={{ delay: 0.28 }}
+          className="p-4 lg:p-5 rounded-2xl bg-[#0A0A0A] border border-white/5">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp size={14} className="text-slate-500" />
             <span className="text-xs font-mono text-slate-500 uppercase tracking-wider">Pipeline Conversion</span>
@@ -97,11 +94,8 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
-        <motion.button
-          {...fadeUp} transition={{ delay: 0.3 }}
-          onClick={() => onNavigate('crm')}
-          className="group p-5 rounded-2xl bg-[#0A0A0A] border border-white/5 hover:border-[#00D67D]/30 transition-all text-left"
-        >
+        <motion.button {...fadeUp} transition={{ delay: 0.3 }} onClick={() => onNavigate('crm')}
+          className="group p-5 rounded-2xl bg-[#0A0A0A] border border-white/5 hover:border-[#00D67D]/30 transition-all text-left">
           <div className="flex items-center justify-between mb-3">
             <div className="w-9 h-9 rounded-xl bg-[#00D67D]/10 flex items-center justify-center">
               <Users size={18} className="text-[#00D67D]" />
@@ -112,11 +106,8 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
           <div className="text-xs text-slate-500">{stats.pending} lead{stats.pending !== 1 ? 's' : ''} pending outreach</div>
         </motion.button>
 
-        <motion.button
-          {...fadeUp} transition={{ delay: 0.35 }}
-          onClick={() => onNavigate('generator')}
-          className="group p-5 rounded-2xl bg-[#0A0A0A] border border-white/5 hover:border-blue-500/30 transition-all text-left"
-        >
+        <motion.button {...fadeUp} transition={{ delay: 0.35 }} onClick={() => onNavigate('generator')}
+          className="group p-5 rounded-2xl bg-[#0A0A0A] border border-white/5 hover:border-blue-500/30 transition-all text-left">
           <div className="flex items-center justify-between mb-3">
             <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
               <Zap size={18} className="text-blue-400" />
@@ -129,12 +120,11 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
       </div>
 
       {/* Recent leads */}
-      <motion.div {...fadeUp} transition={{ delay: 0.4 }} className="rounded-2xl bg-[#0A0A0A] border border-white/5 overflow-hidden">
+      <motion.div {...fadeUp} transition={{ delay: 0.4 }}
+        className="rounded-2xl bg-[#0A0A0A] border border-white/5 overflow-hidden">
         <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
           <h3 className="font-bold text-sm">Recent Leads</h3>
-          <button onClick={() => onNavigate('crm')} className="text-xs text-slate-500 hover:text-[#00D67D] transition-colors">
-            View all →
-          </button>
+          <button onClick={() => onNavigate('crm')} className="text-xs text-slate-500 hover:text-[#00D67D] transition-colors">View all →</button>
         </div>
         {loading ? (
           <div className="px-5 py-10 text-center text-slate-600 text-sm">Loading...</div>
@@ -142,7 +132,7 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
           <div className="px-5 py-10 text-center text-slate-600 text-sm">No leads yet. Add your first lead in the CRM.</div>
         ) : (
           <div className="divide-y divide-white/5">
-            {recent.map((lead, i) => (
+            {recent.map((lead: any, i: number) => (
               <div key={i} className="px-5 py-3.5 flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <div className="font-medium text-sm truncate">{lead.business_name}</div>

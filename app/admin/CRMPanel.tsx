@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, Save, Trash2, Search, ChevronDown } from 'lucide-react';
-import { supabase, Lead } from '@/lib/supabase';
+import { Lead } from '@/lib/supabase';
 
 const EMPTY_LEAD: Omit<Lead, 'id' | 'created_at'> = {
   business_name: '', website: '', industry: '', contact_email: '',
@@ -45,11 +45,9 @@ export default function CRMPanel() {
 
   async function fetchLeads() {
     setLoading(true);
-    const { data } = await supabase
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false });
-    setLeads(data || []);
+    const res = await fetch('/api/leads');
+    const data = await res.json();
+    setLeads(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 
@@ -84,12 +82,21 @@ export default function CRMPanel() {
     setSaving(true);
     setSaveError('');
     try {
-      if (editId) {
-        const { error } = await supabase.from('leads').update(form).eq('id', editId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('leads').insert([form]);
-        if (error) throw error;
+      const res = editId
+        ? await fetch(`/api/leads?id=${editId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(form),
+          })
+        : await fetch('/api/leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(form),
+          });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to save lead');
       }
       closeForm();
       await fetchLeads();
@@ -102,7 +109,7 @@ export default function CRMPanel() {
 
   async function deleteLead(id: string) {
     if (!confirm('Delete this lead?')) return;
-    await supabase.from('leads').delete().eq('id', id);
+    await fetch(`/api/leads?id=${id}`, { method: 'DELETE' });
     fetchLeads();
   }
 
