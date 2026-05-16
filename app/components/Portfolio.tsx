@@ -72,14 +72,35 @@ const ProjectCard = ({ project, index }: { project: any, index: number }) => {
 
                 {/* RIGHT: Project Screenshot (Hidden on small mobiles, visible on tablet+) */}
                 {project.image && (
-                    <div className="hidden md:block relative h-full bg-[#050505]">
-                        <Image
-                            src={project.image}
-                            alt={`${project.title} screenshot`}
-                            fill
-                            className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0A]/30 via-transparent to-transparent pointer-events-none" />
+                    <div className="hidden md:flex flex-col justify-center items-center relative h-full bg-[#080808] p-5 border-l border-white/5">
+                        {/* Browser chrome mockup */}
+                        <div className="w-full rounded-xl overflow-hidden border border-white/10 shadow-2xl transition-transform duration-500 group-hover:scale-[1.03]">
+                            {/* Browser bar */}
+                            <div className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] border-b border-white/5">
+                                <div className="flex gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-red-500/50" />
+                                    <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
+                                    <div className="w-2 h-2 rounded-full bg-green-500/50" />
+                                </div>
+                                <div className="flex-1 mx-2 px-2 py-0.5 rounded bg-white/5 text-[9px] font-mono text-slate-500 truncate">
+                                    {project.url}
+                                </div>
+                            </div>
+                            {/* Screenshot */}
+                            <div className="relative w-full aspect-[16/10] overflow-hidden bg-[#111]">
+                                <Image
+                                    src={project.image}
+                                    alt={`${project.title} screenshot`}
+                                    fill
+                                    className="object-cover object-top"
+                                />
+                            </div>
+                        </div>
+                        {/* Ambient glow behind mockup */}
+                        <div className={`absolute inset-0 blur-[80px] opacity-5 pointer-events-none ${
+                            project.color === 'green' ? 'bg-[#00D67D]' :
+                            project.color === 'blue' ? 'bg-blue-500' : 'bg-purple-500'
+                        }`} />
                     </div>
                 )}
             </div>
