@@ -21,24 +21,35 @@ Website Analysis:
 - SEO Quality: ${lead.seo_quality || 'Unknown'}
 - Has Dashboard/System: ${lead.has_dashboard ? 'Yes' : 'No'}
 - AI Opportunity: ${lead.ai_opportunity || 'Not assessed'}
-- Weak Points: ${lead.weak_points || 'Not specified'}
+- Observations: ${lead.weak_points || 'Not specified'}
 - Possible Improvements: ${lead.possible_improvements || 'Not specified'}
 
-Instructions:
-- Start with a friendly and natural introduction
-- Mention 1–2 specific observations noticed from their website or digital experience
-- Mention weak points subtly without sounding critical or insulting
-- Explain how Spacze can improve those areas using: modern web development, dashboards, automation systems, or AI solutions
-- Focus on real business outcomes: improved customer experience, better lead generation, operational efficiency, automation, modern branding
-- Keep the tone calm, intelligent, and authentic
-- Avoid generic marketing phrases and hype language
-- Avoid sounding like mass outreach
-- Do NOT use spam-trigger words like: guaranteed, increase revenue fast, limited offer, act now, boost sales instantly
-- Keep the email concise and readable
+Tone & Framing Rules (follow strictly):
+- NEVER say the website is bad, weak, outdated, poor, terrible, or lacking
+- NEVER criticise or insult the business in any way
+- Frame all observations as opportunities, not problems
+- Sound consultative and strategic — like a trusted advisor, not a salesperson
+- Use calm, professional language such as:
+  "there may be opportunities to improve…"
+  "I noticed a few areas that could enhance…"
+  "there's potential to modernize…"
+  "a more streamlined experience could help…"
+
+Writing Instructions:
+- Start with a warm, natural introduction that shows genuine familiarity with the business
+- Reference 1–2 specific improvement opportunities observed from their website or industry
+- Connect those opportunities to real business outcomes: better lead conversion, stronger brand positioning, operational efficiency, or improved customer experience
+- Position Spacze as intelligent, modern, strategic, consultative, and trustworthy
+- Explain how Spacze can help using: modern web development, premium UI/UX, dashboards, automation systems, or AI solutions
+- The email must feel like genuine research was done — personalized, not templated
+- Avoid generic marketing phrases, hype language, and mass-outreach tone
+- Do NOT use spam-trigger words: guaranteed, increase revenue fast, limited offer, act now, boost sales instantly
 - Keep total email length between 140–190 words
-- Include a soft CTA asking for a quick discussion or call
+- Close with a soft, low-pressure CTA inviting a quick conversation or call
 - Mention portfolio naturally: Spacze.vercel.app
-- The email should feel like it was personally written after reviewing the company's website carefully
+
+The goal is to start a conversation, not close a sale.
+The reader should feel: "This person actually looked at our business and has something valuable to say."
 
 Output format (exactly):
 SUBJECT: [subject line here]
