@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export async function POST(req: NextRequest) {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  try {
-    const lead = await req.json();
-
-    const prompt = `You are an expert B2B sales copywriter for Spacze, a software and AI automation agency.
+function buildPrompt(lead: any): string {
+  return `You are an expert B2B sales copywriter for Spacze, a software and AI automation agency.
 
 Your task is to write a highly personalized cold outreach email for a business based on their website analysis.
 
@@ -39,24 +36,67 @@ Output format (exactly):
 SUBJECT: [subject line here]
 BODY:
 [email body here]`;
+}
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.85,
-      max_tokens: 600,
-    });
+function parseOutput(raw: string) {
+  const subjectMatch = raw.match(/SUBJECT:\s*(.+)/i);
+  const bodyMatch = raw.match(/BODY:\s*([\s\S]+)/i);
+  return {
+    subject: subjectMatch ? subjectMatch[1].trim() : 'Quick thought about your website',
+    body: bodyMatch ? bodyMatch[1].trim() : raw,
+  };
+}
 
-    const raw = completion.choices[0].message.content || '';
+async function generateWithOpenAI(prompt: string): Promise<string> {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.85,
+    max_tokens: 600,
+  });
+  return completion.choices[0].message.content || '';
+}
 
-    // Parse subject and body
-    const subjectMatch = raw.match(/SUBJECT:\s*(.+)/i);
-    const bodyMatch = raw.match(/BODY:\s*([\s\S]+)/i);
+async function generateWithGemini(prompt: string): Promise<string> {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const result = await model.generateContent(prompt);
+  return result.response.text();
+}
 
-    const subject = subjectMatch ? subjectMatch[1].trim() : 'Quick thought about your website';
-    const body = bodyMatch ? bodyMatch[1].trim() : raw;
+export async function POST(req: NextRequest) {
+  try {
+    const lead = await req.json();
+    const prompt = buildPrompt(lead);
 
-    return NextResponse.json({ subject, body });
+    let raw = '';
+    let provider = '';
+
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        raw = await generateWithOpenAI(prompt);
+        provider = 'openai';
+      } catch (openaiErr: any) {
+        console.warn('OpenAI failed, falling back to Gemini:', openaiErr.message);
+        if (!process.env.GEMINI_API_KEY) {
+          throw new Error('OpenAI failed and no GEMINI_API_KEY is set.');
+        }
+        raw = await generateWithGemini(prompt);
+        provider = 'gemini';
+      }
+    } else if (process.env.GEMINI_API_KEY) {
+      raw = await generateWithGemini(prompt);
+      provider = 'gemini';
+    } else {
+      return NextResponse.json(
+        { error: 'No AI provider configured. Set OPENAI_API_KEY or GEMINI_API_KEY in environment variables.' },
+        { status: 500 }
+      );
+    }
+
+    const { subject, body } = parseOutput(raw);
+    return NextResponse.json({ subject, body, provider });
   } catch (err: any) {
     console.error('generate-email error:', err);
     return NextResponse.json({ error: err.message || 'Failed to generate email' }, { status: 500 });
