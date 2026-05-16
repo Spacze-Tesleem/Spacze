@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
-// GET /api/leads — fetch all leads ordered by created_at desc
+// GET /api/leads
 export async function GET() {
-  const { data, error } = await supabaseAdmin
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
     .from('leads')
     .select('*')
     .order('created_at', { ascending: false });
@@ -12,31 +13,34 @@ export async function GET() {
   return NextResponse.json(data);
 }
 
-// POST /api/leads — insert a new lead
+// POST /api/leads
 export async function POST(req: NextRequest) {
+  const db = getSupabaseAdmin();
   const body = await req.json();
-  const { error, data } = await supabaseAdmin.from('leads').insert([body]).select().single();
+  const { data, error } = await db.from('leads').insert([body]).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data, { status: 201 });
 }
 
-// PUT /api/leads?id=<uuid> — update an existing lead
+// PUT /api/leads?id=<uuid>
 export async function PUT(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
+  const db = getSupabaseAdmin();
   const body = await req.json();
-  const { error, data } = await supabaseAdmin.from('leads').update(body).eq('id', id).select().single();
+  const { data, error } = await db.from('leads').update(body).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
 
-// DELETE /api/leads?id=<uuid> — delete a lead
+// DELETE /api/leads?id=<uuid>
 export async function DELETE(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
-  const { error } = await supabaseAdmin.from('leads').delete().eq('id', id);
+  const db = getSupabaseAdmin();
+  const { error } = await db.from('leads').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return new NextResponse(null, { status: 204 });
 }
