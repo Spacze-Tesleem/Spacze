@@ -4,34 +4,41 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
 
 function buildPrompt(lead: any): string {
-  return `You are an expert B2B sales copywriter for Spacze, a software and AI automation agency.
+  return `You are an expert B2B outreach copywriter for Spacze, a software development and AI automation agency.
 
-Your task is to write a highly personalized cold outreach email for a business based on their website analysis.
+Your task is to generate a highly personalized cold outreach email based on a company's website analysis.
 
-Business Details:
+The email must feel human, natural, conversational, and professional — not robotic, spammy, or overly sales-focused.
+
+Business Information:
 - Business Name: ${lead.business_name}
-- Website: ${lead.website}
-- Industry: ${lead.industry}
+- Website: ${lead.website || 'Not provided'}
+- Industry: ${lead.industry || 'Not specified'}
 
 Website Analysis:
-- Website quality: ${lead.website_quality_score ?? 'N/A'}/10
-- Mobile responsiveness: ${lead.mobile_responsiveness || 'Unknown'}
-- SEO quality: ${lead.seo_quality || 'Unknown'}
-- Has dashboard/system: ${lead.has_dashboard ? 'Yes' : 'No'}
-- AI opportunity: ${lead.ai_opportunity || 'Not assessed'}
-- Weak points: ${lead.weak_points || 'Not specified'}
-- Possible improvements: ${lead.possible_improvements || 'Not specified'}
+- Website Quality Score: ${lead.website_quality_score ?? 'N/A'}/10
+- Mobile Responsiveness: ${lead.mobile_responsiveness || 'Unknown'}
+- SEO Quality: ${lead.seo_quality || 'Unknown'}
+- Has Dashboard/System: ${lead.has_dashboard ? 'Yes' : 'No'}
+- AI Opportunity: ${lead.ai_opportunity || 'Not assessed'}
+- Weak Points: ${lead.weak_points || 'Not specified'}
+- Possible Improvements: ${lead.possible_improvements || 'Not specified'}
 
 Instructions:
-- Mention 1–2 specific weak points noticed on their website or digital experience
-- Explain how Spacze can improve those areas using modern web development, automation, dashboards, or AI solutions
-- Keep the email natural and conversational
-- Avoid robotic or overly sales-focused language
-- Focus on business benefits: better customer experience, automation, improved lead generation, faster operations, modern branding
-- Mention portfolio: https://spacze.vercel.app
-- Include a clear CTA asking for a short discussion or quick call
-- Keep email length between 180–220 words
-- Write like a real human, not a marketing bot
+- Start with a friendly and natural introduction
+- Mention 1–2 specific observations noticed from their website or digital experience
+- Mention weak points subtly without sounding critical or insulting
+- Explain how Spacze can improve those areas using: modern web development, dashboards, automation systems, or AI solutions
+- Focus on real business outcomes: improved customer experience, better lead generation, operational efficiency, automation, modern branding
+- Keep the tone calm, intelligent, and authentic
+- Avoid generic marketing phrases and hype language
+- Avoid sounding like mass outreach
+- Do NOT use spam-trigger words like: guaranteed, increase revenue fast, limited offer, act now, boost sales instantly
+- Keep the email concise and readable
+- Keep total email length between 140–190 words
+- Include a soft CTA asking for a quick discussion or call
+- Mention portfolio naturally: Spacze.vercel.app
+- The email should feel like it was personally written after reviewing the company's website carefully
 
 Output format (exactly):
 SUBJECT: [subject line here]
