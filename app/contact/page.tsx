@@ -24,9 +24,11 @@ const services = [
 
 export default function ContactPage() {
   const [copied, setCopied] = useState(false);
-  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [formError, setFormError] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState('');
+  const [formData, setFormData] = useState({ name: '', email: '', budget: '', message: '' });
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText('spaczehq@gmail.com');
@@ -34,11 +36,37 @@ export default function ContactPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormStatus('submitting');
-    await new Promise((r) => setTimeout(r, 2000));
-    setFormStatus('success');
+    setFormError('');
+
+    const serviceLabel = selectedService ? `Service: ${selectedService}\n` : '';
+    const budgetLabel = formData.budget ? `Budget: ${formData.budget}\n` : '';
+    const body = `From: ${formData.name}\n${serviceLabel}${budgetLabel}\n${formData.message}`;
+    const subject = `New enquiry from ${formData.name}${selectedService ? ` — ${selectedService}` : ''}`;
+
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: 'spaczehq@gmail.com', subject, body }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to send message');
+      }
+
+      setFormStatus('success');
+    } catch (err: any) {
+      setFormError(err.message || 'Something went wrong. Please try again.');
+      setFormStatus('error');
+    }
   };
 
   const inputClass = (field: string) =>
@@ -161,8 +189,11 @@ export default function ContactPage() {
                     <label className="block text-xs text-slate-500 mb-1.5 font-mono uppercase tracking-wider">Name</label>
                     <input
                       type="text"
+                      name="name"
                       required
                       placeholder="John Doe"
+                      value={formData.name}
+                      onChange={handleChange}
                       className={inputClass('name')}
                       onFocus={() => setFocusedField('name')}
                       onBlur={() => setFocusedField(null)}
@@ -172,8 +203,11 @@ export default function ContactPage() {
                     <label className="block text-xs text-slate-500 mb-1.5 font-mono uppercase tracking-wider">Email</label>
                     <input
                       type="email"
+                      name="email"
                       required
                       placeholder="you@company.com"
+                      value={formData.email}
+                      onChange={handleChange}
                       className={inputClass('email')}
                       onFocus={() => setFocusedField('email')}
                       onBlur={() => setFocusedField(null)}
@@ -205,7 +239,10 @@ export default function ContactPage() {
                   <label className="block text-xs text-slate-500 mb-1.5 font-mono uppercase tracking-wider">Budget Range</label>
                   <input
                     type="text"
+                    name="budget"
                     placeholder="e.g. $2,000 – $5,000"
+                    value={formData.budget}
+                    onChange={handleChange}
                     className={inputClass('budget')}
                     onFocus={() => setFocusedField('budget')}
                     onBlur={() => setFocusedField(null)}
@@ -216,13 +253,20 @@ export default function ContactPage() {
                   <label className="block text-xs text-slate-500 mb-1.5 font-mono uppercase tracking-wider">Message</label>
                   <textarea
                     required
+                    name="message"
                     rows={5}
                     placeholder="Tell us about your project, goals, and timeline..."
+                    value={formData.message}
+                    onChange={handleChange}
                     className={`${inputClass('message')} resize-none`}
                     onFocus={() => setFocusedField('message')}
                     onBlur={() => setFocusedField(null)}
                   />
                 </div>
+
+                {formStatus === 'error' && (
+                  <p className="text-red-400 text-sm text-center">{formError}</p>
+                )}
 
                 <button
                   type="submit"
