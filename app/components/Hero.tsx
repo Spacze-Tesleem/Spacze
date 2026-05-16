@@ -103,7 +103,7 @@ const Hero = () => {
           <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-[#00D67D]/5 blur-[120px] rounded-full" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-[1.1fr_0.9fr] gap-16 lg:gap-24 items-center relative z-10">
+      <div className="max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
         
         {/* === LEFT COLUMN === */}
         <div className="flex flex-col items-start text-left z-20">
@@ -113,7 +113,7 @@ const Hero = () => {
              initial={{ opacity: 0, x: -20 }}
              animate={{ opacity: 1, x: 0 }}
              transition={{ duration: 0.5 }}
-             className="mb-8 flex items-center gap-3 text-xs font-mono text-[#00D67D]"
+             className="mb-6 flex items-center gap-3 text-xs font-mono text-[#00D67D]"
            >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00D67D] opacity-75"></span>
@@ -122,26 +122,25 @@ const Hero = () => {
               <span className="tracking-widest opacity-80">SYSTEMS ONLINE v2.4</span>
            </motion.div>
 
-           {/* Headline - REDUCED FONT SIZE */}
+           {/* Headline */}
            <motion.h1 
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, delay: 0.1 }}
-             className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tighter leading-[1.1] mb-8"
+             className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight leading-[1.15] mb-6"
            >
-             Spacze builds <br />
+             Spacze builds{' '}
              <span className="text-white relative inline-block">
                 intelligent
-                {/* Decorative underline */}
                 <motion.span 
                     initial={{ width: 0 }}
                     animate={{ width: "100%" }}
                     transition={{ delay: 0.8, duration: 1 }}
-                    className="absolute bottom-2 left-0 h-1 bg-blue-600/50 -z-10"
+                    className="absolute bottom-1 left-0 h-[3px] bg-blue-600/50 -z-10"
                 />
-             </span> <br/>
-             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-[#00D67D]">software systems </span> <br />
-             <span className="text-slate-200">for modern businesses.</span>
+             </span>{' '}
+             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-[#00D67D]">software systems</span>{' '}
+             <span className="text-slate-300">for modern businesses.</span>
            </motion.h1>
 
            {/* Subtext */}
@@ -149,7 +148,7 @@ const Hero = () => {
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, delay: 0.2 }}
-             className="text-lg text-slate-400 max-w-lg mb-12 leading-relaxed font-light"
+             className="text-base text-slate-400 max-w-md mb-10 leading-relaxed font-light"
            >
              From <span className="text-blue-400 font-medium">secure platforms</span> to <span className="text-[#00D67D] font-medium">automated workflows</span>, we help teams design, build, and scale technology that works.
            </motion.p>
@@ -169,11 +168,10 @@ const Hero = () => {
              initial={{ opacity: 0 }}
              animate={{ opacity: 1 }}
              transition={{ delay: 0.6 }}
-             className="mt-12 pt-8 border-t border-white/5 w-full max-w-lg flex items-center gap-6"
+             className="mt-10 pt-6 border-t border-white/5 w-full max-w-md flex items-center gap-6"
            >
               <span className="text-[10px] text-slate-600 uppercase tracking-widest">Built With</span>
               <div className="flex gap-4 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
-                  {/* Icons replaced with color blocks for demonstration */}
                   <div className="h-5 w-5 bg-white rounded-sm" title="Next.js" />
                   <div className="h-5 w-5 bg-blue-500 rounded-sm" title="React" />
                   <div className="h-5 w-5 bg-[#00D67D] rounded-sm" title="Node" />
@@ -183,27 +181,22 @@ const Hero = () => {
         </div>
 
         {/* === RIGHT COLUMN: Layered Visuals === */}
-        <div className="relative h-[600px] w-full hidden lg:flex items-center justify-center perspective-[2000px]">
+        <div className="relative h-[480px] w-full hidden lg:flex items-center justify-center">
             
-            {/* 1. Base Layer: The "Platform" */}
+            {/* 1. Base Image Card */}
             <motion.div 
-                initial={{ opacity: 0, rotateX: 20, rotateY: -20 }}
-                animate={{ opacity: 1, rotateX: 5, rotateY: -5 }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-                className="relative z-10 w-[450px] h-[550px] bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
+                className="relative z-10 w-full max-w-[420px] h-[400px] bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
             >
-                {/* Image with subtle overlay */}
                 <div className="absolute inset-0 bg-blue-900/10 z-10" />
                 <img 
                     src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop" 
-                    alt="Dashboard" 
+                    alt="Tech infrastructure" 
                     className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-1000"
                 />
-                
-                {/* Decorative Grid Overlay */}
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] z-20 pointer-events-none" />
-
-                {/* Scanning Line */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:40px_40px] z-20 pointer-events-none" />
                 <motion.div 
                     animate={{ top: ['0%', '100%'] }}
                     transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
@@ -211,15 +204,15 @@ const Hero = () => {
                 />
             </motion.div>
 
-            {/* 2. Floating Code Card (Top Left) */}
+            {/* 2. Floating Code Card */}
             <motion.div 
-                animate={{ y: [0, -10, 0] }}
+                animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-24 left-10 z-30"
+                className="absolute top-10 -left-4 z-30"
             >
-                <div className="bg-[#050505]/90 backdrop-blur border border-white/10 p-4 rounded-xl shadow-2xl min-w-[200px]">
+                <div className="bg-[#050505]/90 backdrop-blur border border-white/10 p-4 rounded-xl shadow-2xl min-w-[190px]">
                     <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
-                        <Code2 size={14} className="text-blue-400" />
+                        <Code2 size={13} className="text-blue-400" />
                         <span className="text-[10px] text-slate-500 font-mono">core.config.ts</span>
                     </div>
                     <div className="space-y-1 font-mono text-[10px] leading-relaxed">
@@ -231,19 +224,18 @@ const Hero = () => {
                 </div>
             </motion.div>
 
-            {/* 3. Floating Stats (Bottom Right) */}
+            {/* 3. Floating Stats */}
             <motion.div 
-                animate={{ y: [0, 15, 0] }}
+                animate={{ y: [0, 10, 0] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                className="absolute bottom-32 -right-4 z-40 space-y-3"
+                className="absolute bottom-16 -right-2 z-40 space-y-2"
             >
                 <TechCard icon={Activity} label="Latency" value="14ms" color="text-[#00D67D]" delay={0.8} />
                 <TechCard icon={ShieldCheck} label="Status" value="Secure" color="text-blue-400" delay={1} />
             </motion.div>
 
-            {/* Background Abstract Blur behind Image */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[600px] bg-blue-600/10 blur-[100px] rounded-full -z-10" />
-
+            {/* Ambient blur */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-blue-600/10 blur-[100px] rounded-full -z-10" />
         </div>
       </div>
     </section>
