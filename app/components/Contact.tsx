@@ -24,7 +24,7 @@ const ContactPage = () => {
 
   // Email Copy Logic
   const handleCopyEmail = () => {
-    navigator.clipboard.writeText('hello@spacze.com');
+    navigator.clipboard.writeText('spaczehq@gmail.com');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -95,7 +95,7 @@ const ContactPage = () => {
                 {copied ? <CheckCircle2 size={18} className="text-[#00D67D]" /> : <Copy size={18} className="text-slate-600 group-hover:text-blue-400 transition-colors" />}
               </div>
               <div className="text-2xl font-medium text-white group-hover:text-blue-400 transition-colors">
-                hello@spacze.com
+                spaczehq@gmail.com
               </div>
             </motion.div>
 

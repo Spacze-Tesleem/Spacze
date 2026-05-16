@@ -6,7 +6,7 @@ import { ArrowRight, Copy, Check, Github, Linkedin, Twitter, Terminal, MessageSq
 
 const EnhancedCTA = () => {
     const [copied, setCopied] = useState(false);
-    const email = "hello@yourname.dev";
+    const email = "spaczehq@gmail.com";
     
     // Mouse tracking for spotlight effect
     const cardRef = useRef<HTMLDivElement>(null);
@@ -136,7 +136,7 @@ const EnhancedCTA = () => {
                         </div>
 
                         {/* Primary Button */}
-                        <a href="mailto:hello@yourname.dev" className="group relative w-full overflow-hidden rounded-xl">
+                        <a href="mailto:spaczehq@gmail.com" className="group relative w-full overflow-hidden rounded-xl">
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-[#00D67D] transition-transform duration-300 group-hover:scale-105" />
                             <div className="relative w-full py-4 bg-transparent flex items-center justify-center gap-2 text-white font-bold text-base tracking-wide">
                                 <span>Initialize Project</span>
