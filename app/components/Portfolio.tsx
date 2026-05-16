@@ -3,88 +3,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
-import { ArrowUpRight, Github, ExternalLink, Zap, AlertCircle, Code2, ArrowLeft, ArrowRight, Terminal } from 'lucide-react';
-
-// --- Sub-Component: Abstract Tech Interface (The Visual) ---
-const TechInterface = ({ color, isHovered }: { color: string; isHovered: boolean }) => {
-    const colorMap: Record<string, string> = {
-        blue: 'bg-blue-500',
-        green: 'bg-[#00D67D]',
-        purple: 'bg-purple-500',
-    };
-    const activeColor = colorMap[color] || 'bg-white';
-
-    return (
-        <div className="relative w-full h-full min-h-[300px] bg-[#0F0F0F] flex flex-col overflow-hidden font-mono text-[10px] md:text-xs border-l border-white/5">
-            {/* Window Header */}
-            <div className="h-10 bg-[#1a1a1a] border-b border-white/5 flex items-center justify-between px-4">
-                <div className="flex gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500/30" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20 border border-yellow-500/30" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/20 border border-green-500/30" />
-                </div>
-                <div className="text-slate-600">bash — v.2.0.4</div>
-            </div>
-
-            {/* Scrollable Content Simulation */}
-            <motion.div
-                animate={isHovered ? { y: -40 } : { y: 0 }}
-                transition={{ duration: 4, ease: "linear" }}
-                className="p-6 space-y-4 text-slate-400"
-            >
-                <div className="flex gap-3 text-slate-500">
-                    <span>$</span>
-                    <span className="text-white">init_sequence --verbose</span>
-                </div>
-                
-                {/* Abstract Data Blocks */}
-                <div className="space-y-2 opacity-80">
-                    <div className="flex items-center gap-4">
-                        <span className="text-blue-400">LOADING</span>
-                        <div className="flex-1 h-1 bg-white/10 rounded overflow-hidden">
-                            <motion.div 
-                                initial={{ width: 0 }} 
-                                whileInView={{ width: '100%' }} 
-                                transition={{ duration: 1.5 }}
-                                className={`h-full ${activeColor}`} 
-                            />
-                        </div>
-                        <span className="text-white">100%</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                        <div className="p-3 border border-white/5 rounded bg-white/[0.02]">
-                            <div className="mb-2 text-slate-500">Latency</div>
-                            <div className="text-xl font-bold text-white">24ms</div>
-                        </div>
-                        <div className="p-3 border border-white/5 rounded bg-white/[0.02]">
-                            <div className="mb-2 text-slate-500">Requests</div>
-                            <div className="text-xl font-bold text-white">1.2M</div>
-                        </div>
-                    </div>
-
-                    <div className="mt-4 p-4 rounded bg-[#050505] border border-white/5 font-mono leading-relaxed">
-                        <span className="text-purple-400">function</span> <span className="text-blue-400">optimize</span>() {'{'} <br/>
-                        &nbsp;&nbsp;<span className="text-white">return</span> data.<span className="text-yellow-400">filter</span>(x =&gt; x.value &gt; 0); <br/>
-                        {'}'}
-                    </div>
-                </div>
-            </motion.div>
-            
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F0F] via-transparent to-transparent pointer-events-none" />
-        </div>
-    );
-};
+import { ArrowUpRight, Github, Zap, AlertCircle, Code2, ArrowLeft, ArrowRight } from 'lucide-react';
 
 // --- Sub-Component: Project Card ---
 const ProjectCard = ({ project, index }: { project: any, index: number }) => {
-    const [isHovered, setIsHovered] = useState(false);
-
     return (
         <motion.div
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
             className="relative flex-shrink-0 w-[85vw] md:w-[600px] lg:w-[800px] snap-center"
         >
             <div className="group relative grid md:grid-cols-[1.1fr_0.9fr] bg-[#0A0A0A] border border-white/10 rounded-3xl overflow-hidden hover:border-white/20 transition-all duration-500 h-full">
@@ -146,26 +70,18 @@ const ProjectCard = ({ project, index }: { project: any, index: number }) => {
                     </div>
                 </div>
 
-                {/* RIGHT: Visual Mockup (Hidden on small mobiles to save space, visible on tablet+) */}
-                <div className="hidden md:flex flex-col relative h-full bg-[#050505]">
-                    {/* Project Thumbnail */}
-                    {project.image && (
-                        <div className="relative w-full h-[160px] overflow-hidden border-b border-white/5 flex-shrink-0">
-                            <Image
-                                src={project.image}
-                                alt={`${project.title} screenshot`}
-                                fill
-                                className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
-                            />
-                            {/* Subtle overlay so it blends with the dark card */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#050505]/60 pointer-events-none" />
-                        </div>
-                    )}
-                    {/* Terminal animation below the thumbnail */}
-                    <div className="flex-1 min-h-0">
-                        <TechInterface color={project.color} isHovered={isHovered} />
+                {/* RIGHT: Project Screenshot (Hidden on small mobiles, visible on tablet+) */}
+                {project.image && (
+                    <div className="hidden md:block relative h-full bg-[#050505]">
+                        <Image
+                            src={project.image}
+                            alt={`${project.title} screenshot`}
+                            fill
+                            className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0A]/30 via-transparent to-transparent pointer-events-none" />
                     </div>
-                </div>
+                )}
             </div>
         </motion.div>
     );
