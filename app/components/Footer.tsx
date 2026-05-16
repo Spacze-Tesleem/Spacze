@@ -92,10 +92,10 @@ const Footer = () => {
               Navigation
             </h4>
             <ul className="space-y-3">
-              <FooterLink href="#services" label="Services" />
-              <FooterLink href="#about" label="About Us" />
-              <FooterLink href="#portfolio" label="Portfolio" />
-              <FooterLink href="#contact" label="Contact" />
+              <FooterLink href="/services" label="Services" />
+              <FooterLink href="/about" label="About Us" />
+              <FooterLink href="/portfolio" label="Portfolio" />
+              <FooterLink href="/contact" label="Contact" />
             </ul>
           </div>
 
@@ -106,7 +106,7 @@ const Footer = () => {
             </h4>
             <ul className="space-y-3">
               <FooterLink href="mailto:spaczehq@gmail.com" label="spaczehq@gmail.com" />
-              <FooterLink href="#contact" label="Start a Project" />
+              <FooterLink href="/contact" label="Start a Project" />
             </ul>
           </div>
 

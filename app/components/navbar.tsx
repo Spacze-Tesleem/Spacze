@@ -13,10 +13,10 @@ import {
 
 // Navigation Data
 const navLinks = [
-  { name: 'Services', href: '#services' },
-  { name: 'About Us', href: '#about' },
-  { name: 'Portfolio', href: '#portfolio' },
-  { name: 'Contact', href: '#contact' },
+  { name: 'Services', href: '/services' },
+  { name: 'About Us', href: '/about' },
+  { name: 'Portfolio', href: '/portfolio' },
+  { name: 'Contact', href: '/contact' },
 ];
 
 // Brand Colors - Green & Silver
@@ -263,7 +263,7 @@ const Navbar = () => {
             <motion.button
               whileHover={{ scale: 1.03, y: -1 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => window.location.href = '/contact'}
               className="group relative overflow-hidden rounded-xl px-6 py-2.5 font-semibold text-black bg-white"
             >
               {/* Gradient overlay on hover */}
@@ -506,7 +506,7 @@ const Navbar = () => {
                 className="mt-8"
               >
                 <button 
-                  onClick={() => { setIsMobileOpen(false); setTimeout(() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' }), 300); }}
+                  onClick={() => { setIsMobileOpen(false); setTimeout(() => { window.location.href = '/contact'; }, 300); }}
                   className="w-full py-4 rounded-2xl bg-white text-black font-bold text-lg relative overflow-hidden group"
                 >
                   {/* Hover overlay */}
