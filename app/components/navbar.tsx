@@ -13,9 +13,9 @@ import {
 
 // Navigation Data
 const navLinks = [
-  { name: 'Services', href: 'services' },
-  { name: 'Benefits', href: '#benefits' },
-  { name: 'Pricing', href: '#pricing' },
+  { name: 'Services', href: '#services' },
+  { name: 'About Us', href: '#about' },
+  { name: 'Portfolio', href: '#portfolio' },
   { name: 'Contact', href: '#contact' },
 ];
 
@@ -263,6 +263,7 @@ const Navbar = () => {
             <motion.button
               whileHover={{ scale: 1.03, y: -1 }}
               whileTap={{ scale: 0.97 }}
+              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
               className="group relative overflow-hidden rounded-xl px-6 py-2.5 font-semibold text-black bg-white"
             >
               {/* Gradient overlay on hover */}
@@ -505,7 +506,7 @@ const Navbar = () => {
                 className="mt-8"
               >
                 <button 
-                  onClick={() => setIsMobileOpen(false)}
+                  onClick={() => { setIsMobileOpen(false); setTimeout(() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' }), 300); }}
                   className="w-full py-4 rounded-2xl bg-white text-black font-bold text-lg relative overflow-hidden group"
                 >
                   {/* Hover overlay */}
@@ -551,11 +552,11 @@ const Navbar = () => {
                     Get in touch
                   </p>
                   <a 
-                    href="mailto:hello@spacze.io" 
+                    href="mailto:spaczehq@gmail.com" 
                     className="text-sm transition-colors duration-300 hover:text-white"
                     style={{ color: brandColors.silver }}
                   >
-                    hello@spacze.io
+                    spaczehq@gmail.com
                   </a>
                 </div>
                 

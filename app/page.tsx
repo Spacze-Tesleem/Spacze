@@ -1,8 +1,7 @@
-import Navbar from './components/navbar'; 
 import Hero from './components/Hero';
-import About from './components/About';
 import Services from './components/Services';
 import Process from './components/Process';
+import About from './components/About';
 import MissionVision from './components/MissionVision';
 import WhyChooseUs from './components/Choose';
 import Portfolio from './components/Portfolio';
@@ -14,9 +13,9 @@ export default function Home() {
   return (
     <main className="bg-black min-h-screen">
       <Hero />
-      <About />
       <Services />
       <Process />
+      <About />
       <MissionVision />
       <WhyChooseUs />
       <Portfolio />

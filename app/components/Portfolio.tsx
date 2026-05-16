@@ -191,7 +191,7 @@ const PortfolioSlider = () => {
     };
 
     return (
-        <section className="relative w-full py-24 bg-[#050505] text-white overflow-hidden">
+        <section id="portfolio" className="relative w-full py-24 bg-[#050505] text-white overflow-hidden">
             {/* Background Texture */}
             <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/stardust.png")' }} />
             

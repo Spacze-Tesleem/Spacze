@@ -38,7 +38,7 @@ const ContactPage = () => {
   };
 
   return (
-    <section className="relative w-full min-h-screen bg-[#020202] text-white pt-32 pb-20 px-6 overflow-hidden flex items-center">
+    <section id="contact" className="relative w-full min-h-screen bg-[#020202] text-white pt-32 pb-20 px-6 overflow-hidden flex items-center">
       
       {/* --- 1. Dynamic Background Atmosphere --- */}
       <div className="absolute inset-0 w-full h-full pointer-events-none">

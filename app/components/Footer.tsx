@@ -86,29 +86,27 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* COLUMN 2: Platform (Span 2) */}
+          {/* COLUMN 2: Navigation (Span 2) */}
           <div className="lg:col-span-2 lg:col-start-6">
             <h4 className="font-bold text-white mb-6 flex items-center gap-2 text-sm uppercase tracking-wider">
-              Platform
+              Navigation
             </h4>
             <ul className="space-y-3">
-              <FooterLink href="#" label="Services" />
-              <FooterLink href="#" label="Case Studies" />
-              <FooterLink href="#" label="Process" />
-              <FooterLink href="#" label="Pricing" />
+              <FooterLink href="#services" label="Services" />
+              <FooterLink href="#about" label="About Us" />
+              <FooterLink href="#portfolio" label="Portfolio" />
+              <FooterLink href="#contact" label="Contact" />
             </ul>
           </div>
 
-          {/* COLUMN 3: Company (Span 2) */}
+          {/* COLUMN 3: Contact (Span 2) */}
           <div className="lg:col-span-2">
             <h4 className="font-bold text-white mb-6 flex items-center gap-2 text-sm uppercase tracking-wider">
-              Company
+              Contact
             </h4>
             <ul className="space-y-3">
-              <FooterLink href="#" label="About" />
-              <FooterLink href="#" label="Careers" />
-              <FooterLink href="#" label="Blog" />
-              <FooterLink href="#" label="Contact" />
+              <FooterLink href="mailto:spaczehq@gmail.com" label="spaczehq@gmail.com" />
+              <FooterLink href="#contact" label="Start a Project" />
             </ul>
           </div>
 

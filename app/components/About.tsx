@@ -31,7 +31,7 @@ const About = () => {
   ];
 
   return (
-    <section className="relative w-full py-24 bg-[#0A0A0A] text-white overflow-hidden">
+    <section id="about" className="relative w-full py-24 bg-[#0A0A0A] text-white overflow-hidden">
       {/* Background Decorative Element */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#00D67D]/5 blur-[120px] rounded-full pointer-events-none" />
       

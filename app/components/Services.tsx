@@ -62,7 +62,7 @@ const Services = () => {
   ];
 
   return (
-    <section className="relative w-full py-24 md:py-32 bg-[#020202] text-white overflow-hidden">
+    <section id="services" className="relative w-full py-24 md:py-32 bg-[#020202] text-white overflow-hidden">
       
       {/* --- Background Texture --- */}
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
