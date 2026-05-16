@@ -25,31 +25,51 @@ Website Analysis:
 - Possible Improvements: ${lead.possible_improvements || 'Not specified'}
 
 Tone & Framing Rules (follow strictly):
-- NEVER say the website is bad, weak, outdated, poor, terrible, or lacking
+- NEVER say the website is bad, weak, outdated, poor, or terrible
 - NEVER criticise or insult the business in any way
 - Frame all observations as opportunities, not problems
-- Sound consultative and strategic — like a trusted advisor, not a salesperson
-- Use calm, professional language such as:
-  "there may be opportunities to improve…"
-  "I noticed a few areas that could enhance…"
-  "there's potential to modernize…"
+- Sound like a real person who spent time on their website — not a bot running a campaign
+- Use calm, natural language such as:
+  "I noticed there may be opportunities to improve…"
   "a more streamlined experience could help…"
+  "there's potential to take this even further…"
+  "I believe there's a strong opportunity to…"
 
 Writing Instructions:
-- Start with a warm, natural introduction that shows genuine familiarity with the business
-- Reference 1–2 specific improvement opportunities observed from their website or industry
-- Connect those opportunities to real business outcomes: better lead conversion, stronger brand positioning, operational efficiency, or improved customer experience
-- Position Spacze as intelligent, modern, strategic, consultative, and trustworthy
-- Explain how Spacze can help using: modern web development, premium UI/UX, dashboards, automation systems, or AI solutions
-- The email must feel like genuine research was done — personalized, not templated
-- Avoid generic marketing phrases, hype language, and mass-outreach tone
+- Open with a genuine, specific compliment about the business — reference their industry or what they do
+- Mention 1–2 specific observations from their website naturally, without listing them like bullet points
+- Transition smoothly into how Spacze can help — keep it brief, one short paragraph
+- Avoid corporate filler phrases like "ultimately leading to improved operational efficiency" or "strengthen brand positioning" — these sound AI-generated
+- Avoid repeating the same idea twice in different words
+- Keep sentences short and readable — no long run-on sentences
+- The portfolio mention should feel like a natural aside, not a sales pitch line
+- Close with a soft, low-pressure CTA — something like "Would you be open to a quick chat this week?"
 - Do NOT use spam-trigger words: guaranteed, increase revenue fast, limited offer, act now, boost sales instantly
-- Keep total email length between 140–190 words
-- Close with a soft, low-pressure CTA inviting a quick conversation or call
-- Mention portfolio naturally: Spacze.vercel.app
+- Total email length: 140–175 words maximum
 
-The goal is to start a conversation, not close a sale.
+Use this email as a style reference — match this tone and structure:
+
+---
+Hi [Business Name] Team,
+
+I recently spent some time exploring your website and was genuinely impressed by [specific thing about their business].
+
+While going through the platform, I noticed there may be opportunities to [specific observation 1] and [specific observation 2 if applicable]. A more streamlined experience could help [one clear business outcome].
+
+At Spacze, we help businesses modernize their digital presence through custom web development, premium UI/UX, automation systems, and AI-powered solutions.
+
+I believe there's strong potential to take [Business Name]'s online experience even further.
+
+You can take a look at some of our work here: Spacze.vercel.app
+
+Would you be open to a quick conversation sometime this week to explore a few ideas?
+
+Best regards,
+[Your Name]
+---
+
 The reader should feel: "This person actually looked at our business and has something valuable to say."
+The goal is to start a conversation, not close a sale.
 
 Output format (exactly):
 SUBJECT: [subject line here]
