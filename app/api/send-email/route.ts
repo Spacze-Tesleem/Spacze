@@ -9,6 +9,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields: to, subject, body' }, { status: 400 });
     }
 
+    if (!process.env.EMAIL_FROM || !process.env.EMAIL_PASSWORD) {
+      return NextResponse.json(
+        { error: 'Email not configured. Set EMAIL_FROM and EMAIL_PASSWORD in your environment variables.' },
+        { status: 500 }
+      );
+    }
+
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
