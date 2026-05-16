@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
 function buildPrompt(lead: any): string {
   return `You are an expert B2B sales copywriter for Spacze, a software and AI automation agency.
@@ -65,36 +66,52 @@ async function generateWithGemini(prompt: string): Promise<string> {
   return result.response.text();
 }
 
+async function generateWithGroq(prompt: string): Promise<string> {
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  const completion = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.85,
+    max_tokens: 600,
+  });
+  return completion.choices[0].message.content || '';
+}
+
+// Try each provider in order, skipping those without a key configured.
+// Returns { raw, provider } from the first one that succeeds.
+async function generateWithFallback(prompt: string): Promise<{ raw: string; provider: string }> {
+  const providers: Array<{ name: string; key: string | undefined; fn: () => Promise<string> }> = [
+    { name: 'openai', key: process.env.OPENAI_API_KEY,  fn: () => generateWithOpenAI(prompt) },
+    { name: 'gemini', key: process.env.GEMINI_API_KEY,  fn: () => generateWithGemini(prompt) },
+    { name: 'groq',   key: process.env.GROQ_API_KEY,    fn: () => generateWithGroq(prompt) },
+  ];
+
+  const configured = providers.filter(p => p.key);
+  if (configured.length === 0) {
+    throw new Error(
+      'No AI provider configured. Set at least one of: OPENAI_API_KEY, GEMINI_API_KEY, GROQ_API_KEY.'
+    );
+  }
+
+  let lastError: Error | null = null;
+  for (const provider of configured) {
+    try {
+      const raw = await provider.fn();
+      return { raw, provider: provider.name };
+    } catch (err: any) {
+      console.warn(`${provider.name} failed, trying next provider:`, err.message);
+      lastError = err;
+    }
+  }
+
+  throw lastError ?? new Error('All AI providers failed.');
+}
+
 export async function POST(req: NextRequest) {
   try {
     const lead = await req.json();
     const prompt = buildPrompt(lead);
-
-    let raw = '';
-    let provider = '';
-
-    if (process.env.OPENAI_API_KEY) {
-      try {
-        raw = await generateWithOpenAI(prompt);
-        provider = 'openai';
-      } catch (openaiErr: any) {
-        console.warn('OpenAI failed, falling back to Gemini:', openaiErr.message);
-        if (!process.env.GEMINI_API_KEY) {
-          throw new Error('OpenAI failed and no GEMINI_API_KEY is set.');
-        }
-        raw = await generateWithGemini(prompt);
-        provider = 'gemini';
-      }
-    } else if (process.env.GEMINI_API_KEY) {
-      raw = await generateWithGemini(prompt);
-      provider = 'gemini';
-    } else {
-      return NextResponse.json(
-        { error: 'No AI provider configured. Set OPENAI_API_KEY or GEMINI_API_KEY in environment variables.' },
-        { status: 500 }
-      );
-    }
-
+    const { raw, provider } = await generateWithFallback(prompt);
     const { subject, body } = parseOutput(raw);
     return NextResponse.json({ subject, body, provider });
   } catch (err: any) {
