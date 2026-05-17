@@ -161,7 +161,7 @@ export default function EmailGeneratorPanel() {
   const currentStepMeta = STEPS.find(s => s.step === activeStep)!;
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto lg:mx-0">
+    <div className="space-y-4 max-w-7xl mx-auto lg:mx-0">
 
       {/* ── Lead selector ── */}
       <motion.div {...fadeUp} className="p-5 lg:p-6 rounded-2xl bg-[#0A0A0A] border border-white/5">
