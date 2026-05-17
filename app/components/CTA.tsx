@@ -61,13 +61,13 @@ const EnhancedCTA = () => {
                             </div>
                             
                             <h2 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-[1] mb-6">
-                                Let's ship <br />
+                                Ready to get <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-white to-[#00D67D]">
-                                    masterpieces.
+                                    more customers?
                                 </span>
                             </h2>
                             <p className="text-slate-400 text-lg max-w-lg mx-auto md:mx-0 leading-relaxed font-light">
-                                You have the vision. I have the architecture. Let's bridge the gap between concept and scalable reality.
+                                Book a free 20-minute call. We'll review your current digital presence and show you exactly where you're leaving money on the table.
                             </p>
                         </div>
 
@@ -135,20 +135,25 @@ const EnhancedCTA = () => {
                             </button>
                         </div>
 
-                        {/* Primary Button */}
-                        <a href="mailto:spaczehq@gmail.com" className="group relative w-full overflow-hidden rounded-xl">
+                        {/* Primary CTA */}
+                        <a href="https://cal.com" target="_blank" rel="noopener noreferrer" className="group relative w-full overflow-hidden rounded-xl">
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-[#00D67D] transition-transform duration-300 group-hover:scale-105" />
                             <div className="relative w-full py-4 bg-transparent flex items-center justify-center gap-2 text-white font-bold text-base tracking-wide">
-                                <span>Initialize Project</span>
+                                <span>Book a Free 20-Min Strategy Call</span>
                                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                             </div>
-                            {/* Shine Effect */}
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
+                        </a>
+
+                        {/* Secondary CTA */}
+                        <a href="mailto:spaczehq@gmail.com?subject=Free Website Audit Request" className="w-full py-3.5 rounded-xl border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 text-slate-300 hover:text-white text-sm font-medium transition-colors">
+                            <MessageSquare size={15} />
+                            Get a Free Website Audit
                         </a>
 
                         <div className="text-center">
                             <p className="text-[10px] text-slate-500 font-mono">
-                                RESPONSE TIME: &lt; 24 HOURS
+                                NO COMMITMENT · RESPONSE WITHIN 24 HOURS
                             </p>
                         </div>
                     </div>

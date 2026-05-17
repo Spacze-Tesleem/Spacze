@@ -108,66 +108,82 @@ const Hero = () => {
         {/* === LEFT COLUMN === */}
         <div className="flex flex-col items-start text-left z-20">
            
-           {/* Technical Badge */}
-           <motion.div 
+           {/* Badge */}
+           <motion.div
              initial={{ opacity: 0, x: -20 }}
              animate={{ opacity: 1, x: 0 }}
              transition={{ duration: 0.5 }}
              className="mb-6 flex items-center gap-3 text-xs font-mono text-[#00D67D]"
            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00D67D] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00D67D]"></span>
-              </span>
-              <span className="tracking-widest opacity-80">SYSTEMS ONLINE v2.4</span>
+             <span className="relative flex h-2 w-2">
+               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00D67D] opacity-75" />
+               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00D67D]" />
+             </span>
+             <span className="tracking-widest opacity-80">5 BUSINESSES LAUNCHED THIS YEAR</span>
            </motion.div>
 
-           {/* Headline */}
-           <motion.h1 
+           {/* Headline — answers WHO + WHAT in one read */}
+           <motion.h1
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, delay: 0.1 }}
-             className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight leading-[1.15] mb-6"
+             className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight leading-[1.15] mb-5"
            >
-             Stop guessing,{' '}
-             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-[#00D67D]">start using</span>{' '}
-             <span className="text-slate-300">Spacze.</span>
+             We build fast, modern{' '}
+             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-[#00D67D]">
+               web apps & AI systems
+             </span>{' '}
+             <span className="text-slate-300">that get you more customers.</span>
            </motion.h1>
 
-           {/* Subtext */}
-           <motion.p 
+           {/* Sub-headline — outcome + audience */}
+           <motion.p
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, delay: 0.2 }}
-             className="text-base text-slate-400 max-w-md mb-10 leading-relaxed font-light"
+             className="text-base text-slate-400 max-w-md mb-8 leading-relaxed font-light"
            >
-             From <span className="text-blue-400 font-medium">secure platforms</span> to <span className="text-[#00D67D] font-medium">automated workflows</span>, we help teams design, build, and scale technology that works.
+             For startups, e-commerce brands, and growing businesses across Africa and beyond — we turn your idea into a product that works and converts.
            </motion.p>
 
-           {/* Input Component */}
-           <motion.div 
+           {/* CTAs */}
+           <motion.div
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, delay: 0.3 }}
-             className="w-full"
+             className="flex flex-col sm:flex-row gap-3 w-full max-w-md mb-10"
            >
-              <ProjectInput />
+             <a
+               href="https://cal.com"
+               target="_blank"
+               rel="noopener noreferrer"
+               className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white text-black font-bold text-sm hover:bg-[#00D67D] transition-colors duration-200"
+             >
+               Book a Free Strategy Call
+               <ArrowRight size={16} />
+             </a>
+             <a
+               href="#portfolio"
+               className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-white/10 text-slate-300 font-medium text-sm hover:border-white/30 hover:text-white transition-colors duration-200"
+             >
+               See Our Work
+             </a>
            </motion.div>
 
-           {/* Trust/Stack Line */}
-           <motion.div 
+           {/* Trust bar — social proof */}
+           <motion.div
              initial={{ opacity: 0 }}
              animate={{ opacity: 1 }}
              transition={{ delay: 0.6 }}
-             className="mt-10 pt-6 border-t border-white/5 w-full max-w-md flex items-center gap-6"
+             className="pt-6 border-t border-white/5 w-full max-w-md flex flex-wrap items-center gap-x-6 gap-y-2"
            >
-              <span className="text-[10px] text-slate-600 uppercase tracking-widest">Built With</span>
-              <div className="flex gap-4 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
-                  <div className="h-5 w-5 bg-white rounded-sm" title="Next.js" />
-                  <div className="h-5 w-5 bg-blue-500 rounded-sm" title="React" />
-                  <div className="h-5 w-5 bg-[#00D67D] rounded-sm" title="Node" />
-                  <div className="h-5 w-5 bg-purple-500 rounded-sm" title="AWS" />
-              </div>
+             {[
+               '5 products shipped',
+               'Real Estate · Logistics · E-Commerce',
+               'Next.js · React · AI',
+             ].map(item => (
+               <span key={item} className="text-[10px] text-slate-600 font-mono uppercase tracking-wider">{item}</span>
+             ))}
            </motion.div>
         </div>
 
