@@ -1,22 +1,25 @@
 'use client';
 
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, Zap, LogOut, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import { LayoutDashboard, Users, Zap, LogOut, ChevronLeft, ChevronRight, Menu, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CRMPanel from './CRMPanel';
 import EmailGeneratorPanel from './EmailGeneratorPanel';
 import StatsPanel from './StatsPanel';
+import WhatsAppPanel from './WhatsAppPanel';
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'crm',       label: 'CRM',       icon: Users },
-  { id: 'generator', label: 'AI Email',  icon: Zap },
+  { id: 'dashboard', label: 'Dashboard',  icon: LayoutDashboard },
+  { id: 'crm',       label: 'CRM',        icon: Users },
+  { id: 'generator', label: 'AI Email',   icon: Zap },
+  { id: 'whatsapp',  label: 'WhatsApp',   icon: MessageCircle },
 ];
 
 const pageTitle: Record<string, string> = {
   dashboard: 'Dashboard',
   crm: 'CRM Pipeline',
   generator: 'AI Email Generator',
+  whatsapp: 'WhatsApp Outreach',
 };
 
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
@@ -175,6 +178,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {active === 'dashboard' && <StatsPanel onNavigate={setActive} />}
               {active === 'crm'       && <CRMPanel />}
               {active === 'generator' && <EmailGeneratorPanel />}
+              {active === 'whatsapp'  && <WhatsAppPanel />}
             </motion.div>
           </AnimatePresence>
         </main>
