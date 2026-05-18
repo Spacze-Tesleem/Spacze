@@ -17,6 +17,7 @@ export default function WhatsAppPanel() {
   const [status, setStatus] = useState<ConnectionStatus>('unknown');
   const [qr, setQr] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
+  const [statusError, setStatusError] = useState('');
 
   // Bulk send state
   const [bulkMode, setBulkMode] = useState(false);
@@ -39,10 +40,18 @@ export default function WhatsAppPanel() {
     try {
       const res = await fetch('/api/whatsapp-worker');
       const data = await res.json();
-      setStatus(data.status || 'unknown');
-      setQr(data.qr || null);
-    } catch {
+      if (data.error) {
+        setStatusError(data.error);
+        setStatus('disconnected');
+        setQr(null);
+      } else {
+        setStatusError('');
+        setStatus(data.status || 'unknown');
+        setQr(data.qr || null);
+      }
+    } catch (e: any) {
       setStatus('disconnected');
+      setStatusError(e.message || 'Could not reach worker');
       setQr(null);
     }
   }, []);
@@ -218,7 +227,14 @@ export default function WhatsAppPanel() {
           </motion.div>
         )}
 
-        {(status === 'disconnected' || status === 'unknown') && !qr && (
+        {statusError && (
+          <div className="mt-4 flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono break-all">
+            <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+            {statusError}
+          </div>
+        )}
+
+        {(status === 'disconnected' || status === 'unknown') && !qr && !statusError && (
           <p className="mt-4 admin-subtle text-sm">
             Worker is not connected. Click <strong className="text-slate-400">Reconnect</strong> to start, then scan the QR code.
           </p>
