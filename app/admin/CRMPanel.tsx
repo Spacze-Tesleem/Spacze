@@ -155,7 +155,7 @@ export default function CRMPanel() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y admin-divider">
+            <tbody className="admin-divider divide-y">
               {loading ? (
                 <tr><td colSpan={11} className="px-4 py-12 text-center admin-subtle">Loading...</td></tr>
               ) : filtered.length === 0 ? (

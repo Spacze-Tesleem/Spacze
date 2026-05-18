@@ -44,16 +44,16 @@ body {
 [data-theme="light"] {
   --admin-bg:        #f1f5f9;   /* slate-100 */
   --admin-surface:   #ffffff;
-  --admin-border:    rgba(0,0,0,0.07);
-  --admin-border-md: rgba(0,0,0,0.12);
+  --admin-border:    rgba(0,0,0,0.06);
+  --admin-border-md: rgba(0,0,0,0.10);
   --admin-text:      #0f172a;   /* slate-900 */
   --admin-muted:     #64748b;   /* slate-500 */
   --admin-subtle:    #94a3b8;   /* slate-400 */
-  --admin-hover-bg:  rgba(0,0,0,0.04);
+  --admin-hover-bg:  rgba(0,0,0,0.03);
   --admin-input-bg:  #f8fafc;   /* slate-50 */
   --admin-header-bg: rgba(241,245,249,0.92);
   --admin-mob-nav:   rgba(255,255,255,0.97);
-  --admin-divider:   rgba(0,0,0,0.06);
+  --admin-divider:   rgba(0,0,0,0.05);
 }
 
 /* Utility classes that consume the tokens */
@@ -68,3 +68,4 @@ body {
 .admin-input     { background-color: var(--admin-input-bg); color: var(--admin-text); border-color: var(--admin-border-md); }
 .admin-header    { background-color: var(--admin-header-bg); border-color: var(--admin-border); }
 .admin-divider   { border-color: var(--admin-divider); }
+.admin-divider > * + * { border-color: var(--admin-divider); }

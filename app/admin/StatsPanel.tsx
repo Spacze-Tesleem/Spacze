@@ -131,7 +131,7 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
         ) : recent.length === 0 ? (
           <div className="px-5 py-10 text-center admin-subtle text-sm">No leads yet. Add your first lead in the CRM.</div>
         ) : (
-          <div className="divide-y admin-divider">
+          <div className="admin-divider divide-y">
             {recent.map((lead: any, i: number) => (
               <div key={i} className="px-5 py-3.5 flex items-center justify-between gap-4">
                 <div className="min-w-0">
