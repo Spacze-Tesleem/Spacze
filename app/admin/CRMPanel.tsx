@@ -7,6 +7,7 @@ import { Lead } from '@/lib/supabase';
 
 const EMPTY_LEAD: Omit<Lead, 'id' | 'created_at'> = {
   business_name: '', website: '', industry: '', contact_email: '',
+  whatsapp_number: '',
   website_quality_score: null, mobile_responsiveness: '', whatsapp_integration: '',
   seo_quality: '', has_dashboard: false, ai_opportunity: '', weak_points: '',
   possible_improvements: '', last_contacted: null, follow_up_date: null,
@@ -265,6 +266,7 @@ export default function CRMPanel() {
                   {[
                     { label: 'Business Name *', key: 'business_name', placeholder: 'Acme Corp' },
                     { label: 'Contact Email *', key: 'contact_email', placeholder: 'hello@acme.com' },
+                    { label: 'WhatsApp Number', key: 'whatsapp_number', placeholder: '+2348012345678' },
                     { label: 'Website', key: 'website', placeholder: 'https://acme.com' },
                     { label: 'Industry', key: 'industry', placeholder: 'E-Commerce' },
                   ].map(({ label, key, placeholder }) => (

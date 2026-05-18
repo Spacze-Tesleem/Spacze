@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, Send, Copy, CheckCircle2, RefreshCw,
   ChevronDown, Mail, AlertCircle, ChevronRight,
+  MessageCircle,
 } from 'lucide-react';
 import { Lead } from '@/lib/supabase';
 
@@ -55,6 +56,9 @@ export default function EmailGeneratorPanel() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [activeTab, setActiveTab] = useState<'email' | 'whatsapp'>('email');
+
+  // Email state
   const [activeStep, setActiveStep] = useState(1);
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
@@ -63,6 +67,14 @@ export default function EmailGeneratorPanel() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   const [sendStatus, setSendStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  // WhatsApp state
+  const [waGenerating, setWaGenerating] = useState(false);
+  const [waSending, setWaSending] = useState(false);
+  const [waMessage, setWaMessage] = useState('');
+  const [waCopied, setWaCopied] = useState(false);
+  const [waError, setWaError] = useState('');
+  const [waSendStatus, setWaSendStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     fetch('/api/leads').then(r => r.json()).then(data => setLeads(Array.isArray(data) ? data : []));
@@ -75,6 +87,9 @@ export default function EmailGeneratorPanel() {
     setBody('');
     setError('');
     setSendStatus('idle');
+    setWaMessage('');
+    setWaError('');
+    setWaSendStatus('idle');
   }, [selectedId, leads]);
 
   // Clear output when step changes
@@ -157,6 +172,61 @@ export default function EmailGeneratorPanel() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function generateWhatsApp() {
+    if (!selectedLead) return;
+    setWaGenerating(true);
+    setWaError('');
+    setWaSendStatus('idle');
+    try {
+      const res = await fetch('/api/generate-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(selectedLead),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Generation failed');
+      setWaMessage(data.message);
+    } catch (e: any) {
+      setWaError(e.message);
+    } finally {
+      setWaGenerating(false);
+    }
+  }
+
+  async function sendWhatsApp() {
+    if (!selectedLead?.whatsapp_number || !waMessage) return;
+    setWaSending(true);
+    setWaError('');
+    try {
+      const res = await fetch('/api/send-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: selectedLead.whatsapp_number, message: waMessage }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+
+      await fetch(`/api/leads?id=${selectedLead.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ last_contacted: new Date().toISOString().split('T')[0] }),
+      });
+
+      setWaSendStatus('success');
+    } catch (e: any) {
+      setWaError(e.message);
+      setWaSendStatus('error');
+    } finally {
+      setWaSending(false);
+    }
+  }
+
+  function copyWhatsApp() {
+    navigator.clipboard.writeText(waMessage);
+    setWaCopied(true);
+    setTimeout(() => setWaCopied(false), 2000);
+  }
+
   const inp = 'w-full bg-[#050505] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#00D67D]/50 transition-colors placeholder:text-slate-700';
   const currentStepMeta = STEPS.find(s => s.step === activeStep)!;
 
@@ -220,6 +290,135 @@ export default function EmailGeneratorPanel() {
         </AnimatePresence>
       </motion.div>
 
+      {/* ── Channel Tabs ── */}
+      <motion.div {...fadeUp} transition={{ delay: 0.03 }} className="flex gap-2">
+        {[
+          { id: 'email' as const, label: 'Email Sequence', icon: <Mail size={14} /> },
+          { id: 'whatsapp' as const, label: 'WhatsApp', icon: <MessageCircle size={14} /> },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 ${
+              activeTab === tab.id
+                ? tab.id === 'whatsapp'
+                  ? 'bg-[#25D366]/10 border-[#25D366]/30 text-[#25D366]'
+                  : 'bg-[#00D67D]/10 border-[#00D67D]/30 text-[#00D67D]'
+                : 'bg-white/[0.02] border-white/5 text-slate-500 hover:text-slate-300 hover:border-white/10'
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </motion.div>
+
+      {activeTab === 'whatsapp' && (
+        <>
+          {/* ── WhatsApp Generator ── */}
+          <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="p-5 lg:p-6 rounded-2xl bg-[#0A0A0A] border border-white/5 space-y-4">
+            <div>
+              <h3 className="font-bold text-sm mb-0.5">WhatsApp Message</h3>
+              <p className="text-slate-500 text-xs">
+                Short, conversational message optimised for WhatsApp. 60–90 words.
+              </p>
+            </div>
+
+            {selectedLead && !selectedLead.whatsapp_number && (
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs">
+                <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+                No WhatsApp number saved for this lead. Add one in the CRM panel first.
+              </div>
+            )}
+
+            <button
+              onClick={generateWhatsApp}
+              disabled={!selectedLead || waGenerating}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm bg-[#25D366] text-black hover:bg-[#20c05c] transition-colors disabled:opacity-40"
+            >
+              {waGenerating ? <RefreshCw size={15} className="animate-spin" /> : <Zap size={15} />}
+              {waGenerating ? 'Generating...' : 'Generate Message'}
+            </button>
+
+            <AnimatePresence>
+              {waError && (
+                <motion.div
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+                >
+                  <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+                  <span>{waError}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {waMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] text-slate-500 font-mono uppercase tracking-wider">Message</label>
+                    <button
+                      onClick={copyWhatsApp}
+                      className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                    >
+                      {waCopied ? <CheckCircle2 size={13} className="text-[#25D366]" /> : <Copy size={13} />}
+                      {waCopied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                  <textarea
+                    rows={5}
+                    value={waMessage}
+                    onChange={e => setWaMessage(e.target.value)}
+                    className={`${inp} resize-none leading-relaxed`}
+                  />
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={sendWhatsApp}
+                      disabled={waSending || !selectedLead?.whatsapp_number}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#25D366] text-black font-bold text-sm hover:bg-[#20c05c] transition-colors disabled:opacity-40"
+                    >
+                      {waSending ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
+                      {waSending ? 'Sending...' : selectedLead?.whatsapp_number ? `Send to ${selectedLead.whatsapp_number}` : 'No number saved'}
+                    </button>
+                    <button
+                      onClick={generateWhatsApp}
+                      disabled={waGenerating}
+                      className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-40"
+                    >
+                      <RefreshCw size={14} /> Regenerate
+                    </button>
+                  </div>
+
+                  <AnimatePresence>
+                    {waSendStatus === 'success' && (
+                      <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="flex items-center gap-2 text-[#25D366] text-sm"
+                      >
+                        <CheckCircle2 size={16} /> WhatsApp message sent successfully.
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {!selectedLead && (
+              <div className="py-6 text-center">
+                <MessageCircle size={28} className="text-slate-700 mx-auto mb-2" />
+                <p className="text-slate-500 text-sm">Select a lead above to generate a WhatsApp message.</p>
+              </div>
+            )}
+          </motion.div>
+        </>
+      )}
+
+      {activeTab === 'email' && (
+      <>
       {/* ── Sequence Step Selector ── */}
       <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="p-5 lg:p-6 rounded-2xl bg-[#0A0A0A] border border-white/5">
         <label className="block text-[10px] text-slate-500 mb-3 font-mono uppercase tracking-wider">
@@ -408,6 +607,8 @@ export default function EmailGeneratorPanel() {
             4-step sequence: Initial → Follow-up #1 → Follow-up #2 → Breakup Email
           </p>
         </motion.div>
+      )}
+      </>
       )}
     </div>
   );

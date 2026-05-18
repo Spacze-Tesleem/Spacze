@@ -11,6 +11,7 @@ export type Lead = {
   website: string;
   industry: string;
   contact_email: string;
+  whatsapp_number: string;
   website_quality_score: number | null;
   mobile_responsiveness: string;
   whatsapp_integration: string;
