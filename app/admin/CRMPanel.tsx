@@ -20,18 +20,18 @@ const STATUS_OPTIONS = ['Pending', 'Sent', 'Replied', 'Meeting Booked', 'Not Int
 const RESPONSE_OPTIONS = ['None', 'Positive', 'Negative', 'No Reply', 'Bounced'];
 
 const statusColor: Record<string, string> = {
-  Pending: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
-  Sent: 'text-[#00D67D] bg-[#00D67D]/10 border-[#00D67D]/20',
-  Replied: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  'Meeting Booked': 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-  'Not Interested': 'text-red-400 bg-red-500/10 border-red-500/20',
+  Pending:          'text-yellow-600 bg-yellow-100 border-yellow-300',
+  Sent:             'text-emerald-700 bg-emerald-100 border-emerald-300',
+  Replied:          'text-blue-600 bg-blue-100 border-blue-300',
+  'Meeting Booked': 'text-purple-600 bg-purple-100 border-purple-300',
+  'Not Interested': 'text-red-600 bg-red-100 border-red-300',
 };
 
 const scoreColor = (score: number | null) => {
-  if (score === null) return 'admin-muted bg-white/5';
-  if (score >= 7) return 'text-[#00D67D] bg-[#00D67D]/10';
-  if (score >= 4) return 'text-yellow-400 bg-yellow-500/10';
-  return 'text-red-400 bg-red-500/10';
+  if (score === null) return 'text-slate-500 bg-slate-100 border border-slate-200';
+  if (score >= 7) return 'text-emerald-700 bg-emerald-100';
+  if (score >= 4) return 'text-yellow-700 bg-yellow-100';
+  return 'text-red-600 bg-red-100';
 };
 
 export default function CRMPanel() {
@@ -180,8 +180,8 @@ export default function CRMPanel() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1 text-[10px] font-mono">
-                      {lead.email_sent && <span className="px-1.5 py-0.5 rounded bg-[#00D67D]/10 text-[#00D67D]">Sent</span>}
-                      {lead.reply_received && <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">Reply</span>}
+                      {lead.email_sent && <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Sent</span>}
+                      {lead.reply_received && <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-600">Reply</span>}
                       {lead.meeting_booked && <span className="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400">Mtg</span>}
                     </div>
                   </td>
@@ -217,15 +217,15 @@ export default function CRMPanel() {
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5 text-[10px] font-mono">
-              {lead.industry && <span className="px-2 py-1 rounded-md bg-white/5 text-slate-400">{lead.industry}</span>}
+              {lead.industry && <span className="px-2 py-1 rounded-md admin-hover admin-muted">{lead.industry}</span>}
               {lead.website_quality_score != null && (
                 <span className={`px-2 py-1 rounded-md ${scoreColor(lead.website_quality_score)}`}>Score {lead.website_quality_score}/10</span>
               )}
-              {lead.seo_quality && <span className="px-2 py-1 rounded-md bg-white/5 text-slate-400">SEO: {lead.seo_quality}</span>}
-              {lead.mobile_responsiveness && <span className="px-2 py-1 rounded-md bg-white/5 text-slate-400">Mobile: {lead.mobile_responsiveness}</span>}
-              {lead.email_sent && <span className="px-2 py-1 rounded-md bg-[#00D67D]/10 text-[#00D67D]">Email Sent</span>}
-              {lead.reply_received && <span className="px-2 py-1 rounded-md bg-blue-500/10 text-blue-400">Replied</span>}
-              {lead.meeting_booked && <span className="px-2 py-1 rounded-md bg-purple-500/10 text-purple-400">Meeting</span>}
+              {lead.seo_quality && <span className="px-2 py-1 rounded-md admin-hover admin-muted">SEO: {lead.seo_quality}</span>}
+              {lead.mobile_responsiveness && <span className="px-2 py-1 rounded-md admin-hover admin-muted">Mobile: {lead.mobile_responsiveness}</span>}
+              {lead.email_sent && <span className="px-2 py-1 rounded-md bg-emerald-100 text-emerald-700">Email Sent</span>}
+              {lead.reply_received && <span className="px-2 py-1 rounded-md bg-blue-100 text-blue-600">Replied</span>}
+              {lead.meeting_booked && <span className="px-2 py-1 rounded-md bg-purple-100 text-purple-600">Meeting</span>}
             </div>
             {lead.follow_up_date && (
               <div className="text-[10px] admin-subtle font-mono">Follow-up: {lead.follow_up_date}</div>
