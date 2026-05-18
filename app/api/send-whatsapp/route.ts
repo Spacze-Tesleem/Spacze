@@ -22,11 +22,12 @@ export async function POST(req: NextRequest) {
 
     const client = twilio(accountSid, authToken);
 
-    // Normalise the recipient number — ensure whatsapp: prefix
+    // Both from and to must carry the whatsapp: prefix for the WhatsApp channel
+    const fromFormatted = from.startsWith('whatsapp:') ? from : `whatsapp:${from}`;
     const toFormatted = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
 
     await client.messages.create({
-      from,
+      from: fromFormatted,
       to: toFormatted,
       body: message,
     });
