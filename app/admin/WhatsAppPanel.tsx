@@ -162,11 +162,11 @@ export default function WhatsAppPanel() {
     <div className="space-y-4 max-w-7xl mx-auto lg:mx-0">
 
       {/* ── Connection Card ── */}
-      <motion.div {...fadeUp} className="p-5 lg:p-6 rounded-2xl bg-[#0A0A0A] border border-white/5">
+      <motion.div {...fadeUp} className="p-5 lg:p-6 rounded-2xl admin-surface border admin-border">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h2 className="font-bold mb-0.5">WhatsApp Connection</h2>
-            <p className="text-slate-500 text-sm">Powered by Baileys worker on Railway</p>
+            <p className="admin-muted text-sm">Powered by Baileys worker on Railway</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`flex items-center gap-1.5 text-xs font-mono font-bold px-3 py-1.5 rounded-full border ${badge.color}`}>
@@ -184,7 +184,7 @@ export default function WhatsAppPanel() {
               <button
                 onClick={reconnect}
                 disabled={polling}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-white/5 border admin-border-md text-slate-300 admin-hover transition-colors disabled:opacity-50"
               >
                 <RefreshCw size={13} className={polling ? 'animate-spin' : ''} /> Reconnect
               </button>
@@ -203,8 +203,8 @@ export default function WhatsAppPanel() {
                 Open WhatsApp on your dedicated number → <strong className="text-white">Linked Devices</strong> → <strong className="text-white">Link a Device</strong> → scan below
               </p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qr} alt="WhatsApp QR Code" className="w-56 h-56 rounded-2xl border border-white/10 bg-white p-2" />
-              <p className="text-xs text-slate-600">QR refreshes automatically. This page polls every 4 seconds.</p>
+              <img src={qr} alt="WhatsApp QR Code" className="w-56 h-56 rounded-2xl border admin-border-md bg-white p-2" />
+              <p className="text-xs admin-subtle">QR refreshes automatically. This page polls every 4 seconds.</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -219,33 +219,33 @@ export default function WhatsAppPanel() {
         )}
 
         {(status === 'disconnected' || status === 'unknown') && !qr && (
-          <p className="mt-4 text-slate-600 text-sm">
+          <p className="mt-4 admin-subtle text-sm">
             Worker is not connected. Click <strong className="text-slate-400">Reconnect</strong> to start, then scan the QR code.
           </p>
         )}
       </motion.div>
 
       {/* ── Bulk Send Card ── */}
-      <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="p-5 lg:p-6 rounded-2xl bg-[#0A0A0A] border border-white/5">
+      <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="p-5 lg:p-6 rounded-2xl admin-surface border admin-border">
         <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
           <div>
             <h3 className="font-bold mb-0.5">Bulk WhatsApp Outreach</h3>
-            <p className="text-slate-500 text-sm">
+            <p className="admin-muted text-sm">
               AI generates a personalised message per lead. Sent with a 30–60s delay between each.
             </p>
           </div>
           {leadsWithNumber.length > 0 && (
-            <span className="text-xs font-mono text-slate-500 border border-white/10 px-3 py-1.5 rounded-full">
+            <span className="text-xs font-mono admin-muted border admin-border-md px-3 py-1.5 rounded-full">
               {leadsWithNumber.length} leads with WhatsApp number
             </span>
           )}
         </div>
 
         {leadsWithNumber.length === 0 ? (
-          <div className="py-8 text-center border border-dashed border-white/10 rounded-xl">
+          <div className="py-8 text-center border border-dashed admin-border-md rounded-xl">
             <MessageCircle size={28} className="text-slate-700 mx-auto mb-2" />
-            <p className="text-slate-500 text-sm">No leads with a WhatsApp number yet.</p>
-            <p className="text-slate-600 text-xs mt-1">Add WhatsApp numbers in the CRM panel.</p>
+            <p className="admin-muted text-sm">No leads with a WhatsApp number yet.</p>
+            <p className="admin-subtle text-xs mt-1">Add WhatsApp numbers in the CRM panel.</p>
           </div>
         ) : (
           <>
@@ -273,7 +273,7 @@ export default function WhatsAppPanel() {
                   className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                     selectedIds.has(lead.id!)
                       ? 'bg-[#25D366]/5 border-[#25D366]/20'
-                      : 'bg-white/[0.02] border-white/5 hover:border-white/10'
+                      : 'admin-hover admin-border hover:admin-border-md'
                   }`}
                 >
                   <input
@@ -283,8 +283,8 @@ export default function WhatsAppPanel() {
                     className="accent-[#25D366] w-4 h-4 flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">{lead.business_name}</div>
-                    <div className="text-xs text-slate-500 truncate">{lead.whatsapp_number} · {lead.industry || 'Unknown industry'}</div>
+                    <div className="text-sm font-medium admin-text truncate">{lead.business_name}</div>
+                    <div className="text-xs admin-muted truncate">{lead.whatsapp_number} · {lead.industry || 'Unknown industry'}</div>
                   </div>
                   {lead.outreach_status === 'Sent' && (
                     <span className="text-[10px] font-mono text-[#25D366] border border-[#25D366]/20 px-2 py-0.5 rounded-full flex-shrink-0">Sent</span>
@@ -342,7 +342,7 @@ export default function WhatsAppPanel() {
             </button>
 
             {status !== 'connected' && (
-              <p className="text-xs text-slate-600 mt-2">Connect WhatsApp above before sending.</p>
+              <p className="text-xs admin-subtle mt-2">Connect WhatsApp above before sending.</p>
             )}
           </>
         )}

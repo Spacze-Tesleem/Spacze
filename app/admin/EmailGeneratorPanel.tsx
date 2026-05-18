@@ -227,21 +227,21 @@ export default function EmailGeneratorPanel() {
     setTimeout(() => setWaCopied(false), 2000);
   }
 
-  const inp = 'w-full bg-[#050505] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#00D67D]/50 transition-colors placeholder:text-slate-700';
+  const inp = 'w-full admin-input border admin-border-md rounded-xl px-4 py-3 text-sm admin-text outline-none focus:border-[#00D67D]/50 transition-colors placeholder:admin-subtle';
   const currentStepMeta = STEPS.find(s => s.step === activeStep)!;
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto lg:mx-0">
 
       {/* ── Lead selector ── */}
-      <motion.div {...fadeUp} className="p-5 lg:p-6 rounded-2xl bg-[#0A0A0A] border border-white/5">
+      <motion.div {...fadeUp} className="p-5 lg:p-6 rounded-2xl admin-surface border admin-border">
         <h2 className="font-bold mb-0.5">AI Outreach Sequence</h2>
-        <p className="text-slate-500 text-sm mb-5">
+        <p className="admin-muted text-sm mb-5">
           Select a lead, choose a sequence step, then generate and send.
         </p>
 
         <div className="mb-5">
-          <label className="block text-[10px] text-slate-500 mb-2 font-mono uppercase tracking-wider">Select Lead</label>
+          <label className="block text-[10px] admin-muted mb-2 font-mono uppercase tracking-wider">Select Lead</label>
           <div className="relative">
             <select
               value={selectedId}
@@ -253,7 +253,7 @@ export default function EmailGeneratorPanel() {
                 <option key={l.id} value={l.id}>{l.business_name} ({l.contact_email})</option>
               ))}
             </select>
-            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 admin-muted pointer-events-none" />
           </div>
         </div>
 
@@ -264,7 +264,7 @@ export default function EmailGeneratorPanel() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="mb-5 p-4 rounded-xl bg-white/[0.03] border border-white/5 space-y-3"
+              className="mb-5 p-4 rounded-xl admin-hover border admin-border space-y-3"
             >
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 {[
@@ -274,14 +274,14 @@ export default function EmailGeneratorPanel() {
                   { label: 'Mobile', value: selectedLead.mobile_responsiveness || '—' },
                 ].map(({ label, value }) => (
                   <div key={label}>
-                    <div className="text-slate-600 font-mono uppercase tracking-wider text-[10px] mb-0.5">{label}</div>
-                    <div className="text-white font-medium">{value}</div>
+                    <div className="admin-subtle font-mono uppercase tracking-wider text-[10px] mb-0.5">{label}</div>
+                    <div className="admin-text font-medium">{value}</div>
                   </div>
                 ))}
               </div>
               {selectedLead.weak_points && (
                 <div className="text-xs">
-                  <div className="text-slate-600 font-mono uppercase tracking-wider text-[10px] mb-0.5">Weak Points</div>
+                  <div className="admin-subtle font-mono uppercase tracking-wider text-[10px] mb-0.5">Weak Points</div>
                   <div className="text-slate-300 leading-relaxed">{selectedLead.weak_points}</div>
                 </div>
               )}
@@ -304,7 +304,7 @@ export default function EmailGeneratorPanel() {
                 ? tab.id === 'whatsapp'
                   ? 'bg-[#25D366]/10 border-[#25D366]/30 text-[#25D366]'
                   : 'bg-[#00D67D]/10 border-[#00D67D]/30 text-[#00D67D]'
-                : 'bg-white/[0.02] border-white/5 text-slate-500 hover:text-slate-300 hover:border-white/10'
+                : 'admin-hover admin-border admin-muted hover:text-slate-300 hover:admin-border-md'
             }`}
           >
             {tab.icon}
@@ -316,10 +316,10 @@ export default function EmailGeneratorPanel() {
       {activeTab === 'whatsapp' && (
         <>
           {/* ── WhatsApp Generator ── */}
-          <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="p-5 lg:p-6 rounded-2xl bg-[#0A0A0A] border border-white/5 space-y-4">
+          <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="p-5 lg:p-6 rounded-2xl admin-surface border admin-border space-y-4">
             <div>
               <h3 className="font-bold text-sm mb-0.5">WhatsApp Message</h3>
-              <p className="text-slate-500 text-xs">
+              <p className="admin-muted text-xs">
                 Short, conversational message optimised for WhatsApp. 60–90 words.
               </p>
             </div>
@@ -359,10 +359,10 @@ export default function EmailGeneratorPanel() {
                   className="space-y-3"
                 >
                   <div className="flex items-center justify-between">
-                    <label className="block text-[10px] text-slate-500 font-mono uppercase tracking-wider">Message</label>
+                    <label className="block text-[10px] admin-muted font-mono uppercase tracking-wider">Message</label>
                     <button
                       onClick={copyWhatsApp}
-                      className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                      className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 admin-hover transition-colors"
                     >
                       {waCopied ? <CheckCircle2 size={13} className="text-[#25D366]" /> : <Copy size={13} />}
                       {waCopied ? 'Copied!' : 'Copy'}
@@ -387,7 +387,7 @@ export default function EmailGeneratorPanel() {
                     <button
                       onClick={generateWhatsApp}
                       disabled={waGenerating}
-                      className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-40"
+                      className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white bg-white/5 admin-hover transition-colors disabled:opacity-40"
                     >
                       <RefreshCw size={14} /> Regenerate
                     </button>
@@ -410,7 +410,7 @@ export default function EmailGeneratorPanel() {
             {!selectedLead && (
               <div className="py-6 text-center">
                 <MessageCircle size={28} className="text-slate-700 mx-auto mb-2" />
-                <p className="text-slate-500 text-sm">Select a lead above to generate a WhatsApp message.</p>
+                <p className="admin-muted text-sm">Select a lead above to generate a WhatsApp message.</p>
               </div>
             )}
           </motion.div>
@@ -420,8 +420,8 @@ export default function EmailGeneratorPanel() {
       {activeTab === 'email' && (
       <>
       {/* ── Sequence Step Selector ── */}
-      <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="p-5 lg:p-6 rounded-2xl bg-[#0A0A0A] border border-white/5">
-        <label className="block text-[10px] text-slate-500 mb-3 font-mono uppercase tracking-wider">
+      <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="p-5 lg:p-6 rounded-2xl admin-surface border admin-border">
+        <label className="block text-[10px] admin-muted mb-3 font-mono uppercase tracking-wider">
           Sequence Step
         </label>
 
@@ -432,8 +432,8 @@ export default function EmailGeneratorPanel() {
               onClick={() => setActiveStep(s.step)}
               className={`relative flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all duration-200 ${
                 activeStep === s.step
-                  ? 'bg-white/[0.05] border-white/20'
-                  : 'bg-white/[0.02] border-white/5 hover:border-white/10'
+                  ? 'admin-hover border-white/20'
+                  : 'admin-hover admin-border hover:admin-border-md'
               }`}
             >
               {/* Active indicator */}
@@ -450,8 +450,8 @@ export default function EmailGeneratorPanel() {
                 >
                   {s.tag}
                 </span>
-                <div className="text-xs font-bold text-white leading-tight">{s.label}</div>
-                <div className="text-[10px] text-slate-500 leading-tight mt-0.5">{s.desc}</div>
+                <div className="text-xs font-bold admin-text leading-tight">{s.label}</div>
+                <div className="text-[10px] admin-muted leading-tight mt-0.5">{s.desc}</div>
               </div>
             </button>
           ))}
@@ -473,7 +473,7 @@ export default function EmailGeneratorPanel() {
             </React.Fragment>
           ))}
         </div>
-        <div className="flex justify-between mt-1 text-[9px] font-mono text-slate-600">
+        <div className="flex justify-between mt-1 text-[9px] font-mono admin-subtle">
           <span>Initial</span>
           <span>Breakup</span>
         </div>
@@ -515,7 +515,7 @@ export default function EmailGeneratorPanel() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="p-5 lg:p-6 rounded-2xl bg-[#0A0A0A] border border-white/5 space-y-4"
+            className="p-5 lg:p-6 rounded-2xl admin-surface border admin-border space-y-4"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -528,7 +528,7 @@ export default function EmailGeneratorPanel() {
               </div>
               <button
                 onClick={copyEmail}
-                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 admin-hover transition-colors"
               >
                 {copied ? <CheckCircle2 size={13} className="text-[#00D67D]" /> : <Copy size={13} />}
                 {copied ? 'Copied!' : 'Copy all'}
@@ -536,12 +536,12 @@ export default function EmailGeneratorPanel() {
             </div>
 
             <div>
-              <label className="block text-[10px] text-slate-500 mb-1.5 font-mono uppercase tracking-wider">Subject Line</label>
+              <label className="block text-[10px] admin-muted mb-1.5 font-mono uppercase tracking-wider">Subject Line</label>
               <input value={subject} onChange={e => setSubject(e.target.value)} className={inp} />
             </div>
 
             <div>
-              <label className="block text-[10px] text-slate-500 mb-1.5 font-mono uppercase tracking-wider">Email Body</label>
+              <label className="block text-[10px] admin-muted mb-1.5 font-mono uppercase tracking-wider">Email Body</label>
               <textarea
                 rows={10}
                 value={body}
@@ -564,7 +564,7 @@ export default function EmailGeneratorPanel() {
               {activeStep < 4 && (
                 <button
                   onClick={() => setActiveStep(s => s + 1)}
-                  className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+                  className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white bg-white/5 admin-hover transition-colors"
                 >
                   Next Step <ChevronRight size={14} />
                 </button>
@@ -573,7 +573,7 @@ export default function EmailGeneratorPanel() {
               <button
                 onClick={generate}
                 disabled={generating}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-40"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white bg-white/5 admin-hover transition-colors disabled:opacity-40"
               >
                 <RefreshCw size={14} /> Regenerate
               </button>
@@ -600,10 +600,10 @@ export default function EmailGeneratorPanel() {
 
       {/* ── Empty state ── */}
       {!selectedLead && !generating && (
-        <motion.div {...fadeUp} className="p-10 rounded-2xl border border-dashed border-white/10 text-center">
+        <motion.div {...fadeUp} className="p-10 rounded-2xl border border-dashed admin-border-md text-center">
           <Mail size={32} className="text-slate-700 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm">Select a lead above to start generating your outreach sequence.</p>
-          <p className="text-slate-600 text-xs mt-1">
+          <p className="admin-muted text-sm">Select a lead above to start generating your outreach sequence.</p>
+          <p className="admin-subtle text-xs mt-1">
             4-step sequence: Initial → Follow-up #1 → Follow-up #2 → Breakup Email
           </p>
         </motion.div>
