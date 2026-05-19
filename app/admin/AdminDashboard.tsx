@@ -2,22 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  LayoutDashboard, Users, Sparkles, Megaphone, LogOut,
+  LayoutDashboard, Users, Zap, LogOut,
   ChevronLeft, ChevronRight, MessageCircle, Sun, Moon, Terminal,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CRMPanel from './CRMPanel';
 import StatsPanel from './StatsPanel';
 import WhatsAppPanel from './WhatsAppPanel';
-import AICopyPanel from './AICopyPanel';
-import CampaignsPanel from './CampaignsPanel';
+import OutreachPanel from './OutreachPanel';
 import TerminalPanel from './TerminalPanel';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard',   icon: LayoutDashboard },
   { id: 'crm',       label: 'CRM',         icon: Users },
-  { id: 'copy',      label: 'AI Copy',     icon: Sparkles },
-  { id: 'campaigns', label: 'Campaigns',   icon: Megaphone },
+  { id: 'outreach',  label: 'Outreach',    icon: Zap },
   { id: 'whatsapp',  label: 'WhatsApp',    icon: MessageCircle },
   { id: 'terminal',  label: 'Settings',    icon: Terminal },
 ];
@@ -25,8 +23,7 @@ const navItems = [
 const pageInfo: Record<string, { title: string; subtitle: string }> = {
   dashboard: { title: 'Dashboard',         subtitle: 'Overview & analytics' },
   crm:       { title: 'CRM Pipeline',      subtitle: 'Manage leads & outreach' },
-  copy:      { title: 'AI Copy Generator', subtitle: 'Multi-platform content' },
-  campaigns: { title: 'Campaigns',         subtitle: 'Sequences & scheduling' },
+  outreach:  { title: 'Outreach Studio',   subtitle: 'AI copy & campaign sequences' },
   whatsapp:  { title: 'WhatsApp Outreach', subtitle: 'Bulk messaging via Baileys' },
   terminal:  { title: 'Settings',          subtitle: 'API keys & configuration' },
 };
@@ -187,8 +184,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             >
               {active === 'dashboard' && <StatsPanel onNavigate={setActive} />}
               {active === 'crm'       && <CRMPanel />}
-              {active === 'copy'      && <AICopyPanel />}
-              {active === 'campaigns' && <CampaignsPanel />}
+              {active === 'outreach'  && <OutreachPanel />}
               {active === 'whatsapp'  && <WhatsAppPanel />}
               {active === 'terminal'  && <TerminalPanel />}
             </motion.div>
