@@ -242,3 +242,52 @@ body {
   background: linear-gradient(135deg, rgba(255,255,255,0.025) 0%, transparent 60%);
   pointer-events: none;
 }
+
+/* ─────────────────────────────────────────────
+   PULSE DOT
+───────────────────────────────────────────── */
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1);   opacity: 1; }
+  70%  { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.pulse-dot {
+  display: inline-block;
+  border-radius: 9999px;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+/* ─────────────────────────────────────────────
+   LIGHT MODE OVERRIDES
+───────────────────────────────────────────── */
+
+[data-theme="light"] .skeleton {
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 25%,
+    #f1f5f9 50%,
+    #e2e8f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+[data-theme="light"] .nav-item-active {
+  background-color: var(--admin-active-bg);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+[data-theme="light"] .admin-card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+[data-theme="light"] .stat-card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+[data-theme="light"] .stat-card::before {
+  display: none;
+}
