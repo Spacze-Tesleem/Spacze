@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Terminal, Key, Eye, EyeOff, CheckCircle2, AlertCircle,
   Save, RefreshCw, Zap, Mail, MessageCircle, Database,
-  Globe, Shield, ChevronDown, ChevronRight,
+  Globe, Shield, ChevronDown, ChevronRight, Linkedin, Twitter,
 } from 'lucide-react';
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
@@ -136,6 +136,70 @@ const API_GROUPS: ApiGroup[] = [
         label: 'Supabase Service Role Key',
         placeholder: 'eyJ...',
         hint: 'Server-only key used by admin routes. Never expose publicly.',
+      },
+    ],
+  },
+  {
+    id: 'linkedin',
+    label: 'LinkedIn (Sales Navigator)',
+    icon: <Linkedin size={15} />,
+    color: 'text-blue-500',
+    description: 'Send InMails via the LinkedIn API. Requires an approved Sales Navigator app.',
+    fields: [
+      {
+        key: 'LINKEDIN_ACCESS_TOKEN',
+        label: 'LinkedIn Access Token',
+        placeholder: 'AQV...',
+        hint: 'OAuth 2.0 bearer token with w_member_social scope.',
+        link: 'https://developer.linkedin.com/products/marketing/getting-started',
+        linkLabel: 'LinkedIn developer docs →',
+      },
+      {
+        key: 'LINKEDIN_PERSON_URN',
+        label: 'Sender Person URN',
+        placeholder: 'urn:li:person:ABC123',
+        hint: "Your LinkedIn person URN — found via the /v2/me endpoint.",
+      },
+    ],
+  },
+  {
+    id: 'twitter',
+    label: 'Twitter / X',
+    icon: <Twitter size={15} />,
+    color: 'text-sky-400',
+    description: 'Send DMs via the Twitter API v2. Requires a developer app with OAuth 1.0a.',
+    fields: [
+      {
+        key: 'TWITTER_API_KEY',
+        label: 'API Key (Consumer Key)',
+        placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxx',
+        hint: 'Found in your Twitter developer app settings.',
+        link: 'https://developer.twitter.com/en/portal/dashboard',
+        linkLabel: 'Twitter developer portal →',
+      },
+      {
+        key: 'TWITTER_API_SECRET',
+        label: 'API Secret (Consumer Secret)',
+        placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        hint: 'Consumer secret from your Twitter app.',
+      },
+      {
+        key: 'TWITTER_ACCESS_TOKEN',
+        label: 'Access Token',
+        placeholder: '000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        hint: 'OAuth 1.0a access token for your sending account.',
+      },
+      {
+        key: 'TWITTER_ACCESS_TOKEN_SECRET',
+        label: 'Access Token Secret',
+        placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        hint: 'OAuth 1.0a access token secret.',
+      },
+      {
+        key: 'TWITTER_BEARER_TOKEN',
+        label: 'Bearer Token',
+        placeholder: 'AAAA...',
+        hint: 'App-only bearer token — used for user lookups.',
       },
     ],
   },

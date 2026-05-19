@@ -6,7 +6,7 @@ import {
   Sparkles, Copy, CheckCircle2, RefreshCw, AlertCircle,
   Instagram, Twitter, Search, Mail, MessageCircle, Linkedin,
   ChevronDown, Megaphone, Plus, X, Play, Pause, Trash2,
-  Calendar, Users, Eye, Zap,
+  Calendar, Users, Eye, Zap, Globe,
 } from 'lucide-react';
 import { Campaign, CampaignChannel, Lead, ScheduledMessage } from '@/lib/supabase';
 
@@ -46,12 +46,21 @@ const CHANNEL_ICONS: Record<CampaignChannel, React.ReactNode> = {
   email:    <Mail size={13} />,
   whatsapp: <MessageCircle size={13} />,
   linkedin: <Linkedin size={13} />,
+  twitter:  <Twitter size={13} />,
 };
 
 const CHANNEL_COLORS: Record<CampaignChannel, string> = {
   email:    'text-blue-400',
   whatsapp: 'text-[#25D366]',
   linkedin: 'text-blue-500',
+  twitter:  'text-sky-400',
+};
+
+const CHANNEL_REQUIREMENTS: Record<CampaignChannel, { field: keyof import('@/lib/supabase').Lead; label: string }> = {
+  email:    { field: 'contact_email',   label: 'email' },
+  whatsapp: { field: 'whatsapp_number', label: 'WhatsApp number' },
+  linkedin: { field: 'linkedin_url',    label: 'LinkedIn URL' },
+  twitter:  { field: 'twitter_handle',  label: 'Twitter handle' },
 };
 
 const STEP_OFFSETS = [0, 3, 7, 14];
@@ -158,6 +167,22 @@ function ChannelBadge({ channel }: { channel: CampaignChannel }) {
     <span className={`flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-md border ${CHANNEL_COLORS[channel]} bg-white/5 border-white/10`}>
       {CHANNEL_ICONS[channel]} {channel}
     </span>
+  );
+}
+
+/** Shows how many leads in a list have the required field for a channel */
+function ChannelCoverage({ channel, leads }: { channel: CampaignChannel; leads: Lead[] }) {
+  const req = CHANNEL_REQUIREMENTS[channel];
+  if (!req) return null;
+  const covered = leads.filter(l => !!(l as any)[req.field]).length;
+  const pct = leads.length > 0 ? Math.round((covered / leads.length) * 100) : 0;
+  return (
+    <div className="flex items-center gap-1.5 text-[10px] admin-muted">
+      <div className="w-12 h-1 rounded-full overflow-hidden" style={{ background: 'var(--admin-surface-3)' }}>
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--accent)' }} />
+      </div>
+      <span>{covered}/{leads.length} have {req.label}</span>
+    </div>
   );
 }
 
@@ -332,7 +357,7 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
         const rows: Omit<ScheduledMessage, 'id' | 'created_at'>[] = [];
         for (const leadId of selectedLeadIds) {
           for (const channel of channels) {
-            const steps = channel === 'linkedin' ? [1] : [1, 2, 3, 4];
+            const steps = (channel === 'linkedin' || channel === 'twitter') ? [1] : [1, 2, 3, 4];
             for (const step of steps) {
               rows.push({
                 campaign_id: campaign.id!, lead_id: leadId, channel,
@@ -388,15 +413,19 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
           </div>
           <div>
             <label className="label-xs mb-2 block">Channels *</label>
-            <div className="flex gap-2 flex-wrap">
-              {(['email', 'whatsapp', 'linkedin'] as CampaignChannel[]).map(ch => (
-                <button key={ch} onClick={() => toggleChannel(ch)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
-                    channels.includes(ch) ? `${CHANNEL_COLORS[ch]} bg-white/5 border-white/20` : 'admin-border admin-muted admin-hover'
-                  }`}>
-                  {CHANNEL_ICONS[ch]} {ch.charAt(0).toUpperCase() + ch.slice(1)}
-                </button>
-              ))}
+            <div className="grid grid-cols-2 gap-2">
+              {(['email', 'whatsapp', 'linkedin', 'twitter'] as CampaignChannel[]).map(ch => {
+                const selLeads = leads.filter(l => selectedLeadIds.includes(l.id!));
+                return (
+                  <button key={ch} onClick={() => toggleChannel(ch)}
+                    className={`flex flex-col gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium border transition-all text-left ${
+                      channels.includes(ch) ? `${CHANNEL_COLORS[ch]} bg-white/5 border-white/20` : 'admin-border admin-muted admin-hover'
+                    }`}>
+                    <span className="flex items-center gap-1.5">{CHANNEL_ICONS[ch]} {ch.charAt(0).toUpperCase() + ch.slice(1)}</span>
+                    {selLeads.length > 0 && <ChannelCoverage channel={ch} leads={selLeads} />}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div>
@@ -428,7 +457,7 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
               <div>Step 2 — Day +3</div>
               <div>Step 3 — Day +7</div>
               <div>Step 4 — Day +14 (breakup)</div>
-              <div className="text-[10px] admin-subtle mt-1">LinkedIn sends step 1 only.</div>
+              <div className="text-[10px] admin-subtle mt-1">LinkedIn & Twitter send step 1 only (no multi-step API).</div>
             </div>
           </div>
           {error && (
@@ -792,9 +821,9 @@ export default function OutreachPanel() {
     fetch('/api/leads').then(r => r.json()).then(d => setLeads(Array.isArray(d) ? d : []));
   }, []);
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
-    { id: 'copy',      label: 'AI Copy',   icon: <Sparkles size={14} />,  desc: 'Generate platform copy for a lead' },
-    { id: 'campaigns', label: 'Campaigns', icon: <Megaphone size={14} />, desc: 'Build & schedule outreach sequences' },
+  const tabs: { id: Tab; label: string; icon: React.ReactNode; desc: string; badge?: string }[] = [
+    { id: 'copy',      label: 'AI Copy',   icon: <Sparkles size={14} />,  desc: 'Generate platform copy for a lead — 6 channels' },
+    { id: 'campaigns', label: 'Campaigns', icon: <Megaphone size={14} />, desc: 'Build & schedule multi-channel outreach sequences' },
   ];
 
   return (

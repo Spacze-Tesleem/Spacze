@@ -3,183 +3,125 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Chart as ChartJS,
-  CategoryScale, LinearScale, BarElement, LineElement,
-  PointElement, ArcElement, Title, Tooltip, Legend, Filler,
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement,
+  LineElement, PointElement, ArcElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import {
-  BarChart2, TrendingUp, Mail, MessageCircle, Megaphone,
-  Users, Calendar, Sparkles, ArrowRight, Activity,
+  TrendingUp, Mail, MessageCircle, Megaphone, Users, Calendar,
+  Sparkles, ArrowRight, Activity, BarChart2, Linkedin, Twitter,
+  CheckCircle2, Clock, XCircle, Zap,
 } from 'lucide-react';
 import { Lead, Campaign, ScheduledMessage } from '@/lib/supabase';
 
-ChartJS.register(
-  CategoryScale, LinearScale, BarElement, LineElement,
-  PointElement, ArcElement, Title, Tooltip, Legend, Filler,
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend, Filler);
 
-const fadeUp = { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.35 } };
-
+const fu = { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3 } };
 type DateRange = '7d' | '30d' | '90d' | 'all';
+const GREEN = '#00D67D'; const BLUE = '#3b82f6'; const PURPLE = '#a855f7'; const AMBER = '#f59e0b'; const SKY = '#38bdf8';
 
-const GREEN  = '#00D67D';
-const BLUE   = '#3b82f6';
-const PURPLE = '#a855f7';
-const AMBER  = '#f59e0b';
-
-// ── Helpers ───────────────────────────────────
-
-function daysAgo(n: number): Date {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d;
-}
-
-function filterByRange(date: string, range: DateRange): boolean {
-  if (range === 'all') return true;
+function daysAgo(n: number) { const d = new Date(); d.setDate(d.getDate() - n); return d; }
+function filterByRange(date: string, range: DateRange) {
+  if (range === 'all' || !date) return true;
   const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
   return new Date(date) >= daysAgo(days);
 }
-
-function last30DayLabels(): string[] {
-  return Array.from({ length: 30 }, (_, i) => {
-    const d = daysAgo(29 - i);
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-  });
+function last30Labels() {
+  return Array.from({ length: 30 }, (_, i) => daysAgo(29 - i).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }));
+}
+function last30Dates() {
+  return Array.from({ length: 30 }, (_, i) => { const d = daysAgo(29 - i); d.setHours(0,0,0,0); return d; });
 }
 
-function last30DayDates(): Date[] {
-  return Array.from({ length: 30 }, (_, i) => {
-    const d = daysAgo(29 - i);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
-}
-
-// ── Chart base options ────────────────────────
-
-const baseAxis = {
-  responsive: true,
-  maintainAspectRatio: false,
+const axisBase = {
+  responsive: true, maintainAspectRatio: false,
   plugins: { legend: { display: false } },
   scales: {
-    x: {
-      grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false },
-      ticks: { color: '#4b5563', font: { size: 10 } },
-      border: { display: false },
-    },
-    y: {
-      grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false },
-      ticks: { color: '#4b5563', font: { size: 10 } },
-      border: { display: false },
-    },
+    x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#4b5563', font: { size: 10 } }, border: { display: false } },
+    y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#4b5563', font: { size: 10 } }, border: { display: false } },
   },
 };
-
 const lineOpts = {
-  ...baseAxis,
-  plugins: {
-    legend: {
-      display: true,
-      position: 'top' as const,
-      labels: { color: '#6b7280', font: { size: 10 }, padding: 14, boxWidth: 10, usePointStyle: true },
-    },
-  },
+  ...axisBase,
+  plugins: { legend: { display: true, position: 'top' as const, labels: { color: '#6b7280', font: { size: 10 }, padding: 12, boxWidth: 8, usePointStyle: true } } },
 };
-
 const doughnutOpts = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: true,
-      position: 'bottom' as const,
-      labels: { color: '#6b7280', font: { size: 10 }, padding: 12, boxWidth: 10, usePointStyle: true },
-    },
-  },
-  cutout: '68%',
+  responsive: true, maintainAspectRatio: false, cutout: '70%',
+  plugins: { legend: { display: true, position: 'bottom' as const, labels: { color: '#6b7280', font: { size: 10 }, padding: 10, boxWidth: 8, usePointStyle: true } } },
 };
 
-// ── Stat Card ─────────────────────────────────
-
-function StatCard({
-  label, value, icon: Icon, accent, delta, loading,
-}: {
-  label: string; value: number; icon: React.ElementType;
-  accent: string; delta?: string; loading: boolean;
+function KpiCard({ label, value, icon: Icon, accent, sub, loading }: {
+  label: string; value: number | string; icon: React.ElementType;
+  accent: string; sub?: string; loading: boolean;
 }) {
   return (
-    <motion.div {...fadeUp} className="stat-card p-5">
-      <div className="flex items-start justify-between mb-4">
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: accent + '18' }}
-        >
-          <Icon size={16} style={{ color: accent }} />
+    <motion.div {...fu} className="admin-card p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: accent + '18' }}>
+          <Icon size={15} style={{ color: accent }} />
         </div>
-        {delta && !loading && (
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full"
-            style={{ background: accent + '14', color: accent }}>
-            {delta}
-          </span>
+        {sub && !loading && (
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ background: accent + '14', color: accent }}>{sub}</span>
         )}
       </div>
-      {loading ? (
-        <div className="skeleton h-7 w-16 mb-1.5" />
-      ) : (
-        <div className="text-[26px] font-bold admin-text leading-none mb-1">{value}</div>
-      )}
+      {loading
+        ? <div className="skeleton h-7 w-14 rounded-lg" />
+        : <div className="text-[24px] font-bold admin-text leading-none">{value}</div>
+      }
       <div className="text-[11px] admin-muted leading-tight">{label}</div>
     </motion.div>
   );
 }
-
-// ── Section header ────────────────────────────
-
-function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
-  return (
-    <div className="flex items-center gap-2 mb-4">
-      <Icon size={13} className="admin-muted" />
-      <span className="label-xs">{title}</span>
-    </div>
-  );
-}
-
-// ── Chart card ────────────────────────────────
 
 function ChartCard({ icon: Icon, title, height = 'h-52', children }: {
   icon: React.ElementType; title: string; height?: string; children: React.ReactNode;
 }) {
   return (
     <div className="admin-card p-5">
-      <SectionHeader icon={Icon} title={title} />
+      <div className="flex items-center gap-2 mb-4">
+        <Icon size={13} className="admin-muted" />
+        <span className="label-xs">{title}</span>
+      </div>
       <div className={height}>{children}</div>
     </div>
   );
 }
 
-// ── Loading placeholder ───────────────────────
-
 function ChartSkeleton() {
+  return <div className="h-full flex items-end gap-2 pb-2">{[60,80,45,90,55,70,65,85].map((h,i) => <div key={i} className="skeleton flex-1 rounded" style={{ height: `${h}%` }} />)}</div>;
+}
+
+function ActivityItem({ icon: Icon, color, text, time }: { icon: React.ElementType; color: string; text: string; time: string }) {
   return (
-    <div className="h-full flex flex-col justify-end gap-2 pb-2">
-      {[60, 80, 45, 90, 55, 70].map((h, i) => (
-        <div key={i} className="skeleton rounded" style={{ height: `${h}%`, width: `${100 / 6 - 2}%`, display: 'inline-block', marginRight: '2%' }} />
-      ))}
+    <div className="flex items-start gap-3 py-2.5 border-b admin-border last:border-0">
+      <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: color + '18' }}>
+        <Icon size={11} style={{ color }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[12px] admin-text leading-snug">{text}</p>
+        <p className="text-[10px] admin-muted mt-0.5">{time}</p>
+      </div>
     </div>
   );
 }
 
-// ── Main panel ────────────────────────────────
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
 
 export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) => void }) {
   const [leads, setLeads]         = useState<Lead[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [messages, setMessages]   = useState<ScheduledMessage[]>([]);
   const [loading, setLoading]     = useState(true);
-  const [selectedCampaign, setSelectedCampaign] = useState<string>('all');
   const [dateRange, setDateRange] = useState<DateRange>('30d');
+  const [selCampaign, setSelCampaign] = useState('all');
 
   useEffect(() => {
     Promise.all([
@@ -194,218 +136,234 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
     }).catch(() => setLoading(false));
   }, []);
 
-  const filteredMessages = useMemo(() =>
-    messages.filter(m => {
-      const inCampaign = selectedCampaign === 'all' || m.campaign_id === selectedCampaign;
-      const inRange    = filterByRange(m.scheduled_at, dateRange);
-      return inCampaign && inRange;
-    }), [messages, selectedCampaign, dateRange]);
+  const fMsgs = useMemo(() => messages.filter(m => {
+    const inCamp = selCampaign === 'all' || m.campaign_id === selCampaign;
+    return inCamp && filterByRange(m.scheduled_at, dateRange);
+  }), [messages, selCampaign, dateRange]);
 
-  const filteredLeads = useMemo(() =>
-    leads.filter(l => filterByRange(l.created_at || '', dateRange)),
-    [leads, dateRange]);
+  const fLeads = useMemo(() => leads.filter(l => filterByRange(l.created_at || '', dateRange)), [leads, dateRange]);
 
   const stats = useMemo(() => ({
-    totalLeads:      filteredLeads.length,
-    emailSent:       filteredMessages.filter(m => m.channel === 'email'    && m.status === 'sent').length,
-    waSent:          filteredMessages.filter(m => m.channel === 'whatsapp' && m.status === 'sent').length,
-    replied:         filteredLeads.filter(l => l.reply_received).length,
-    meetings:        filteredLeads.filter(l => l.meeting_booked).length,
-    activeCampaigns: campaigns.filter(c => c.status === 'active').length,
-    pending:         leads.filter(l => (l as any).outreach_status === 'Pending').length,
-  }), [filteredLeads, filteredMessages, campaigns, leads]);
+    totalLeads:   fLeads.length,
+    emailSent:    fMsgs.filter(m => m.channel === 'email'    && m.status === 'sent').length,
+    waSent:       fMsgs.filter(m => m.channel === 'whatsapp' && m.status === 'sent').length,
+    liSent:       fMsgs.filter(m => m.channel === 'linkedin' && m.status === 'sent').length,
+    twSent:       fMsgs.filter(m => m.channel === 'twitter'  && m.status === 'sent').length,
+    replied:      fLeads.filter(l => l.reply_received).length,
+    meetings:     fLeads.filter(l => l.meeting_booked).length,
+    activeCamps:  campaigns.filter(c => c.status === 'active').length,
+    pending:      leads.filter(l => (l as any).outreach_status === 'Pending').length,
+    failed:       fMsgs.filter(m => m.status === 'failed').length,
+  }), [fLeads, fMsgs, campaigns, leads]);
+
+  const replyRate = stats.totalLeads > 0 ? Math.round((stats.replied / stats.totalLeads) * 100) : 0;
+  const meetRate  = stats.totalLeads > 0 ? Math.round((stats.meetings / stats.totalLeads) * 100) : 0;
 
   const funnelData = useMemo(() => ({
-    labels: ['Total Leads', 'Emails Sent', 'Replies', 'Meetings'],
+    labels: ['Leads', 'Emails', 'WhatsApp', 'LinkedIn', 'Twitter', 'Replies', 'Meetings'],
     datasets: [{
       label: 'Count',
-      data: [stats.totalLeads, stats.emailSent, stats.replied, stats.meetings],
-      backgroundColor: [BLUE + '28', GREEN + '28', PURPLE + '28', AMBER + '28'],
-      borderColor:     [BLUE, GREEN, PURPLE, AMBER],
-      borderWidth: 1.5,
-      borderRadius: 8,
+      data: [stats.totalLeads, stats.emailSent, stats.waSent, stats.liSent, stats.twSent, stats.replied, stats.meetings],
+      backgroundColor: [BLUE+'28', GREEN+'28', '#25D366'+'28', '#6366f1'+'28', SKY+'28', PURPLE+'28', AMBER+'28'],
+      borderColor:     [BLUE, GREEN, '#25D366', '#6366f1', SKY, PURPLE, AMBER],
+      borderWidth: 1.5, borderRadius: 6,
     }],
   }), [stats]);
 
   const channelData = useMemo(() => ({
-    labels: ['Email', 'WhatsApp', 'LinkedIn'],
+    labels: ['Email', 'WhatsApp', 'LinkedIn', 'Twitter'],
     datasets: [{
-      data: [
-        filteredMessages.filter(m => m.channel === 'email'    && m.status === 'sent').length,
-        filteredMessages.filter(m => m.channel === 'whatsapp' && m.status === 'sent').length,
-        filteredMessages.filter(m => m.channel === 'linkedin' && m.status === 'sent').length,
-      ],
-      backgroundColor: [BLUE + 'aa', GREEN + 'aa', '#6366f1aa'],
-      borderColor:     [BLUE, GREEN, '#6366f1'],
+      data: [stats.emailSent, stats.waSent, stats.liSent, stats.twSent],
+      backgroundColor: [BLUE+'aa', '#25D366aa', '#6366f1aa', SKY+'aa'],
+      borderColor: [BLUE, '#25D366', '#6366f1', SKY],
       borderWidth: 1.5,
     }],
-  }), [filteredMessages]);
+  }), [stats]);
 
   const timelineData = useMemo(() => {
-    const labels = last30DayLabels();
-    const dates  = last30DayDates();
-    const count = (channel: string) => dates.map(d => {
+    const labels = last30Labels();
+    const dates  = last30Dates();
+    const count = (ch: string) => dates.map(d => {
       const next = new Date(d); next.setDate(next.getDate() + 1);
-      return messages.filter(m =>
-        m.channel === channel && m.status === 'sent' &&
-        new Date(m.sent_at || m.scheduled_at) >= d &&
-        new Date(m.sent_at || m.scheduled_at) < next
-      ).length;
+      return messages.filter(m => m.channel === ch && m.status === 'sent' && new Date(m.sent_at || m.scheduled_at) >= d && new Date(m.sent_at || m.scheduled_at) < next).length;
     });
     return {
       labels,
       datasets: [
-        { label: 'Email',    data: count('email'),    borderColor: BLUE,  backgroundColor: BLUE  + '12', fill: true, tension: 0.4, pointRadius: 2, borderWidth: 1.5 },
-        { label: 'WhatsApp', data: count('whatsapp'), borderColor: GREEN, backgroundColor: GREEN + '12', fill: true, tension: 0.4, pointRadius: 2, borderWidth: 1.5 },
+        { label: 'Email',    data: count('email'),    borderColor: BLUE,     backgroundColor: BLUE+'12',     fill: true, tension: 0.4, pointRadius: 2, borderWidth: 1.5 },
+        { label: 'WhatsApp', data: count('whatsapp'), borderColor: '#25D366',backgroundColor: '#25D36612',   fill: true, tension: 0.4, pointRadius: 2, borderWidth: 1.5 },
+        { label: 'LinkedIn', data: count('linkedin'), borderColor: '#6366f1',backgroundColor: '#6366f112',   fill: true, tension: 0.4, pointRadius: 2, borderWidth: 1.5 },
+        { label: 'Twitter',  data: count('twitter'),  borderColor: SKY,      backgroundColor: SKY+'12',      fill: true, tension: 0.4, pointRadius: 2, borderWidth: 1.5 },
       ],
     };
   }, [messages]);
 
+  // Activity feed — last 8 sent/failed messages
+  const activity = useMemo(() => {
+    const chIcon: Record<string, React.ElementType> = { email: Mail, whatsapp: MessageCircle, linkedin: Linkedin, twitter: Twitter };
+    const chColor: Record<string, string> = { email: BLUE, whatsapp: '#25D366', linkedin: '#6366f1', twitter: SKY };
+    return [...messages]
+      .filter(m => m.status === 'sent' || m.status === 'failed')
+      .sort((a, b) => new Date(b.sent_at || b.scheduled_at).getTime() - new Date(a.sent_at || a.scheduled_at).getTime())
+      .slice(0, 8)
+      .map(m => {
+        const lead = leads.find(l => l.id === m.lead_id);
+        const name = lead?.business_name || 'Unknown lead';
+        const Icon = chIcon[m.channel] || Mail;
+        const color = m.status === 'failed' ? '#ef4444' : chColor[m.channel] || BLUE;
+        const text = m.status === 'failed'
+          ? `Failed to send ${m.channel} to ${name}`
+          : `${m.channel.charAt(0).toUpperCase() + m.channel.slice(1)} sent to ${name} (step ${m.sequence_step})`;
+        return { icon: Icon, color, text, time: timeAgo(m.sent_at || m.scheduled_at) };
+      });
+  }, [messages, leads]);
+
   const campaignStats = useMemo(() => campaigns.map(c => {
-    const cMsgs    = messages.filter(m => m.campaign_id === c.id);
-    const sent     = cMsgs.filter(m => m.status === 'sent').length;
-    const cLeads   = leads.filter(l => (c.lead_ids || []).includes(l.id!));
+    const cMsgs  = messages.filter(m => m.campaign_id === c.id);
+    const sent   = cMsgs.filter(m => m.status === 'sent').length;
+    const cLeads = leads.filter(l => (c.lead_ids || []).includes(l.id!));
     const replied  = cLeads.filter(l => l.reply_received).length;
     const meetings = cLeads.filter(l => l.meeting_booked).length;
     return {
-      name:        c.name,
-      status:      c.status,
-      leadCount:   cLeads.length,
-      sent,
-      total:       cMsgs.length,
+      name: c.name, status: c.status, leadCount: cLeads.length,
+      sent, total: cMsgs.length,
       replyRate:   cLeads.length > 0 ? Math.round((replied  / cLeads.length) * 100) : 0,
       meetingRate: cLeads.length > 0 ? Math.round((meetings / cLeads.length) * 100) : 0,
     };
   }), [campaigns, messages, leads]);
 
-  const recent = useMemo(() => leads.slice(0, 5), [leads]);
-
-  const statusPill: Record<string, string> = {
-    Pending:          'text-amber-600 bg-amber-50 border border-amber-200',
-    Sent:             'text-emerald-700 bg-emerald-50 border border-emerald-200',
-    Replied:          'text-blue-600 bg-blue-50 border border-blue-200',
-    'Meeting Booked': 'text-purple-600 bg-purple-50 border border-purple-200',
-    'Not Interested': 'text-red-500 bg-red-50 border border-red-200',
-  };
-
-  const campaignStatusPill: Record<string, string> = {
+  const campStatusPill: Record<string, string> = {
     active:    'text-[#00D67D] bg-[#00D67D]/10 border-[#00D67D]/20',
     paused:    'text-amber-400 bg-amber-400/10 border-amber-400/20',
     completed: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
     draft:     'text-slate-400 bg-slate-400/10 border-slate-400/20',
   };
+  const leadStatusPill: Record<string, string> = {
+    Pending:          'text-amber-500 bg-amber-500/10',
+    Sent:             'text-emerald-500 bg-emerald-500/10',
+    Replied:          'text-blue-400 bg-blue-400/10',
+    'Meeting Booked': 'text-purple-400 bg-purple-400/10',
+    'Not Interested': 'text-red-400 bg-red-400/10',
+  };
 
   return (
     <div className="space-y-5 max-w-[1400px]">
 
-      {/* ── Filters ── */}
-      <motion.div {...fadeUp} className="flex flex-wrap items-center gap-2.5">
-        <div className="flex items-center gap-2 p-1 rounded-xl border admin-border admin-surface-2">
-          {(['7d', '30d', '90d', 'all'] as DateRange[]).map(r => (
-            <button
-              key={r}
-              onClick={() => setDateRange(r)}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-                dateRange === r
-                  ? 'accent-bg accent-text font-semibold'
-                  : 'admin-muted hover:admin-text'
-              }`}
-            >
+      {/* Filters */}
+      <motion.div {...fu} className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1 p-1 rounded-xl border admin-border" style={{ background: 'var(--admin-surface-2)' }}>
+          {(['7d','30d','90d','all'] as DateRange[]).map(r => (
+            <button key={r} onClick={() => setDateRange(r)}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${dateRange === r ? 'accent-bg accent-text font-semibold' : 'admin-muted hover:admin-text'}`}>
               {r === 'all' ? 'All time' : `Last ${r}`}
             </button>
           ))}
         </div>
-
-        <select
-          value={selectedCampaign}
-          onChange={e => setSelectedCampaign(e.target.value)}
-          className="admin-input border rounded-xl px-3 py-2 text-[11px] outline-none transition-colors"
-        >
+        <select value={selCampaign} onChange={e => setSelCampaign(e.target.value)}
+          className="admin-input border rounded-xl px-3 py-2 text-[11px] outline-none transition-colors">
           <option value="all">All Campaigns</option>
-          {campaigns.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
+          {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </motion.div>
 
-      {/* ── Stat cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-        <StatCard label="Total Leads"      value={stats.totalLeads}      icon={Users}         accent={BLUE}   loading={loading} />
-        <StatCard label="Emails Sent"      value={stats.emailSent}       icon={Mail}          accent={GREEN}  loading={loading} />
-        <StatCard label="WhatsApp Sent"    value={stats.waSent}          icon={MessageCircle} accent="#25D366" loading={loading} />
-        <StatCard label="Replies"          value={stats.replied}         icon={TrendingUp}    accent={PURPLE} loading={loading} />
-        <StatCard label="Meetings Booked"  value={stats.meetings}        icon={Calendar}      accent={AMBER}  loading={loading} />
-        <StatCard label="Active Campaigns" value={stats.activeCampaigns} icon={Megaphone}     accent={GREEN}  loading={loading} />
+      {/* KPI row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
+        <KpiCard label="Total Leads"   value={stats.totalLeads}  icon={Users}         accent={BLUE}     loading={loading} />
+        <KpiCard label="Emails Sent"   value={stats.emailSent}   icon={Mail}          accent={GREEN}    loading={loading} />
+        <KpiCard label="WhatsApp Sent" value={stats.waSent}      icon={MessageCircle} accent="#25D366"  loading={loading} />
+        <KpiCard label="LinkedIn Sent" value={stats.liSent}      icon={Linkedin}      accent="#6366f1"  loading={loading} />
+        <KpiCard label="Twitter DMs"   value={stats.twSent}      icon={Twitter}       accent={SKY}      loading={loading} />
+        <KpiCard label="Replies"       value={stats.replied}     icon={TrendingUp}    accent={PURPLE}   loading={loading} sub={`${replyRate}%`} />
+        <KpiCard label="Meetings"      value={stats.meetings}    icon={Calendar}      accent={AMBER}    loading={loading} sub={`${meetRate}%`} />
+        <KpiCard label="Active Camps"  value={stats.activeCamps} icon={Megaphone}     accent={GREEN}    loading={loading} />
       </div>
 
-      {/* ── Charts row ── */}
+      {/* Charts row */}
       <div className="grid lg:grid-cols-3 gap-4">
-        <motion.div {...fadeUp} transition={{ delay: 0.08 }} className="lg:col-span-2">
+        <motion.div {...fu} transition={{ delay: 0.06 }} className="lg:col-span-2">
           <ChartCard icon={BarChart2} title="Conversion Funnel">
-            {loading ? <ChartSkeleton /> : <Bar data={funnelData} options={baseAxis} />}
+            {loading ? <ChartSkeleton /> : <Bar data={funnelData} options={axisBase} />}
           </ChartCard>
         </motion.div>
-
-        <motion.div {...fadeUp} transition={{ delay: 0.12 }}>
+        <motion.div {...fu} transition={{ delay: 0.1 }}>
           <ChartCard icon={Activity} title="Channel Mix">
             {loading ? <ChartSkeleton /> : <Doughnut data={channelData} options={doughnutOpts} />}
           </ChartCard>
         </motion.div>
       </div>
 
-      {/* ── Timeline ── */}
-      <motion.div {...fadeUp} transition={{ delay: 0.16 }}>
-        <ChartCard icon={TrendingUp} title="Messages Sent — Last 30 Days" height="h-52">
+      {/* Timeline */}
+      <motion.div {...fu} transition={{ delay: 0.14 }}>
+        <ChartCard icon={TrendingUp} title="Messages Sent — Last 30 Days" height="h-48">
           {loading ? <ChartSkeleton /> : <Line data={timelineData} options={lineOpts} />}
         </ChartCard>
       </motion.div>
 
-      {/* ── Quick actions ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {[
-          { tab: 'crm',       icon: Users,     accent: GREEN,  bg: 'bg-emerald-50',  iconCls: 'text-emerald-700', title: 'Manage CRM Pipeline',   sub: `${stats.pending} lead${stats.pending !== 1 ? 's' : ''} pending outreach` },
-          { tab: 'copy',      icon: Sparkles,  accent: BLUE,   bg: 'bg-blue-50',     iconCls: 'text-blue-600',    title: 'AI Copy Generator',     sub: 'Generate copy for 6 platforms' },
-          { tab: 'campaigns', icon: Megaphone, accent: PURPLE, bg: 'bg-purple-50',   iconCls: 'text-purple-600',  title: 'Create Campaign',       sub: `${stats.activeCampaigns} active campaign${stats.activeCampaigns !== 1 ? 's' : ''}` },
-        ].map(({ tab, icon: Icon, accent, bg, iconCls, title, sub }, i) => (
-          <motion.button
-            key={tab}
-            {...fadeUp}
-            transition={{ delay: 0.2 + i * 0.05 }}
-            onClick={() => onNavigate(tab)}
-            className="group admin-card p-5 text-left transition-all hover:-translate-y-0.5"
-            style={{ '--hover-border': accent + '40' } as React.CSSProperties}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = accent + '35')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = '')}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center`}>
-                <Icon size={17} className={iconCls} />
-              </div>
-              <ArrowRight size={15} className="admin-subtle transition-colors" style={{ color: 'var(--admin-subtle)' }}
-                onMouseEnter={e => (e.currentTarget.style.color = accent)}
-                onMouseLeave={e => (e.currentTarget.style.color = '')}
-              />
+      {/* Activity + Quick actions */}
+      <div className="grid lg:grid-cols-3 gap-4">
+
+        {/* Activity feed */}
+        <motion.div {...fu} transition={{ delay: 0.18 }} className="lg:col-span-2 admin-card overflow-hidden">
+          <div className="px-5 py-4 border-b admin-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap size={13} className="admin-muted" />
+              <span className="label-xs">Activity Feed</span>
             </div>
-            <div className="font-semibold text-[13px] admin-text mb-1">{title}</div>
-            <div className="text-[11px] admin-muted">{sub}</div>
-          </motion.button>
-        ))}
+            <div className="flex items-center gap-3 text-[10px] font-mono admin-muted">
+              <span className="flex items-center gap-1"><CheckCircle2 size={10} className="text-[#00D67D]" /> {fMsgs.filter(m=>m.status==='sent').length} sent</span>
+              <span className="flex items-center gap-1"><Clock size={10} className="text-amber-400" /> {fMsgs.filter(m=>m.status==='pending').length} pending</span>
+              <span className="flex items-center gap-1"><XCircle size={10} className="text-red-400" /> {stats.failed} failed</span>
+            </div>
+          </div>
+          <div className="px-5 py-1 max-h-64 overflow-y-auto">
+            {loading ? (
+              <div className="py-4 space-y-3">{[1,2,3,4].map(i => <div key={i} className="skeleton h-8 w-full rounded-lg" />)}</div>
+            ) : activity.length === 0 ? (
+              <div className="py-10 text-center admin-muted text-sm">No activity yet. Activate a campaign to start sending.</div>
+            ) : (
+              activity.map((a, i) => <ActivityItem key={i} {...a} />)
+            )}
+          </div>
+        </motion.div>
+
+        {/* Quick actions */}
+        <motion.div {...fu} transition={{ delay: 0.22 }} className="flex flex-col gap-3">
+          {[
+            { tab: 'crm',      icon: Users,    accent: GREEN,  title: 'CRM Pipeline',      sub: `${stats.pending} pending` },
+            { tab: 'outreach', icon: Sparkles, accent: BLUE,   title: 'Outreach Studio',   sub: 'Copy & campaigns' },
+            { tab: 'whatsapp', icon: MessageCircle, accent: '#25D366', title: 'WhatsApp', sub: 'Bulk messaging' },
+          ].map(({ tab, icon: Icon, accent, title, sub }) => (
+            <button key={tab} onClick={() => onNavigate(tab)}
+              className="admin-card p-4 text-left flex items-center justify-between gap-3 admin-hover transition-all hover:-translate-y-0.5 group">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: accent + '18' }}>
+                  <Icon size={14} style={{ color: accent }} />
+                </div>
+                <div>
+                  <div className="font-semibold text-[12px] admin-text">{title}</div>
+                  <div className="text-[10px] admin-muted">{sub}</div>
+                </div>
+              </div>
+              <ArrowRight size={13} className="admin-subtle flex-shrink-0" />
+            </button>
+          ))}
+        </motion.div>
       </div>
 
-      {/* ── Campaign performance ── */}
-      <motion.div {...fadeUp} transition={{ delay: 0.3 }} className="admin-card overflow-hidden">
+      {/* Campaign performance table */}
+      <motion.div {...fu} transition={{ delay: 0.26 }} className="admin-card overflow-hidden">
         <div className="px-5 py-4 border-b admin-border flex items-center gap-2">
           <Megaphone size={13} className="admin-muted" />
           <span className="label-xs">Campaign Performance</span>
         </div>
         {campaignStats.length === 0 ? (
-          <div className="px-5 py-12 text-center admin-muted text-sm">No campaigns yet.</div>
+          <div className="px-5 py-10 text-center admin-muted text-sm">No campaigns yet.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b admin-border">
-                  {['Campaign', 'Status', 'Leads', 'Sent', 'Reply Rate', 'Meeting Rate'].map(h => (
+                  {['Campaign','Status','Leads','Sent','Reply Rate','Meeting Rate'].map(h => (
                     <th key={h} className="text-left px-5 py-3 label-xs whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -413,25 +371,23 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
               <tbody>
                 {campaignStats.map((c, i) => (
                   <tr key={i} className="border-b admin-border last:border-0 admin-hover transition-colors">
-                    <td className="px-5 py-3.5 font-medium text-[13px] admin-text">{c.name}</td>
-                    <td className="px-5 py-3.5">
-                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${campaignStatusPill[c.status] || campaignStatusPill.draft}`}>
-                        {c.status}
-                      </span>
+                    <td className="px-5 py-3 font-medium text-[13px] admin-text">{c.name}</td>
+                    <td className="px-5 py-3">
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${campStatusPill[c.status] || campStatusPill.draft}`}>{c.status}</span>
                     </td>
-                    <td className="px-5 py-3.5 admin-muted text-[13px]">{c.leadCount}</td>
-                    <td className="px-5 py-3.5 admin-muted text-[13px]">{c.sent}/{c.total}</td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--admin-surface-3)' }}>
+                    <td className="px-5 py-3 admin-muted text-[12px]">{c.leadCount}</td>
+                    <td className="px-5 py-3 admin-muted text-[12px]">{c.sent}/{c.total}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-14 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--admin-surface-3)' }}>
                           <div className="h-full rounded-full" style={{ width: `${c.replyRate}%`, background: PURPLE }} />
                         </div>
                         <span className="text-[11px] admin-muted">{c.replyRate}%</span>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--admin-surface-3)' }}>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-14 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--admin-surface-3)' }}>
                           <div className="h-full rounded-full" style={{ width: `${c.meetingRate}%`, background: AMBER }} />
                         </div>
                         <span className="text-[11px] admin-muted">{c.meetingRate}%</span>
@@ -445,42 +401,32 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
         )}
       </motion.div>
 
-      {/* ── Recent leads ── */}
-      <motion.div {...fadeUp} transition={{ delay: 0.35 }} className="admin-card overflow-hidden">
+      {/* Recent leads */}
+      <motion.div {...fu} transition={{ delay: 0.3 }} className="admin-card overflow-hidden">
         <div className="px-5 py-4 border-b admin-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users size={13} className="admin-muted" />
-            <span className="label-xs">Recent Leads</span>
-          </div>
-          <button
-            onClick={() => onNavigate('crm')}
-            className="text-[11px] admin-muted hover:accent-text transition-colors font-medium"
-          >
-            View all →
-          </button>
+          <div className="flex items-center gap-2"><Users size={13} className="admin-muted" /><span className="label-xs">Recent Leads</span></div>
+          <button onClick={() => onNavigate('crm')} className="text-[11px] admin-muted hover:accent-text transition-colors">View all →</button>
         </div>
         {loading ? (
-          <div className="p-5 space-y-3">
-            {[1,2,3].map(i => <div key={i} className="skeleton h-10 w-full" />)}
-          </div>
-        ) : recent.length === 0 ? (
-          <div className="px-5 py-12 text-center admin-muted text-sm">No leads yet. Add your first lead in the CRM.</div>
+          <div className="p-5 space-y-3">{[1,2,3].map(i => <div key={i} className="skeleton h-10 w-full rounded-lg" />)}</div>
+        ) : leads.slice(0,5).length === 0 ? (
+          <div className="px-5 py-10 text-center admin-muted text-sm">No leads yet.</div>
         ) : (
           <div>
-            {recent.map((lead, i) => (
-              <div key={i} className="px-5 py-3.5 flex items-center justify-between gap-4 border-b admin-border last:border-0 admin-hover transition-colors">
+            {leads.slice(0,5).map((lead, i) => (
+              <div key={i} className="px-5 py-3 flex items-center justify-between gap-4 border-b admin-border last:border-0 admin-hover transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-[11px] font-bold"
                     style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
                     {lead.business_name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <div className="font-medium text-[13px] admin-text truncate">{lead.business_name}</div>
-                    <div className="text-[11px] admin-muted truncate">{lead.contact_email}</div>
+                    <div className="font-medium text-[12px] admin-text truncate">{lead.business_name}</div>
+                    <div className="text-[10px] admin-muted truncate">{lead.contact_email || lead.industry || '—'}</div>
                   </div>
                 </div>
-                <span className={`flex-shrink-0 text-[10px] font-mono px-2 py-0.5 rounded-full ${statusPill[(lead as any).outreach_status] || 'admin-muted'}`}>
-                  {(lead as any).outreach_status}
+                <span className={`flex-shrink-0 text-[10px] font-mono px-2 py-0.5 rounded-full ${leadStatusPill[(lead as any).outreach_status] || 'admin-muted bg-white/5'}`}>
+                  {(lead as any).outreach_status || 'Pending'}
                 </span>
               </div>
             ))}

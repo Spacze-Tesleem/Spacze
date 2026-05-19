@@ -27,13 +27,15 @@ export type Lead = {
   email_sent: boolean;
   reply_received: boolean;
   meeting_booked: boolean;
+  linkedin_url?: string;
+  twitter_handle?: string;
   generated_subject?: string;
   generated_email?: string;
   created_at?: string;
 };
 
 export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed';
-export type CampaignChannel = 'email' | 'whatsapp' | 'linkedin';
+export type CampaignChannel = 'email' | 'whatsapp' | 'linkedin' | 'twitter';
 
 export type Campaign = {
   id?: string;

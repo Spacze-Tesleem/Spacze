@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Save, Trash2, Search, ChevronDown } from 'lucide-react';
+import { Plus, X, Save, Trash2, Search, ChevronDown, Mail, MessageCircle, Linkedin, Twitter, Filter } from 'lucide-react';
 import { Lead } from '@/lib/supabase';
 
 const EMPTY_LEAD: Omit<Lead, 'id' | 'created_at'> = {
   business_name: '', website: '', industry: '', contact_email: '',
-  whatsapp_number: '',
+  whatsapp_number: '', linkedin_url: '', twitter_handle: '',
   website_quality_score: null, mobile_responsiveness: '', whatsapp_integration: '',
   seo_quality: '', has_dashboard: false, ai_opportunity: '', weak_points: '',
   possible_improvements: '', last_contacted: null, follow_up_date: null,
@@ -38,6 +38,7 @@ export default function CRMPanel() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Lead, 'id' | 'created_at'>>(EMPTY_LEAD);
@@ -114,11 +115,14 @@ export default function CRMPanel() {
     fetchLeads();
   }
 
-  const filtered = leads.filter(l =>
-    l.business_name?.toLowerCase().includes(search.toLowerCase()) ||
-    l.contact_email?.toLowerCase().includes(search.toLowerCase()) ||
-    l.industry?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = leads.filter(l => {
+    const matchSearch =
+      l.business_name?.toLowerCase().includes(search.toLowerCase()) ||
+      l.contact_email?.toLowerCase().includes(search.toLowerCase()) ||
+      l.industry?.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === 'All' || l.outreach_status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   const inp = 'w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] admin-text outline-none transition-colors placeholder:admin-subtle';
   const sel = `${inp} cursor-pointer appearance-none`;
@@ -127,22 +131,27 @@ export default function CRMPanel() {
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-        <div className="relative flex-1 sm:max-w-xs">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 admin-subtle pointer-events-none" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search leads…"
-            className={`${inp} pl-9`}
-          />
+        <div className="flex flex-1 gap-2 flex-wrap">
+          <div className="relative flex-1 sm:max-w-xs">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 admin-subtle pointer-events-none" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads…" className={`${inp} pl-9`} />
+          </div>
+          <div className="relative">
+            <Filter size={12} className="absolute left-3 top-1/2 -translate-y-1/2 admin-subtle pointer-events-none" />
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+              className={`${inp} pl-8 pr-8 cursor-pointer appearance-none min-w-[140px]`}>
+              <option value="All">All Statuses</option>
+              {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <ChevronDown size={11} className="absolute right-3 top-1/2 -translate-y-1/2 admin-subtle pointer-events-none" />
+          </div>
         </div>
-        <button
-          onClick={openAdd}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 text-black font-bold text-[13px] rounded-xl transition-colors"
-          style={{ background: 'var(--accent)' }}
-        >
-          <Plus size={15} /> Add Lead
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-[11px] font-mono admin-muted hidden sm:block">{filtered.length} lead{filtered.length !== 1 ? 's' : ''}</span>
+          <button onClick={openAdd} className="flex items-center justify-center gap-2 px-4 py-2.5 text-black font-bold text-[13px] rounded-xl transition-colors" style={{ background: 'var(--accent)' }}>
+            <Plus size={15} /> Add Lead
+          </button>
+        </div>
       </div>
 
       {/* Desktop table */}
@@ -151,7 +160,7 @@ export default function CRMPanel() {
           <table className="w-full">
             <thead>
               <tr className="border-b admin-border">
-                {['Business', 'Email', 'Industry', 'Score', 'Mobile', 'SEO', 'AI Opp.', 'Outreach', 'Flags', 'Follow-Up', ''].map(h => (
+                {['Business', 'Email', 'Industry', 'Score', 'SEO', 'AI Opp.', 'Channels', 'Outreach', 'Flags', ''].map(h => (
                   <th key={h} className="px-4 py-3 text-left label-xs whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -179,9 +188,16 @@ export default function CRMPanel() {
                       {lead.website_quality_score != null ? `${lead.website_quality_score}/10` : '—'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 admin-muted text-[12px]">{lead.mobile_responsiveness || '—'}</td>
                   <td className="px-4 py-3 admin-muted text-[12px]">{lead.seo_quality || '—'}</td>
-                  <td className="px-4 py-3 admin-muted text-[12px]">{lead.ai_opportunity || '—'}</td>
+                  <td className="px-4 py-3 admin-muted text-[12px] max-w-[120px] truncate">{lead.ai_opportunity || '—'}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <span title="Email" className={lead.contact_email   ? 'text-blue-400'    : 'text-slate-700'}><Mail size={12} /></span>
+                      <span title="WhatsApp" className={lead.whatsapp_number ? 'text-[#25D366]' : 'text-slate-700'}><MessageCircle size={12} /></span>
+                      <span title="LinkedIn" className={lead.linkedin_url    ? 'text-blue-500'  : 'text-slate-700'}><Linkedin size={12} /></span>
+                      <span title="Twitter"  className={lead.twitter_handle  ? 'text-sky-400'   : 'text-slate-700'}><Twitter size={12} /></span>
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${statusColor[lead.outreach_status] || 'text-slate-400 bg-white/5 border-white/10'}`}>
                       {lead.outreach_status}
@@ -189,12 +205,11 @@ export default function CRMPanel() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1 text-[10px] font-mono">
-                      {lead.email_sent     && <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">Sent</span>}
-                      {lead.reply_received && <span className="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 border border-blue-200">Reply</span>}
-                      {lead.meeting_booked && <span className="px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-600 border border-purple-200">Mtg</span>}
+                      {lead.email_sent     && <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Sent</span>}
+                      {lead.reply_received && <span className="px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">Reply</span>}
+                      {lead.meeting_booked && <span className="px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20">Mtg</span>}
                     </div>
                   </td>
-                  <td className="px-4 py-3 admin-muted text-[12px] whitespace-nowrap">{lead.follow_up_date || '—'}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => openEdit(lead)} className="admin-muted hover:admin-text text-[12px] px-2.5 py-1 rounded-lg border admin-border admin-hover transition-colors">Edit</button>
@@ -282,11 +297,13 @@ export default function CRMPanel() {
               <div className="overflow-y-auto flex-1 p-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
-                    { label: 'Business Name *', key: 'business_name', placeholder: 'Acme Corp' },
-                    { label: 'Contact Email *', key: 'contact_email', placeholder: 'hello@acme.com' },
-                    { label: 'WhatsApp Number', key: 'whatsapp_number', placeholder: '+2348012345678' },
-                    { label: 'Website', key: 'website', placeholder: 'https://acme.com' },
-                    { label: 'Industry', key: 'industry', placeholder: 'E-Commerce' },
+                    { label: 'Business Name *',  key: 'business_name',   placeholder: 'Acme Corp' },
+                    { label: 'Contact Email *',  key: 'contact_email',   placeholder: 'hello@acme.com' },
+                    { label: 'WhatsApp Number',  key: 'whatsapp_number', placeholder: '+2348012345678' },
+                    { label: 'LinkedIn URL',     key: 'linkedin_url',    placeholder: 'linkedin.com/in/username' },
+                    { label: 'Twitter Handle',   key: 'twitter_handle',  placeholder: '@handle' },
+                    { label: 'Website',          key: 'website',         placeholder: 'https://acme.com' },
+                    { label: 'Industry',         key: 'industry',        placeholder: 'E-Commerce' },
                   ].map(({ label, key, placeholder }) => (
                     <div key={key}>
                       <label className="block label-xs mb-1.5">{label}</label>
