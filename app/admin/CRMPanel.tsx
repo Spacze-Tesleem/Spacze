@@ -360,7 +360,7 @@ export default function CRMPanel() {
   const inp = 'w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] admin-text outline-none transition-colors placeholder:admin-subtle';
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-full min-w-0">
       <ToastStack toasts={toasts} onDismiss={dismiss} />
 
       {/* Toolbar */}

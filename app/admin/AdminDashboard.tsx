@@ -167,7 +167,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       </aside>
 
       {/* Main */}
-      <div className={`flex-1 ${mainML} flex flex-col min-h-screen pb-20 lg:pb-0 transition-all duration-200`}>
+      <div className={`flex-1 min-w-0 ${mainML} flex flex-col min-h-screen pb-20 lg:pb-0 transition-all duration-200 overflow-x-hidden`}>
 
         {/* Topbar */}
         <header className="sticky top-0 z-30 admin-header backdrop-blur border-b admin-border px-5 lg:px-6 h-[56px] flex items-center justify-between flex-shrink-0">
