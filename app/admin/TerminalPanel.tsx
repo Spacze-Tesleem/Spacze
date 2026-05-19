@@ -1,0 +1,432 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Terminal, Key, Eye, EyeOff, CheckCircle2, AlertCircle,
+  Save, RefreshCw, Zap, Mail, MessageCircle, Database,
+  Globe, Shield, ChevronDown, ChevronRight,
+} from 'lucide-react';
+
+const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
+
+// ── Types ─────────────────────────────────────
+
+interface ApiField {
+  key: string;
+  label: string;
+  placeholder: string;
+  hint: string;
+  link?: string;
+  linkLabel?: string;
+}
+
+interface ApiGroup {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+  description: string;
+  fields: ApiField[];
+}
+
+// ── Config groups ─────────────────────────────
+
+const API_GROUPS: ApiGroup[] = [
+  {
+    id: 'ai',
+    label: 'AI Providers',
+    icon: <Zap size={15} />,
+    color: 'text-[#00D67D]',
+    description: 'At least one key required. The system falls back through OpenAI → Gemini → Groq.',
+    fields: [
+      {
+        key: 'OPENAI_API_KEY',
+        label: 'OpenAI API Key',
+        placeholder: 'sk-...',
+        hint: 'Used for gpt-4o-mini. Primary provider.',
+        link: 'https://platform.openai.com/api-keys',
+        linkLabel: 'Get key →',
+      },
+      {
+        key: 'GEMINI_API_KEY',
+        label: 'Google Gemini API Key',
+        placeholder: 'AIza...',
+        hint: 'Used for gemini-2.0-flash. Fallback #1.',
+        link: 'https://aistudio.google.com/app/apikey',
+        linkLabel: 'Get key →',
+      },
+      {
+        key: 'GROQ_API_KEY',
+        label: 'Groq API Key',
+        placeholder: 'gsk_...',
+        hint: 'Used for llama-3.3-70b. Fallback #2.',
+        link: 'https://console.groq.com/keys',
+        linkLabel: 'Get key →',
+      },
+    ],
+  },
+  {
+    id: 'email',
+    label: 'Email (Gmail)',
+    icon: <Mail size={15} />,
+    color: 'text-blue-400',
+    description: 'Gmail account used to send outreach emails via Nodemailer.',
+    fields: [
+      {
+        key: 'EMAIL_FROM',
+        label: 'Gmail Address',
+        placeholder: 'you@gmail.com',
+        hint: 'The Gmail account emails are sent from.',
+      },
+      {
+        key: 'EMAIL_PASSWORD',
+        label: 'Gmail App Password',
+        placeholder: 'xxxx xxxx xxxx xxxx',
+        hint: 'Use a Gmail App Password, not your account password.',
+        link: 'https://myaccount.google.com/apppasswords',
+        linkLabel: 'Create app password →',
+      },
+    ],
+  },
+  {
+    id: 'whatsapp',
+    label: 'WhatsApp Worker',
+    icon: <MessageCircle size={15} />,
+    color: 'text-[#25D366]',
+    description: 'Baileys-based worker deployed on Railway. Proxied through /api/whatsapp-worker.',
+    fields: [
+      {
+        key: 'WHATSAPP_WORKER_URL',
+        label: 'Worker URL',
+        placeholder: 'https://your-worker.railway.app',
+        hint: 'Base URL of the deployed Baileys worker.',
+      },
+      {
+        key: 'WHATSAPP_WORKER_SECRET',
+        label: 'Worker Secret',
+        placeholder: 'your-secret-token',
+        hint: 'Shared secret sent as x-worker-secret header.',
+      },
+    ],
+  },
+  {
+    id: 'supabase',
+    label: 'Supabase',
+    icon: <Database size={15} />,
+    color: 'text-emerald-400',
+    description: 'PostgreSQL database for leads, campaigns, and scheduled messages.',
+    fields: [
+      {
+        key: 'NEXT_PUBLIC_SUPABASE_URL',
+        label: 'Supabase Project URL',
+        placeholder: 'https://xxxx.supabase.co',
+        hint: 'Found in Project Settings → API.',
+        link: 'https://supabase.com/dashboard',
+        linkLabel: 'Open dashboard →',
+      },
+      {
+        key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+        label: 'Supabase Anon Key',
+        placeholder: 'eyJ...',
+        hint: 'Public anon key — safe to expose in the browser.',
+      },
+      {
+        key: 'SUPABASE_SERVICE_ROLE_KEY',
+        label: 'Supabase Service Role Key',
+        placeholder: 'eyJ...',
+        hint: 'Server-only key used by admin routes. Never expose publicly.',
+      },
+    ],
+  },
+  {
+    id: 'app',
+    label: 'App Config',
+    icon: <Globe size={15} />,
+    color: 'text-purple-400',
+    description: 'General application settings.',
+    fields: [
+      {
+        key: 'NEXT_PUBLIC_APP_URL',
+        label: 'App URL',
+        placeholder: 'https://spacze.vercel.app',
+        hint: 'Used by the queue processor to call internal API routes.',
+      },
+      {
+        key: 'ADMIN_PASSWORD',
+        label: 'Admin Password',
+        placeholder: '••••••••',
+        hint: 'Password for the /admin login page.',
+      },
+    ],
+  },
+];
+
+// ── Secret field component ────────────────────
+
+function SecretField({
+  field,
+  value,
+  onChange,
+  saved,
+}: {
+  field: ApiField;
+  value: string;
+  onChange: (v: string) => void;
+  saved: boolean;
+}) {
+  const [show, setShow] = useState(false);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-xs admin-muted">{field.label}</label>
+        {field.link && (
+          <a
+            href={field.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-[#00D67D] hover:underline"
+          >
+            {field.linkLabel}
+          </a>
+        )}
+      </div>
+      <div className="relative">
+        <Key size={13} className="absolute left-3 top-1/2 -translate-y-1/2 admin-muted" />
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          className="w-full admin-input border rounded-xl pl-8 pr-16 py-2.5 text-sm font-mono outline-none focus:border-[#00D67D]/40 transition-colors"
+        />
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+          {saved && <CheckCircle2 size={13} className="text-[#00D67D]" />}
+          <button
+            type="button"
+            onClick={() => setShow(s => !s)}
+            className="admin-muted hover:admin-text transition-colors"
+          >
+            {show ? <EyeOff size={13} /> : <Eye size={13} />}
+          </button>
+        </div>
+      </div>
+      <p className="text-[10px] admin-subtle mt-1">{field.hint}</p>
+    </div>
+  );
+}
+
+// ── Group card ────────────────────────────────
+
+function GroupCard({
+  group,
+  values,
+  onChange,
+  onSave,
+  saving,
+  savedKeys,
+  delay,
+}: {
+  group: ApiGroup;
+  values: Record<string, string>;
+  onChange: (key: string, val: string) => void;
+  onSave: (groupId: string) => void;
+  saving: boolean;
+  savedKeys: Set<string>;
+  delay: number;
+}) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <motion.div {...fadeUp} transition={{ delay }} className="rounded-2xl admin-surface border admin-border overflow-hidden">
+      {/* Header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-4 admin-hover transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className={group.color}>{group.icon}</span>
+          <span className="font-bold text-sm admin-text">{group.label}</span>
+          <span className="text-[10px] admin-muted hidden sm:inline">{group.description}</span>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {group.fields.every(f => savedKeys.has(f.key)) && (
+            <span className="text-[10px] font-mono text-[#00D67D] border border-[#00D67D]/20 bg-[#00D67D]/5 px-2 py-0.5 rounded-full">
+              configured
+            </span>
+          )}
+          {open ? <ChevronDown size={14} className="admin-muted" /> : <ChevronRight size={14} className="admin-muted" />}
+        </div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5 space-y-4 border-t admin-border pt-4">
+              {group.fields.map(field => (
+                <SecretField
+                  key={field.key}
+                  field={field}
+                  value={values[field.key] || ''}
+                  onChange={val => onChange(field.key, val)}
+                  saved={savedKeys.has(field.key)}
+                />
+              ))}
+              <button
+                onClick={() => onSave(group.id)}
+                disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00D67D] text-black font-bold text-xs hover:bg-[#00c06e] transition-colors disabled:opacity-40"
+              >
+                {saving ? <RefreshCw size={12} className="animate-spin" /> : <Save size={12} />}
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ── Main panel ────────────────────────────────
+
+export default function TerminalPanel() {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [notice, setNotice] = useState('');
+
+  // Load existing env values from the API on mount
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(data => {
+        if (data && typeof data === 'object' && !data.error) {
+          setValues(data);
+          // Mark any key that has a non-empty value as saved
+          const configured = new Set<string>(
+            Object.entries(data)
+              .filter(([, v]) => v && (v as string).length > 0)
+              .map(([k]) => k)
+          );
+          setSavedKeys(configured);
+        }
+      })
+      .catch(() => {/* settings API not yet configured — silent */});
+  }, []);
+
+  function handleChange(key: string, val: string) {
+    setValues(prev => ({ ...prev, [key]: val }));
+  }
+
+  async function handleSave(groupId: string) {
+    const group = API_GROUPS.find(g => g.id === groupId);
+    if (!group) return;
+
+    setSaving(true);
+    setSaveError('');
+    setNotice('');
+
+    const payload: Record<string, string> = {};
+    group.fields.forEach(f => {
+      if (values[f.key] !== undefined) payload[f.key] = values[f.key];
+    });
+
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Save failed');
+
+      // Mark saved keys
+      setSavedKeys(prev => {
+        const next = new Set(prev);
+        group.fields.forEach(f => {
+          if (values[f.key]?.trim()) next.add(f.key);
+          else next.delete(f.key);
+        });
+        return next;
+      });
+      setNotice(`${group.label} settings saved. Restart the server for changes to take effect.`);
+    } catch (e: any) {
+      setSaveError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5 max-w-3xl">
+
+      {/* Header */}
+      <motion.div {...fadeUp}>
+        <div className="flex items-center gap-3 mb-1">
+          <Terminal size={18} className="text-[#00D67D]" />
+          <h2 className="font-bold admin-text">Terminal</h2>
+        </div>
+        <p className="text-xs admin-muted">
+          Configure API keys and integrations. Values are stored server-side in environment variables.
+          Changes require a server restart to take effect.
+        </p>
+      </motion.div>
+
+      {/* Notice / error banners */}
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="flex items-start gap-2 p-3 rounded-xl bg-[#00D67D]/10 border border-[#00D67D]/20 text-[#00D67D] text-xs"
+          >
+            <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5" />
+            {notice}
+          </motion.div>
+        )}
+        {saveError && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs"
+          >
+            <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+            {saveError}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Security notice */}
+      <motion.div {...fadeUp} transition={{ delay: 0.05 }}
+        className="flex items-start gap-3 p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/15 text-yellow-400 text-xs"
+      >
+        <Shield size={14} className="flex-shrink-0 mt-0.5" />
+        <span>
+          API keys are sensitive. They are saved to your server environment and never exposed in the browser.
+          Do not share or commit them to version control.
+        </span>
+      </motion.div>
+
+      {/* API groups */}
+      {API_GROUPS.map((group, i) => (
+        <GroupCard
+          key={group.id}
+          group={group}
+          values={values}
+          onChange={handleChange}
+          onSave={handleSave}
+          saving={saving}
+          savedKeys={savedKeys}
+          delay={0.08 + i * 0.06}
+        />
+      ))}
+    </div>
+  );
+}
