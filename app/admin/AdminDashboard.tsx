@@ -1,24 +1,30 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, Zap, LogOut, ChevronLeft, ChevronRight, MessageCircle, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Users, Sparkles, Megaphone, BarChart2, LogOut, ChevronLeft, ChevronRight, MessageCircle, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CRMPanel from './CRMPanel';
-import EmailGeneratorPanel from './EmailGeneratorPanel';
 import StatsPanel from './StatsPanel';
 import WhatsAppPanel from './WhatsAppPanel';
+import AICopyPanel from './AICopyPanel';
+import CampaignsPanel from './CampaignsPanel';
+import AnalyticsPanel from './AnalyticsPanel';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'crm',       label: 'CRM',       icon: Users },
-  { id: 'generator', label: 'AI Email',  icon: Zap },
+  { id: 'copy',      label: 'AI Copy',   icon: Sparkles },
+  { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
+  { id: 'analytics', label: 'Analytics', icon: BarChart2 },
   { id: 'whatsapp',  label: 'WhatsApp',  icon: MessageCircle },
 ];
 
 const pageTitle: Record<string, string> = {
   dashboard: 'Dashboard',
   crm: 'CRM Pipeline',
-  generator: 'AI Email Generator',
+  copy: 'AI Copy Generator',
+  campaigns: 'Campaigns',
+  analytics: 'Analytics',
   whatsapp: 'WhatsApp Outreach',
 };
 
@@ -58,8 +64,8 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <AnimatePresence initial={false}>
               {!collapsed && (
                 <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden whitespace-nowrap">
-                  <div className="font-bold text-sm admin-text">Spacze Admin</div>
-                  <div className="text-[10px] admin-muted font-mono">Outreach Engine</div>
+                  <div className="font-bold text-sm admin-text">Spacze</div>
+                  <div className="text-[10px] admin-muted font-mono">Command Centre</div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -115,7 +121,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         <header className="sticky top-0 z-30 admin-header backdrop-blur border-b admin-border px-4 lg:px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="font-bold text-base admin-text">{pageTitle[active]}</h1>
-            <p className="text-[10px] admin-muted font-mono">Spacze Outreach Engine</p>
+            <p className="text-[10px] admin-muted font-mono">Spacze Command Centre</p>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={toggleTheme} className="p-2 rounded-xl admin-hover border admin-border transition-colors" title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
@@ -136,7 +142,9 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <motion.div key={active} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {active === 'dashboard' && <StatsPanel onNavigate={setActive} />}
               {active === 'crm'       && <CRMPanel />}
-              {active === 'generator' && <EmailGeneratorPanel />}
+              {active === 'copy'      && <AICopyPanel />}
+              {active === 'campaigns' && <CampaignsPanel />}
+              {active === 'analytics' && <AnalyticsPanel />}
               {active === 'whatsapp'  && <WhatsAppPanel />}
             </motion.div>
           </AnimatePresence>

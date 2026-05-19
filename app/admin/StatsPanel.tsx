@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Mail, CheckCircle2, Calendar, Zap, ArrowRight, TrendingUp } from 'lucide-react';
+import { Users, Mail, CheckCircle2, Calendar, Sparkles, Megaphone, ArrowRight, TrendingUp } from 'lucide-react';
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
@@ -15,14 +15,18 @@ const statusColor: Record<string, string> = {
 };
 
 export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) => void }) {
-  const [stats, setStats] = useState({ total: 0, emailSent: 0, replied: 0, meetings: 0, pending: 0 });
+  const [stats, setStats] = useState({ total: 0, emailSent: 0, replied: 0, meetings: 0, pending: 0, activeCampaigns: 0 });
   const [recent, setRecent] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const res = await fetch('/api/leads');
-      const data = await res.json();
+      const [leadsRes, campaignsRes] = await Promise.all([
+        fetch('/api/leads'),
+        fetch('/api/campaigns'),
+      ]);
+      const data = await leadsRes.json();
+      const campaigns = await campaignsRes.json();
       if (!Array.isArray(data)) return;
       setStats({
         total: data.length,
@@ -30,6 +34,7 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
         replied: data.filter((d: any) => d.reply_received).length,
         meetings: data.filter((d: any) => d.meeting_booked).length,
         pending: data.filter((d: any) => d.outreach_status === 'Pending').length,
+        activeCampaigns: Array.isArray(campaigns) ? campaigns.filter((c: any) => c.status === 'active').length : 0,
       });
       setRecent(data.slice(0, 5));
       setLoading(false);
@@ -38,17 +43,18 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
   }, []);
 
   const cards = [
-    { label: 'Total Leads',     value: stats.total,     icon: Users,        color: 'text-blue-600',   bg: 'bg-blue-100' },
-    { label: 'Emails Sent',     value: stats.emailSent, icon: Mail,         color: 'text-emerald-700', bg: 'bg-emerald-100' },
-    { label: 'Replies',         value: stats.replied,   icon: CheckCircle2, color: 'text-purple-600', bg: 'bg-purple-100' },
-    { label: 'Meetings Booked', value: stats.meetings,  icon: Calendar,     color: 'text-yellow-600', bg: 'bg-yellow-100' },
+    { label: 'Total Leads',       value: stats.total,            icon: Users,        color: 'text-blue-600',    bg: 'bg-blue-100' },
+    { label: 'Emails Sent',       value: stats.emailSent,        icon: Mail,         color: 'text-emerald-700', bg: 'bg-emerald-100' },
+    { label: 'Replies',           value: stats.replied,          icon: CheckCircle2, color: 'text-purple-600',  bg: 'bg-purple-100' },
+    { label: 'Meetings Booked',   value: stats.meetings,         icon: Calendar,     color: 'text-yellow-600',  bg: 'bg-yellow-100' },
+    { label: 'Active Campaigns',  value: stats.activeCampaigns,  icon: Megaphone,    color: 'text-[#00D67D]',   bg: 'bg-emerald-100' },
   ];
 
   return (
     <div className="space-y-5">
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
         {cards.map((c, i) => (
           <motion.div key={i} {...fadeUp} transition={{ delay: i * 0.07 }}
             className="p-4 lg:p-5 rounded-2xl admin-surface border admin-border">
@@ -93,7 +99,7 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
       )}
 
       {/* Quick actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
         <motion.button {...fadeUp} transition={{ delay: 0.3 }} onClick={() => onNavigate('crm')}
           className="group p-5 rounded-2xl admin-surface border admin-border hover:border-[#00D67D]/30 transition-all text-left">
           <div className="flex items-center justify-between mb-3">
@@ -106,16 +112,28 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
           <div className="text-xs admin-muted">{stats.pending} lead{stats.pending !== 1 ? 's' : ''} pending outreach</div>
         </motion.button>
 
-        <motion.button {...fadeUp} transition={{ delay: 0.35 }} onClick={() => onNavigate('generator')}
+        <motion.button {...fadeUp} transition={{ delay: 0.35 }} onClick={() => onNavigate('copy')}
           className="group p-5 rounded-2xl admin-surface border admin-border hover:border-blue-500/30 transition-all text-left">
           <div className="flex items-center justify-between mb-3">
             <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center">
-              <Zap size={18} className="text-blue-600" />
+              <Sparkles size={18} className="text-blue-600" />
             </div>
             <ArrowRight size={16} className="admin-subtle group-hover:text-blue-400 transition-colors" />
           </div>
-          <div className="font-bold text-sm mb-1">AI Email Generator</div>
-          <div className="text-xs admin-muted">Generate &amp; send personalised outreach</div>
+          <div className="font-bold text-sm mb-1">AI Copy Generator</div>
+          <div className="text-xs admin-muted">Generate copy for 6 platforms</div>
+        </motion.button>
+
+        <motion.button {...fadeUp} transition={{ delay: 0.4 }} onClick={() => onNavigate('campaigns')}
+          className="group p-5 rounded-2xl admin-surface border admin-border hover:border-purple-500/30 transition-all text-left">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center">
+              <Megaphone size={18} className="text-purple-600" />
+            </div>
+            <ArrowRight size={16} className="admin-subtle group-hover:text-purple-400 transition-colors" />
+          </div>
+          <div className="font-bold text-sm mb-1">Create Campaign</div>
+          <div className="text-xs admin-muted">{stats.activeCampaigns} active campaign{stats.activeCampaigns !== 1 ? 's' : ''}</div>
         </motion.button>
       </div>
 

@@ -67,7 +67,7 @@ export default function AdminPage() {
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00D67D] to-blue-600 flex items-center justify-center mb-4 shadow-lg shadow-[#00D67D]/20">
             <Shield size={26} className="text-black" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Spacze Admin</h1>
+          <h1 className="text-2xl font-bold text-white">Spacze Command Centre</h1>
           <p className="text-slate-500 text-sm mt-1">Restricted access</p>
         </div>
 
@@ -116,7 +116,7 @@ export default function AdminPage() {
         </form>
 
         <p className="text-center text-slate-700 text-xs mt-6">
-          This page is not publicly linked. Spacze internal use only.
+          This page is not publicly linked. Spacze Command Centre — internal use only.
         </p>
       </motion.div>
     </div>
