@@ -9,8 +9,12 @@ export async function GET() {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  // Return empty array if table doesn't exist yet (Supabase error code 42P01)
+  if (error) {
+    if (error.code === '42P01') return NextResponse.json([]);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json(data ?? []);
 }
 
 // POST /api/campaigns
