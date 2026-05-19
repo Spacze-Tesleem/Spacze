@@ -1,6 +1,23 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Spacze schema
 -- Run this once in the Supabase SQL Editor (Dashboard → SQL Editor → New query)
+-- Safe to re-run: all statements use IF NOT EXISTS / OR REPLACE.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- ── Migration: add social columns to existing leads table ────────────────────
+-- Skip if you are running schema.sql fresh (the CREATE TABLE below includes them).
+-- Run these if you already have a leads table from a previous deployment:
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS linkedin_url   text;
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS twitter_handle text;
+
+-- ── Migration: add twitter to scheduled_messages channel constraint ───────────
+-- Drops and recreates the check constraint to include 'twitter'.
+ALTER TABLE public.scheduled_messages
+  DROP CONSTRAINT IF EXISTS scheduled_messages_channel_check;
+ALTER TABLE public.scheduled_messages
+  ADD CONSTRAINT scheduled_messages_channel_check
+  CHECK (channel IN ('email','whatsapp','linkedin','twitter'));
+
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- ── leads ────────────────────────────────────────────────────────────────────
