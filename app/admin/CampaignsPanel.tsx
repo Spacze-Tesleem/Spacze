@@ -373,9 +373,7 @@ function CreateModal({
   const [description, setDescription] = useState('');
   const [channels, setChannels] = useState<CampaignChannel[]>(['email']);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
-  const [autoSeq, setAutoSeq] = useState(true);
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 16));
-  const [manualDates, setManualDates] = useState<string[]>(['', '', '', '']);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -418,7 +416,7 @@ function CreateModal({
           status,
           channels,
           lead_ids: selectedLeadIds,
-          auto_sequence: autoSeq,
+          auto_sequence: true,
           start_date: startDate,
         }),
       });
@@ -434,10 +432,7 @@ function CreateModal({
           for (const channel of channels) {
             const steps = channel === 'linkedin' ? [1] : [1, 2, 3, 4];
             for (const step of steps) {
-              const offset = autoSeq ? STEP_OFFSETS[step - 1] : 0;
-              const scheduledAt = autoSeq
-                ? addDays(base, offset)
-                : (manualDates[step - 1] ? new Date(manualDates[step - 1]).toISOString() : addDays(base, offset));
+              const scheduledAt = addDays(base, STEP_OFFSETS[step - 1]);
 
               rows.push({
                 campaign_id: campaign.id!,
@@ -565,62 +560,20 @@ function CreateModal({
 
           {/* Scheduling */}
           <div>
-            <label className="label-xs mb-2 block">Scheduling</label>
-            <div className="flex gap-2 mb-3">
-              {[true, false].map(v => (
-                <button
-                  key={String(v)}
-                  onClick={() => setAutoSeq(v)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-all ${
-                    autoSeq === v
-                      ? 'bg-[#00D67D]/10 text-[#00D67D] border-[#00D67D]/20'
-                      : 'admin-border admin-muted admin-hover'
-                  }`}
-                >
-                  {v ? 'Auto-sequence' : 'Manual dates'}
-                </button>
-              ))}
+            <label className="label-xs mb-1.5 block">Start Date & Time</label>
+            <input
+              type="datetime-local"
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
+            />
+            <div className="mt-2 p-3 rounded-xl border admin-border text-[11px] admin-muted space-y-1" style={{ background: 'var(--admin-surface-2)' }}>
+              <div>Step 1 — Day 0 (start date)</div>
+              <div>Step 2 — Day +3</div>
+              <div>Step 3 — Day +7</div>
+              <div>Step 4 — Day +14 (breakup)</div>
+              <div className="text-[10px] admin-subtle mt-1">LinkedIn sends step 1 only (copy-only, no API).</div>
             </div>
-
-            <div>
-              <label className="label-xs mb-1.5 block">Start Date & Time</label>
-              <input
-                type="datetime-local"
-                value={startDate}
-                onChange={e => setStartDate(e.target.value)}
-                className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
-              />
-            </div>
-
-            {autoSeq && (
-              <div className="mt-2 p-3 rounded-xl bg-white/[0.02] border admin-border text-xs admin-muted space-y-1">
-                <div>Step 1 — Day 0 (start date)</div>
-                <div>Step 2 — Day +3</div>
-                <div>Step 3 — Day +7</div>
-                <div>Step 4 — Day +14 (breakup)</div>
-                <div className="text-[10px] admin-subtle mt-1">LinkedIn sends step 1 only (copy-only, no API).</div>
-              </div>
-            )}
-
-            {!autoSeq && (
-              <div className="mt-2 space-y-2">
-                {['Step 1', 'Step 2', 'Step 3', 'Step 4 (Breakup)'].map((label, i) => (
-                  <div key={i}>
-                    <label className="text-[10px] admin-muted mb-0.5 block">{label}</label>
-                    <input
-                      type="datetime-local"
-                      value={manualDates[i]}
-                      onChange={e => {
-                        const next = [...manualDates];
-                        next[i] = e.target.value;
-                        setManualDates(next);
-                      }}
-                      className="w-full admin-input border rounded-xl px-3 py-2 text-sm outline-none focus:border-[#00D67D]/40 transition-colors"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {error && (
