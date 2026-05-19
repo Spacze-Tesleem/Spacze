@@ -34,8 +34,7 @@ export type Lead = {
   created_at?: string;
 };
 
-export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed';
-export type CampaignChannel = 'email' | 'whatsapp' | 'linkedin' | 'twitter';
+export type { CampaignStatus, CampaignChannel } from './constants';
 
 export type Campaign = {
   id?: string;
@@ -50,7 +49,7 @@ export type Campaign = {
   updated_at?: string;
 };
 
-export type ScheduledMessageStatus = 'pending' | 'sent' | 'failed' | 'cancelled';
+export type { ScheduledMessageStatus } from './constants';
 
 export type ScheduledMessage = {
   id?: string;

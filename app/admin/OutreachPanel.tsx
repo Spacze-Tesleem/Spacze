@@ -174,7 +174,7 @@ function ChannelBadge({ channel }: { channel: CampaignChannel }) {
 function ChannelCoverage({ channel, leads }: { channel: CampaignChannel; leads: Lead[] }) {
   const req = CHANNEL_REQUIREMENTS[channel];
   if (!req) return null;
-  const covered = leads.filter(l => !!(l as any)[req.field]).length;
+  const covered = leads.filter(l => !!l[req.field]).length;
   const pct = leads.length > 0 ? Math.round((covered / leads.length) * 100) : 0;
   return (
     <div className="flex items-center gap-1.5 text-[10px] admin-muted">
@@ -349,8 +349,9 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
           auto_sequence: true, start_date: startDate,
         }),
       });
-      const campaign: Campaign = await res.json();
-      if (!res.ok) throw new Error((campaign as any).error || 'Failed to create campaign');
+      const campaignData = await res.json();
+      if (!res.ok) throw new Error(campaignData.error || 'Failed to create campaign');
+      const campaign: Campaign = campaignData;
 
       if (activate && campaign.id) {
         const base = new Date(startDate);
@@ -813,47 +814,51 @@ function CampaignsTab({ leads }: { leads: Lead[] }) {
 
 type Tab = 'copy' | 'campaigns';
 
-export default function OutreachPanel() {
-  const [tab, setTab]     = useState<Tab>('copy');
+// defaultTab: when provided by the sidebar, the internal tab switcher is hidden
+// and the panel renders only that tab. When absent, the switcher is shown.
+export default function OutreachPanel({ defaultTab }: { defaultTab?: Tab }) {
+  const [tab, setTab]     = useState<Tab>(defaultTab ?? 'copy');
   const [leads, setLeads] = useState<Lead[]>([]);
+
+  // Sync if the sidebar navigates to a different tab
+  useEffect(() => { if (defaultTab) setTab(defaultTab); }, [defaultTab]);
 
   useEffect(() => {
     fetch('/api/leads').then(r => r.json()).then(d => setLeads(Array.isArray(d) ? d : []));
   }, []);
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode; desc: string; badge?: string }[] = [
+  const tabs: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
     { id: 'copy',      label: 'AI Copy',   icon: <Sparkles size={14} />,  desc: 'Generate platform copy for a lead — 6 channels' },
     { id: 'campaigns', label: 'Campaigns', icon: <Megaphone size={14} />, desc: 'Build & schedule multi-channel outreach sequences' },
   ];
 
   return (
     <div className="space-y-5 max-w-5xl">
-      {/* Tab switcher */}
-      <motion.div {...fadeUp} className="flex items-center gap-1 p-1 rounded-2xl border admin-border w-fit" style={{ background: 'var(--admin-surface-2)' }}>
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 ${
-              tab === t.id ? 'text-black' : 'admin-muted hover:admin-text'
-            }`}
-          >
-            {tab === t.id && (
-              <motion.div layoutId="outreach-tab-bg" className="absolute inset-0 rounded-xl"
-                style={{ background: 'var(--accent)' }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
-            )}
-            <span className="relative z-10 flex items-center gap-2">
-              {t.icon}
-              {t.label}
-            </span>
-          </button>
-        ))}
-      </motion.div>
-
-      {/* Active tab description */}
-      <motion.p key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[11px] admin-muted font-mono -mt-2">
-        {tabs.find(t => t.id === tab)?.desc}
-      </motion.p>
+      {/* Internal tab switcher — only shown when not driven by the sidebar */}
+      {!defaultTab && (
+        <>
+          <motion.div {...fadeUp} className="flex items-center gap-1 p-1 rounded-2xl border admin-border w-fit" style={{ background: 'var(--admin-surface-2)' }}>
+            {tabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 ${
+                  tab === t.id ? 'text-black' : 'admin-muted hover:admin-text'
+                }`}
+              >
+                {tab === t.id && (
+                  <motion.div layoutId="outreach-tab-bg" className="absolute inset-0 rounded-xl"
+                    style={{ background: 'var(--accent)' }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
+                )}
+                <span className="relative z-10 flex items-center gap-2">{t.icon}{t.label}</span>
+              </button>
+            ))}
+          </motion.div>
+          <motion.p key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[11px] admin-muted font-mono -mt-2">
+            {tabs.find(t => t.id === tab)?.desc}
+          </motion.p>
+        </>
+      )}
 
       {/* Tab content */}
       <AnimatePresence mode="wait">

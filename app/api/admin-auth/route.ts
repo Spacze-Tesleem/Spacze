@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual, createHash } from 'crypto';
+import { setSessionCookie } from '@/lib/session';
+
 
 // In-memory rate limiter: max 5 attempts per IP per 15-minute window
 const attempts = new Map<string, { count: number; resetAt: number }>();
@@ -62,5 +64,10 @@ export async function POST(req: NextRequest) {
   }
 
   attempts.delete(ip);
-  return NextResponse.json({ success: true });
+
+  // Set a signed httpOnly session cookie so the middleware can authenticate
+  // subsequent requests without re-checking the password.
+  const res = NextResponse.json({ success: true });
+  await setSessionCookie(res);
+  return res;
 }

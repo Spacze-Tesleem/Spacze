@@ -3,23 +3,30 @@ import { NextRequest, NextResponse } from 'next/server';
 // Proxy requests from the Next.js admin panel to the persistent Baileys worker.
 // Supported actions: status, send, send-bulk, disconnect, reconnect
 
-const WORKER_URL = process.env.WHATSAPP_WORKER_URL;
-const WORKER_SECRET = process.env.WHATSAPP_WORKER_SECRET;
-
-function workerHeaders() {
+// Read env vars inside functions, not at module load time, so that values
+// written via /api/settings (process.env mutation) are always picked up.
+function workerConfig() {
   return {
-    'Content-Type': 'application/json',
-    'x-worker-secret': WORKER_SECRET || '',
+    url:    process.env.WHATSAPP_WORKER_URL,
+    secret: process.env.WHATSAPP_WORKER_SECRET,
   };
 }
 
-export async function GET(req: NextRequest) {
-  if (!WORKER_URL) {
+function workerHeaders(secret: string) {
+  return {
+    'Content-Type': 'application/json',
+    'x-worker-secret': secret,
+  };
+}
+
+export async function GET(_req: NextRequest) {
+  const { url, secret } = workerConfig();
+  if (!url) {
     return NextResponse.json({ error: 'WHATSAPP_WORKER_URL not configured.' }, { status: 500 });
   }
 
   try {
-    const res = await fetch(`${WORKER_URL}/status`, { headers: workerHeaders() });
+    const res = await fetch(`${url}/status`, { headers: workerHeaders(secret ?? '') });
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
@@ -28,7 +35,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!WORKER_URL) {
+  const { url, secret } = workerConfig();
+  if (!url) {
     return NextResponse.json({ error: 'WHATSAPP_WORKER_URL not configured.' }, { status: 500 });
   }
 
@@ -41,9 +49,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const res = await fetch(`${WORKER_URL}/${action}`, {
+    const res = await fetch(`${url}/${action}`, {
       method: 'POST',
-      headers: workerHeaders(),
+      headers: workerHeaders(secret ?? ''),
       body: JSON.stringify(payload),
     });
     const data = await res.json();

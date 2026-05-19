@@ -4,11 +4,13 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Wifi, WifiOff, RefreshCw, Send, CheckCircle2,
-  AlertCircle, QrCode, MessageCircle, LogOut, Zap,
+  AlertCircle, QrCode, MessageCircle, LogOut, Zap, Eye, Edit3, X,
 } from 'lucide-react';
 import { Lead } from '@/lib/supabase';
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'qr_ready' | 'connected' | 'unknown';
+
+interface PreviewMessage { leadId: string; to: string; businessName: string; message: string; }
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
@@ -20,13 +22,16 @@ export default function WhatsAppPanel() {
   const [statusError, setStatusError] = useState('');
 
   // Bulk send state
-  const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
   const [progress, setProgress] = useState('');
   const [sendDone, setSendDone] = useState(false);
   const [error, setError] = useState('');
+
+  // Preview state — messages generated but not yet sent
+  const [previews, setPreviews] = useState<PreviewMessage[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
 
   // ── Fetch leads ──
   useEffect(() => {
@@ -107,47 +112,50 @@ export default function WhatsAppPanel() {
     }
   }
 
-  async function sendBulk() {
+  // Phase 1: generate previews for selected leads
+  async function generatePreviews() {
     const targets = leads.filter(l => selectedIds.has(l.id!));
     if (targets.length === 0) return;
+    setGenerating(true);
+    setError('');
+    setProgress(`Generating messages for ${targets.length} leads…`);
+    try {
+      const generated: PreviewMessage[] = [];
+      for (let i = 0; i < targets.length; i++) {
+        const lead = targets[i];
+        setProgress(`Generating ${i + 1}/${targets.length} — ${lead.business_name}…`);
+        const res  = await fetch('/api/generate-whatsapp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lead) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Generation failed');
+        generated.push({ leadId: lead.id!, to: lead.whatsapp_number, businessName: lead.business_name, message: data.message });
+      }
+      setPreviews(generated);
+      setShowPreview(true);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Generation failed');
+    } finally {
+      setGenerating(false);
+      setProgress('');
+    }
+  }
 
+  // Phase 2: send previewed messages via server-side job
+  async function sendPreviews() {
     setSending(true);
     setSendDone(false);
     setError('');
-    setProgress(`Generating messages for ${targets.length} leads...`);
-
+    setProgress(`Sending ${previews.length} messages via server…`);
     try {
-      // Generate AI messages for each lead
-      const messages: { to: string; message: string }[] = [];
-      for (let i = 0; i < targets.length; i++) {
-        const lead = targets[i];
-        setProgress(`Generating message ${i + 1}/${targets.length} — ${lead.business_name}...`);
-        const res = await fetch('/api/generate-whatsapp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(lead),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Generation failed');
-        messages.push({ to: lead.whatsapp_number, message: data.message });
-      }
-
-      setProgress(`Sending ${messages.length} messages with 30–60s delay between each...`);
-
-      // Send bulk via worker (30–60s random delay between messages)
-      const res = await fetch('/api/whatsapp-worker', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send-bulk', messages, delayMin: 30000, delayMax: 60000 }),
-      });
+      const res  = await fetch('/api/whatsapp-bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: previews }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Bulk send failed');
-
       setProgress('');
       setSendDone(true);
       setSelectedIds(new Set());
-    } catch (e: any) {
-      setError(e.message);
+      setPreviews([]);
+      setShowPreview(false);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Send failed');
       setProgress('');
     } finally {
       setSending(false);
@@ -347,14 +355,14 @@ export default function WhatsAppPanel() {
               )}
             </AnimatePresence>
 
-            {/* Send button */}
+            {/* Generate previews button */}
             <button
-              onClick={sendBulk}
-              disabled={selectedIds.size === 0 || sending || status !== 'connected'}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#25D366] text-black font-bold text-[13px] hover:bg-[#20c05c] transition-colors disabled:opacity-40"
+              onClick={generatePreviews}
+              disabled={selectedIds.size === 0 || generating || sending}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border admin-border-md admin-muted hover:admin-text text-[13px] font-bold transition-colors disabled:opacity-40"
             >
-              {sending ? <RefreshCw size={15} className="animate-spin" /> : <Zap size={15} />}
-              {sending ? 'Processing...' : `Send to ${selectedIds.size || 0} lead${selectedIds.size !== 1 ? 's' : ''}`}
+              {generating ? <RefreshCw size={15} className="animate-spin" /> : <Eye size={15} />}
+              {generating ? progress || 'Generating…' : `Preview ${selectedIds.size || 0} message${selectedIds.size !== 1 ? 's' : ''}`}
             </button>
 
             {status !== 'connected' && (
@@ -363,6 +371,76 @@ export default function WhatsAppPanel() {
           </>
         )}
       </motion.div>
+
+      {/* Preview modal */}
+      <AnimatePresence>
+        {showPreview && previews.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            onClick={e => { if (e.target === e.currentTarget) setShowPreview(false); }}
+          >
+            <motion.div
+              initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="admin-surface border admin-border-md rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b admin-border flex-shrink-0">
+                <div>
+                  <h2 className="font-bold text-[15px] admin-text">Preview Messages</h2>
+                  <p className="text-[11px] admin-muted mt-0.5">{previews.length} message{previews.length !== 1 ? 's' : ''} ready — review before sending</p>
+                </div>
+                <button onClick={() => setShowPreview(false)} className="admin-muted hover:admin-text p-1.5 rounded-xl admin-hover border admin-border transition-colors">
+                  <X size={15} />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto flex-1 p-5 space-y-4">
+                {previews.map((p, i) => (
+                  <div key={p.leadId} className="admin-card p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-[13px] admin-text">{p.businessName}</span>
+                      <span className="text-[10px] font-mono admin-muted">{p.to}</span>
+                    </div>
+                    <textarea
+                      rows={4}
+                      value={p.message}
+                      onChange={e => setPreviews(prev => prev.map((m, j) => j === i ? { ...m, message: e.target.value } : m))}
+                      className="w-full admin-input border rounded-xl px-3 py-2.5 text-[12px] admin-text outline-none resize-none transition-colors"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex-shrink-0 px-5 py-4 border-t admin-border space-y-3">
+                {error && <p className="text-red-400 text-[12px] text-center px-3 py-2 rounded-xl bg-red-500/8 border border-red-500/20">{error}</p>}
+                {progress && (
+                  <div className="flex items-center gap-2 text-blue-400 text-[12px]">
+                    <RefreshCw size={13} className="animate-spin" /> {progress}
+                  </div>
+                )}
+                {sendDone && (
+                  <div className="flex items-center gap-2 text-[#25D366] text-[12px]">
+                    <CheckCircle2 size={14} /> All messages sent successfully.
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <button onClick={() => setShowPreview(false)} className="flex-1 py-2.5 rounded-xl text-[13px] admin-muted hover:admin-text border admin-border admin-hover transition-colors">Cancel</button>
+                  <button
+                    onClick={sendPreviews}
+                    disabled={sending || status !== 'connected'}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#25D366] text-black font-bold text-[13px] hover:bg-[#20c05c] transition-colors disabled:opacity-40"
+                  >
+                    {sending ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
+                    {sending ? 'Sending…' : `Send ${previews.length} message${previews.length !== 1 ? 's' : ''}`}
+                  </button>
+                </div>
+                {status !== 'connected' && <p className="text-xs admin-subtle text-center">Connect WhatsApp before sending.</p>}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

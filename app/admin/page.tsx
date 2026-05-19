@@ -5,8 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Eye, EyeOff, Shield } from 'lucide-react';
 import AdminDashboard from './AdminDashboard';
 
-const SESSION_KEY = 'spacze_admin_auth';
-
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [password, setPassword] = useState('');
@@ -15,10 +13,14 @@ export default function AdminPage() {
   const [checking, setChecking] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Probe a protected API endpoint to check whether the session cookie is
+  // still valid. This replaces the old sessionStorage flag — the cookie is
+  // the real auth token now.
   useEffect(() => {
-    const stored = sessionStorage.getItem(SESSION_KEY);
-    if (stored === 'true') setAuthed(true);
-    setChecking(false);
+    fetch('/api/leads', { method: 'HEAD' })
+      .then(r => { if (r.ok || r.status !== 401) setAuthed(true); })
+      .catch(() => {})
+      .finally(() => setChecking(false));
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -32,7 +34,6 @@ export default function AdminPage() {
         body: JSON.stringify({ password }),
       });
       if (res.ok) {
-        sessionStorage.setItem(SESSION_KEY, 'true');
         setAuthed(true);
       } else {
         const data = await res.json();
@@ -47,7 +48,12 @@ export default function AdminPage() {
   };
 
   if (checking) return null;
-  if (authed) return <AdminDashboard onLogout={() => { sessionStorage.removeItem(SESSION_KEY); setAuthed(false); }} />;
+  async function handleLogout() {
+    await fetch('/api/admin-logout', { method: 'POST' });
+    setAuthed(false);
+  }
+
+  if (authed) return <AdminDashboard onLogout={handleLogout} />;
 
   return (
     <div className="min-h-screen bg-[#020202] flex items-center justify-center px-6">
