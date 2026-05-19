@@ -11,8 +11,7 @@ import {
   MessageSquare, 
   ArrowUpRight,
   Zap,
-  Cpu,
-  Layers
+  Megaphone,
 } from 'lucide-react';
 
 const Services = () => {
@@ -58,6 +57,13 @@ const Services = () => {
       desc: "WhatsApp bots and support automation pipelines.",
       tags: ["Twilio", "Meta API", "Node"],
       color: "from-teal-400 to-blue-400"
+    },
+    {
+      icon: <Megaphone size={24} />,
+      title: "AI Marketing Engine",
+      desc: "Multi-channel campaign management, AI-generated ad copy, automated outreach sequences, and real-time analytics — all in one platform.",
+      tags: ["AI Copy", "Campaigns", "Analytics"],
+      color: "from-[#00D67D] to-blue-500"
     }
   ];
 

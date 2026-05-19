@@ -31,3 +31,35 @@ export type Lead = {
   generated_email?: string;
   created_at?: string;
 };
+
+export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed';
+export type CampaignChannel = 'email' | 'whatsapp' | 'linkedin';
+
+export type Campaign = {
+  id?: string;
+  name: string;
+  description: string;
+  status: CampaignStatus;
+  channels: CampaignChannel[];
+  lead_ids: string[];
+  auto_sequence: boolean;
+  start_date?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type ScheduledMessageStatus = 'pending' | 'sent' | 'failed' | 'cancelled';
+
+export type ScheduledMessage = {
+  id?: string;
+  campaign_id: string;
+  lead_id: string;
+  channel: CampaignChannel;
+  sequence_step: number;
+  scheduled_at: string;
+  sent_at?: string | null;
+  status: ScheduledMessageStatus;
+  message_body?: string | null;
+  subject?: string | null;
+  created_at?: string;
+};
