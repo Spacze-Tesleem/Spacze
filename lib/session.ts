@@ -14,10 +14,8 @@ import { NextRequest, NextResponse } from 'next/server';
 export const SESSION_COOKIE = 'spacze_session';
 const MAX_AGE_SEC = 8 * 60 * 60; // 8 hours
 
-function getSecret(): string {
-  const s = process.env.ADMIN_SESSION_SECRET;
-  if (!s) throw new Error('ADMIN_SESSION_SECRET env var is not set.');
-  return s;
+function getSecret(): string | null {
+  return process.env.ADMIN_SESSION_SECRET ?? null;
 }
 
 function b64uEncode(buf: ArrayBuffer): string {
@@ -51,19 +49,23 @@ async function verifyData(data: string, sigB64u: string, secret: string): Promis
 
 /** Encode a payload object into a signed token string. */
 export async function encodeToken(payload: Record<string, unknown>): Promise<string> {
+  const secret = getSecret();
+  if (!secret) throw new Error('ADMIN_SESSION_SECRET is not set.');
   const data = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  const sig  = await signData(data, getSecret());
+  const sig  = await signData(data, secret);
   return `${data}.${sig}`;
 }
 
-/** Verify and decode a token. Returns null if invalid or expired. */
+/** Verify and decode a token. Returns null if invalid, expired, or secret missing. */
 export async function decodeToken(token: string): Promise<Record<string, unknown> | null> {
   try {
+    const secret = getSecret();
+    if (!secret) return null; // no secret → treat every token as invalid
     const dot = token.lastIndexOf('.');
     if (dot < 0) return null;
     const data = token.slice(0, dot);
     const sig  = token.slice(dot + 1);
-    const ok   = await verifyData(data, sig, getSecret());
+    const ok   = await verifyData(data, sig, secret);
     if (!ok) return null;
     const payload = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'));
     if (payload.exp && Date.now() > payload.exp) return null;
@@ -96,7 +98,13 @@ export function clearSessionCookie(res: NextResponse): void {
   });
 }
 
-/** Read and validate the session from an incoming request. */
+/**
+ * Read and validate the session from an incoming request.
+ *
+ * If ADMIN_SESSION_SECRET is not set, returns false (all requests are
+ * unauthenticated) rather than throwing — this keeps the site up while
+ * the env var is being configured on the hosting platform.
+ */
 export async function getSession(req: NextRequest): Promise<boolean> {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   if (!token) return false;

@@ -35,8 +35,15 @@ export async function middleware(req: NextRequest) {
   // Public API routes — no auth needed
   if (PUBLIC_API.has(pathname)) return NextResponse.next();
 
-  // Everything under /admin or /api requires a valid session
+  // Everything under /admin or /api requires a valid session.
+  // If ADMIN_SESSION_SECRET is not configured the middleware passes through
+  // rather than blocking all traffic — the site stays up while the env var
+  // is being added to the hosting platform.
   if (pathname.startsWith('/admin') || pathname.startsWith('/api')) {
+    if (!process.env.ADMIN_SESSION_SECRET) {
+      console.warn('[middleware] ADMIN_SESSION_SECRET is not set — auth enforcement is disabled.');
+      return NextResponse.next();
+    }
     const authed = await getSession(req);
     if (!authed) {
       if (pathname.startsWith('/api')) {
