@@ -211,10 +211,11 @@ async function generateWithGroq(prompt: string): Promise<string> {
 }
 
 async function generateWithFallback(prompt: string): Promise<{ raw: string; provider: string }> {
+  // Order: OpenAI → Groq → Gemini (Gemini free tier exhausts quickly)
   const providers = [
     { name: 'openai', key: process.env.OPENAI_API_KEY, fn: () => generateWithOpenAI(prompt) },
-    { name: 'gemini', key: process.env.GEMINI_API_KEY, fn: () => generateWithGemini(prompt) },
     { name: 'groq',   key: process.env.GROQ_API_KEY,   fn: () => generateWithGroq(prompt) },
+    { name: 'gemini', key: process.env.GEMINI_API_KEY, fn: () => generateWithGemini(prompt) },
   ];
 
   const configured = providers.filter(p => p.key);

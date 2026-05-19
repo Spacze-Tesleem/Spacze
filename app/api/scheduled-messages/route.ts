@@ -16,8 +16,12 @@ export async function GET(req: NextRequest) {
   }
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  // Return empty array if table doesn't exist yet (Supabase error code 42P01)
+  if (error) {
+    if (error.code === '42P01') return NextResponse.json([]);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json(data ?? []);
 }
 
 // POST /api/scheduled-messages — bulk insert (used when activating a campaign)
