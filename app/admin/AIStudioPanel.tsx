@@ -253,3 +253,236 @@ function CopyTab({ leads }: { leads: Lead[] }) {
   );
 }
 
+// ─── EMAIL SEQUENCE TAB ───────────────────────────────────────────────────────
+
+function EmailTab({ leads }: { leads: Lead[] }) {
+  const [selectedId, setSelectedId] = useState('');
+  const [activeStep, setActiveStep] = useState(1);
+  const [generating, setGenerating] = useState(false);
+  const [sending, setSending]       = useState(false);
+  const [subject, setSubject]       = useState('');
+  const [body, setBody]             = useState('');
+  const [copied, setCopied]         = useState(false);
+  const [error, setError]           = useState('');
+  const [sendStatus, setSendStatus] = useState<'idle'|'success'|'error'>('idle');
+
+  const selectedLead = leads.find(l => l.id === selectedId) ?? null;
+  const stepMeta = EMAIL_STEPS.find(s => s.step === activeStep)!;
+  const inp = 'w-full admin-input border admin-border-md rounded-xl px-4 py-3 text-sm admin-text outline-none focus:border-[#00D67D]/50 transition-colors placeholder:admin-subtle';
+
+  useEffect(() => { setSubject(''); setBody(''); setError(''); setSendStatus('idle'); }, [activeStep]);
+  useEffect(() => { setSubject(''); setBody(''); setError(''); setSendStatus('idle'); }, [selectedId]);
+
+  async function generate() {
+    if (!selectedLead) return;
+    setGenerating(true); setError(''); setSendStatus('idle');
+    try {
+      const res = await fetch('/api/generate-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...selectedLead, sequenceStep: activeStep }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Generation failed');
+      setSubject(data.subject); setBody(data.body);
+      if (activeStep === 1) {
+        await fetch(`/api/leads?id=${selectedLead.id}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ generated_subject: data.subject, generated_email: data.body }),
+        });
+      }
+    } catch (e: any) { setError(e.message); }
+    finally { setGenerating(false); }
+  }
+
+  async function sendEmail() {
+    if (!selectedLead || !subject || !body) return;
+    setSending(true); setError('');
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: selectedLead.contact_email, subject, body }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      const updates: Record<string, any> = { email_sent: true, last_contacted: new Date().toISOString().split('T')[0] };
+      if (activeStep === 1) updates.outreach_status = 'Sent';
+      await fetch(`/api/leads?id=${selectedLead.id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      setSendStatus('success');
+    } catch (e: any) { setError(e.message); setSendStatus('error'); }
+    finally { setSending(false); }
+  }
+
+  function copyEmail() {
+    navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="space-y-4">
+      <motion.div {...fadeUp} className="p-5 rounded-2xl admin-surface border admin-border">
+        <label className="label-xs mb-2 block">Select Lead</label>
+        <div className="relative">
+          <select value={selectedId} onChange={e => setSelectedId(e.target.value)}
+            className={`${inp} appearance-none pr-10 cursor-pointer`}>
+            <option value="">— Choose a lead —</option>
+            {leads.map(l => <option key={l.id} value={l.id}>{l.business_name} ({l.contact_email})</option>)}
+          </select>
+          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 admin-muted pointer-events-none" />
+        </div>
+        <AnimatePresence>
+          {selectedLead && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="mt-4 p-4 rounded-xl admin-hover border admin-border grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              {[
+                { label: 'Industry', value: selectedLead.industry || '—' },
+                { label: 'Score',    value: selectedLead.website_quality_score ? `${selectedLead.website_quality_score}/10` : '—' },
+                { label: 'SEO',      value: selectedLead.seo_quality || '—' },
+                { label: 'Mobile',   value: selectedLead.mobile_responsiveness || '—' },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <div className="label-xs mb-0.5">{label}</div>
+                  <div className="admin-text font-medium">{value}</div>
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      <motion.div {...fadeUp} transition={{ delay: 0.04 }} className="p-5 rounded-2xl admin-surface border admin-border">
+        <label className="label-xs mb-3 block">Sequence Step</label>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          {EMAIL_STEPS.map(s => (
+            <button key={s.step} onClick={() => setActiveStep(s.step)}
+              className={`relative flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all duration-200 ${
+                activeStep === s.step ? 'admin-hover border-white/20' : 'admin-hover admin-border hover:admin-border-md'
+              }`}>
+              {activeStep === s.step && (
+                <motion.div layoutId="email-step-indicator" className="absolute inset-0 rounded-xl"
+                  style={{ border: `1px solid ${s.color}40`, backgroundColor: `${s.color}08` }} />
+              )}
+              <div className="relative z-10">
+                <span className={`inline-block text-[9px] font-mono font-bold px-2 py-0.5 rounded border ${s.tagBg} mb-1`}>{s.tag}</span>
+                <div className="text-xs font-bold admin-text leading-tight">{s.label}</div>
+                <div className="text-[10px] admin-muted leading-tight mt-0.5">{s.desc}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1 mt-4 px-1">
+          {EMAIL_STEPS.map((s, i) => (
+            <React.Fragment key={s.step}>
+              <div className="w-2 h-2 rounded-full flex-shrink-0 transition-all duration-200"
+                style={{ backgroundColor: activeStep >= s.step ? s.color : '#ffffff15' }} />
+              {i < EMAIL_STEPS.length - 1 && (
+                <div className="flex-1 h-px transition-all duration-300"
+                  style={{ backgroundColor: activeStep > s.step ? EMAIL_STEPS[i].color + '60' : '#ffffff10' }} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        <button onClick={generate} disabled={!selectedLead || generating}
+          className="mt-5 flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-opacity disabled:opacity-40"
+          style={{ background: `linear-gradient(135deg, ${stepMeta.color}cc, ${stepMeta.color})`, color: activeStep === 1 ? '#000' : '#fff' }}>
+          {generating ? <RefreshCw size={15} className="animate-spin" /> : <Zap size={15} />}
+          {generating ? 'Generating…' : `Generate ${stepMeta.label}`}
+        </button>
+      </motion.div>
+
+      <AnimatePresence>
+        {error && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />{error}
+          </motion.div>
+        )}
+        {(subject || body) && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="p-5 rounded-2xl admin-surface border admin-border space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="label-xs">Generated Email</label>
+              <button onClick={copyEmail}
+                className="flex items-center gap-1.5 text-xs admin-muted hover:text-white px-3 py-1.5 rounded-lg bg-white/5 admin-hover transition-colors">
+                {copied ? <CheckCircle2 size={13} className="text-[#00D67D]" /> : <Copy size={13} />}
+                {copied ? 'Copied!' : 'Copy all'}
+              </button>
+            </div>
+            <div>
+              <label className="label-xs mb-1.5 block">Subject</label>
+              <input value={subject} onChange={e => setSubject(e.target.value)}
+                className="w-full admin-input border admin-border-md rounded-xl px-4 py-2.5 text-sm admin-text outline-none focus:border-[#00D67D]/50 transition-colors" />
+            </div>
+            <div>
+              <label className="label-xs mb-1.5 block">Body</label>
+              <textarea rows={10} value={body} onChange={e => setBody(e.target.value)}
+                className="w-full admin-input border admin-border-md rounded-xl px-4 py-3 text-sm admin-text outline-none focus:border-[#00D67D]/50 transition-colors resize-none leading-relaxed" />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button onClick={sendEmail} disabled={sending || !selectedLead?.contact_email}
+                className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm text-black transition-opacity disabled:opacity-40"
+                style={{ background: 'var(--accent)' }}>
+                {sending ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
+                {sending ? 'Sending…' : selectedLead?.contact_email ? `Send to ${selectedLead.contact_email}` : 'No email saved'}
+              </button>
+              <button onClick={generate} disabled={generating}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm admin-muted hover:text-white bg-white/5 admin-hover transition-colors">
+                <RefreshCw size={14} /> Regenerate
+              </button>
+            </div>
+            <AnimatePresence>
+              {sendStatus === 'success' && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="flex items-center gap-2 text-[#00D67D] text-sm">
+                  <CheckCircle2 size={16} /> Email sent successfully.
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
+
+export default function AIStudioPanel() {
+  const [tab, setTab]     = useState<Tab>('copy');
+  const [leads, setLeads] = useState<Lead[]>([]);
+
+  useEffect(() => {
+    fetch('/api/leads').then(r => r.json()).then(d => setLeads(Array.isArray(d) ? d : []));
+  }, []);
+
+  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: 'copy',  label: 'Copy Generator', icon: <Sparkles size={14} /> },
+    { id: 'email', label: 'Email Sequence',  icon: <Mail size={14} /> },
+  ];
+
+  return (
+    <div className="space-y-4 max-w-7xl mx-auto lg:mx-0">
+      <div className="flex gap-2">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 ${
+              tab === t.id
+                ? 'bg-[#00D67D]/10 border-[#00D67D]/30 text-[#00D67D]'
+                : 'admin-hover admin-border admin-muted hover:text-slate-300'
+            }`}>
+            {t.icon}{t.label}
+          </button>
+        ))}
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
+          {tab === 'copy'  && <CopyTab  leads={leads} />}
+          {tab === 'email' && <EmailTab leads={leads} />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
