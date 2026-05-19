@@ -35,11 +35,15 @@ export async function middleware(req: NextRequest) {
   // Public API routes — no auth needed
   if (PUBLIC_API.has(pathname)) return NextResponse.next();
 
-  // Everything under /admin or /api requires a valid session.
+  // /admin (exact) is the login page — always allow it through so the login
+  // form is reachable without a session. Sub-paths and all /api routes require
+  // a valid session.
+  //
   // If ADMIN_SESSION_SECRET is not configured the middleware passes through
   // rather than blocking all traffic — the site stays up while the env var
   // is being added to the hosting platform.
-  if (pathname.startsWith('/admin') || pathname.startsWith('/api')) {
+  const isAdminLogin = pathname === '/admin';
+  if (!isAdminLogin && (pathname.startsWith('/admin') || pathname.startsWith('/api'))) {
     if (!process.env.ADMIN_SESSION_SECRET) {
       console.warn('[middleware] ADMIN_SESSION_SECRET is not set — auth enforcement is disabled.');
       return NextResponse.next();
@@ -49,7 +53,7 @@ export async function middleware(req: NextRequest) {
       if (pathname.startsWith('/api')) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      // Redirect browser requests to the login page
+      // Redirect unauthenticated sub-path requests to the login page
       const loginUrl = req.nextUrl.clone();
       loginUrl.pathname = '/admin';
       return NextResponse.redirect(loginUrl);
