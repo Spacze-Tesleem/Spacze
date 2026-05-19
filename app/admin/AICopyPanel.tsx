@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Copy, CheckCircle2, RefreshCw, AlertCircle,
   Instagram, Twitter, Search, Mail, MessageCircle, Linkedin,
-  ChevronDown, User, FileText,
+  ChevronDown,
 } from 'lucide-react';
 import { Lead } from '@/lib/supabase';
 
@@ -178,15 +178,11 @@ function renderOutput(platform: Platform, raw: string) {
 // ─────────────────────────────────────────────
 
 export default function AICopyPanel() {
-  const [mode, setMode] = useState<'standalone' | 'lead'>('standalone');
   const [platform, setPlatform] = useState<Platform>('instagram');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leadOpen, setLeadOpen] = useState(false);
 
-  // Standalone brief fields
-  const [productName, setProductName] = useState('');
-  const [targetAudience, setTargetAudience] = useState('');
   const [tone, setTone] = useState('Professional');
   const [goal, setGoal] = useState('Leads');
   const [keyMessage, setKeyMessage] = useState('');
@@ -210,21 +206,20 @@ export default function AICopyPanel() {
     setOutput('');
     setCopied(false);
 
-    const body =
-      mode === 'lead' && selectedLead
-        ? {
-            platform,
-            tone,
-            goal,
-            keyMessage,
-            businessName: selectedLead.business_name,
-            industry: selectedLead.industry,
-            aiOpportunity: selectedLead.ai_opportunity,
-            weakPoints: selectedLead.weak_points,
-            possibleImprovements: selectedLead.possible_improvements,
-            website: selectedLead.website,
-          }
-        : { platform, productName, targetAudience, tone, goal, keyMessage };
+    const body = selectedLead
+      ? {
+          platform,
+          tone,
+          goal,
+          keyMessage,
+          businessName: selectedLead.business_name,
+          industry: selectedLead.industry,
+          aiOpportunity: selectedLead.ai_opportunity,
+          weakPoints: selectedLead.weak_points,
+          possibleImprovements: selectedLead.possible_improvements,
+          website: selectedLead.website,
+        }
+      : { platform, tone, goal, keyMessage };
 
     try {
       const res = await fetch('/api/generate-copy', {
@@ -249,31 +244,10 @@ export default function AICopyPanel() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const canGenerate = mode === 'standalone'
-    ? productName.trim().length > 0
-    : selectedLead !== null;
+  const canGenerate = selectedLead !== null;
 
   return (
     <div className="space-y-5 max-w-5xl">
-
-      {/* Mode toggle */}
-      <motion.div {...fadeUp} className="flex gap-2">
-        {(['standalone', 'lead'] as const).map(m => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-              mode === m
-                ? 'bg-[#00D67D]/10 text-[#00D67D] border-[#00D67D]/20'
-                : 'admin-surface admin-border admin-muted hover:admin-text'
-            }`}
-          >
-            {m === 'standalone' ? <FileText size={14} /> : <User size={14} />}
-            {m === 'standalone' ? 'Standalone Brief' : 'Lead-Linked'}
-          </button>
-        ))}
-      </motion.div>
-
       <div className="grid lg:grid-cols-2 gap-5">
 
         {/* ── Left: Form ── */}
@@ -298,9 +272,8 @@ export default function AICopyPanel() {
             </div>
           </div>
 
-          {/* Lead selector (lead mode) */}
-          {mode === 'lead' && (
-            <div className="admin-card p-4">
+          {/* Lead selector */}
+          <div className="admin-card p-4">
               <div className="text-[10px] font-mono admin-muted uppercase tracking-wider mb-2">Select Lead</div>
               <div className="relative">
                 <button
@@ -344,42 +317,6 @@ export default function AICopyPanel() {
                 </div>
               )}
             </div>
-          )}
-
-          {/* Standalone brief fields */}
-          {mode === 'standalone' && (
-            <div className="admin-card p-4 space-y-3">
-              <div className="label-xs">Brief</div>
-              <div>
-                <label className="label-xs mb-1.5 block">Product / Service *</label>
-                <input
-                  value={productName}
-                  onChange={e => setProductName(e.target.value)}
-                  placeholder="e.g. Spacze AI Marketing Engine"
-                  className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="label-xs mb-1.5 block">Target Audience</label>
-                <input
-                  value={targetAudience}
-                  onChange={e => setTargetAudience(e.target.value)}
-                  placeholder="e.g. SME owners in Lagos"
-                  className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="label-xs mb-1.5 block">Key Message</label>
-                <textarea
-                  value={keyMessage}
-                  onChange={e => setKeyMessage(e.target.value)}
-                  placeholder="What's the one thing you want them to know or do?"
-                  rows={2}
-                  className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors resize-none"
-                />
-              </div>
-            </div>
-          )}
 
           {/* Tone & Goal (shared) */}
           <div className="admin-card p-4">
@@ -424,19 +361,17 @@ export default function AICopyPanel() {
             </div>
           </div>
 
-          {/* Lead-linked key message */}
-          {mode === 'lead' && (
-            <div className="admin-card p-4">
-              <label className="label-xs mb-1.5 block">Additional Key Message (optional)</label>
-              <textarea
-                value={keyMessage}
-                onChange={e => setKeyMessage(e.target.value)}
-                placeholder="Any extra context or angle to emphasise…"
-                rows={2}
-                className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors resize-none"
-              />
-            </div>
-          )}
+          {/* Key message */}
+          <div className="admin-card p-4">
+            <label className="label-xs mb-1.5 block">Additional Key Message (optional)</label>
+            <textarea
+              value={keyMessage}
+              onChange={e => setKeyMessage(e.target.value)}
+              placeholder="Any extra context or angle to emphasise…"
+              rows={2}
+              className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors resize-none"
+            />
+          </div>
 
           <button
             onClick={generate}
@@ -525,9 +460,7 @@ export default function AICopyPanel() {
                   >
                     <Sparkles size={28} className="text-slate-700" />
                     <p className="text-sm admin-muted text-center">
-                      {mode === 'standalone'
-                        ? 'Fill in the brief and click Generate'
-                        : 'Select a lead and click Generate'}
+                      Select a lead and click Generate
                     </p>
                   </motion.div>
                 )}
