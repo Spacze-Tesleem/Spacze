@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   LayoutDashboard, Users, Zap, LogOut,
   ChevronLeft, ChevronRight, MessageCircle, Sun, Moon, Terminal,
-  Bell, Command,
+  Bell, Command, Megaphone, Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CRMPanel from './CRMPanel';
@@ -16,24 +16,26 @@ import TerminalPanel from './TerminalPanel';
 const navItems = [
   { id: 'dashboard', label: 'Dashboard',  icon: LayoutDashboard, group: 'main' },
   { id: 'crm',       label: 'CRM',        icon: Users,           group: 'main' },
-  { id: 'outreach',  label: 'Outreach',   icon: Zap,             group: 'main' },
+  { id: 'copy',      label: 'AI Copy',    icon: Sparkles,        group: 'main' },
+  { id: 'campaigns', label: 'Campaigns',  icon: Megaphone,       group: 'main' },
   { id: 'whatsapp',  label: 'WhatsApp',   icon: MessageCircle,   group: 'main' },
   { id: 'terminal',  label: 'Settings',   icon: Terminal,        group: 'system' },
 ];
 
 const pageInfo: Record<string, { title: string; subtitle: string }> = {
-  dashboard: { title: 'Dashboard',        subtitle: 'Overview & analytics' },
-  crm:       { title: 'CRM Pipeline',     subtitle: 'Manage leads & outreach' },
-  outreach:  { title: 'Outreach Studio',  subtitle: 'AI copy & campaign sequences' },
-  whatsapp:  { title: 'WhatsApp',         subtitle: 'Bulk messaging via Baileys' },
-  terminal:  { title: 'Settings',         subtitle: 'API keys & configuration' },
+  dashboard: { title: 'Dashboard',   subtitle: 'Overview & analytics' },
+  crm:       { title: 'CRM',         subtitle: 'Manage leads & outreach' },
+  copy:      { title: 'AI Copy',     subtitle: 'Generate outreach copy per channel' },
+  campaigns: { title: 'Campaigns',   subtitle: 'Sequences & scheduled messages' },
+  whatsapp:  { title: 'WhatsApp',    subtitle: 'Bulk messaging via Baileys' },
+  terminal:  { title: 'Settings',    subtitle: 'API keys & configuration' },
 };
 
 function useKeyboardNav(setActive: (id: string) => void) {
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if (e.altKey) {
-        const map: Record<string, string> = { '1': 'dashboard', '2': 'crm', '3': 'outreach', '4': 'whatsapp', '5': 'terminal' };
+        const map: Record<string, string> = { '1': 'dashboard', '2': 'crm', '3': 'copy', '4': 'campaigns', '5': 'whatsapp', '6': 'terminal' };
         if (map[e.key]) { e.preventDefault(); setActive(map[e.key]); }
       }
     }
@@ -205,7 +207,8 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }}>
               {active === 'dashboard' && <StatsPanel onNavigate={setActive} />}
               {active === 'crm'       && <CRMPanel />}
-              {active === 'outreach'  && <OutreachPanel />}
+              {active === 'copy'      && <OutreachPanel defaultTab="copy" />}
+              {active === 'campaigns' && <OutreachPanel defaultTab="campaigns" />}
               {active === 'whatsapp'  && <WhatsAppPanel />}
               {active === 'terminal'  && <TerminalPanel />}
             </motion.div>

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useLeads, useCampaigns, useScheduledMessages } from '@/lib/hooks';
 import { motion } from 'framer-motion';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
@@ -116,25 +117,13 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) => void }) {
-  const [leads, setLeads]         = useState<Lead[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [messages, setMessages]   = useState<ScheduledMessage[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [dateRange, setDateRange] = useState<DateRange>('30d');
-  const [selCampaign, setSelCampaign] = useState('all');
+  const { leads,    loading: lLoading }  = useLeads();
+  const { campaigns, loading: cLoading } = useCampaigns();
+  const { messages,  loading: mLoading } = useScheduledMessages();
+  const loading = lLoading || cLoading || mLoading;
 
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/leads').then(r => r.json()),
-      fetch('/api/campaigns').then(r => r.json()),
-      fetch('/api/scheduled-messages').then(r => r.json()),
-    ]).then(([l, c, m]) => {
-      setLeads(Array.isArray(l) ? l : []);
-      setCampaigns(Array.isArray(c) ? c : []);
-      setMessages(Array.isArray(m) ? m : []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
+  const [dateRange, setDateRange]     = useState<DateRange>('30d');
+  const [selCampaign, setSelCampaign] = useState('all');
 
   const fMsgs = useMemo(() => messages.filter(m => {
     const inCamp = selCampaign === 'all' || m.campaign_id === selCampaign;
@@ -152,7 +141,7 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
     replied:      fLeads.filter(l => l.reply_received).length,
     meetings:     fLeads.filter(l => l.meeting_booked).length,
     activeCamps:  campaigns.filter(c => c.status === 'active').length,
-    pending:      leads.filter(l => (l as any).outreach_status === 'Pending').length,
+    pending:      leads.filter(l => l.outreach_status === 'Pending').length,
     failed:       fMsgs.filter(m => m.status === 'failed').length,
   }), [fLeads, fMsgs, campaigns, leads]);
 
@@ -425,8 +414,8 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
                     <div className="text-[10px] admin-muted truncate">{lead.contact_email || lead.industry || '—'}</div>
                   </div>
                 </div>
-                <span className={`flex-shrink-0 text-[10px] font-mono px-2 py-0.5 rounded-full ${leadStatusPill[(lead as any).outreach_status] || 'admin-muted bg-white/5'}`}>
-                  {(lead as any).outreach_status || 'Pending'}
+                <span className={`flex-shrink-0 text-[10px] font-mono px-2 py-0.5 rounded-full ${leadStatusPill[lead.outreach_status] || 'admin-muted bg-white/5'}`}>
+                  {lead.outreach_status || 'Pending'}
                 </span>
               </div>
             ))}

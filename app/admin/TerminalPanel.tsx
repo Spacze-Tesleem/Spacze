@@ -222,6 +222,12 @@ const API_GROUPS: ApiGroup[] = [
         placeholder: '••••••••',
         hint: 'Password for the /admin login page.',
       },
+      {
+        key: 'ADMIN_SESSION_SECRET',
+        label: 'Session Secret',
+        placeholder: 'long-random-string-32-chars-min',
+        hint: 'Signs the httpOnly session cookie. Use a long random string (≥32 chars). Required for server-side auth.',
+      },
     ],
   },
 ];
@@ -428,7 +434,7 @@ export default function TerminalPanel() {
         });
         return next;
       });
-      setNotice(`${group.label} settings saved. Restart the server for changes to take effect.`);
+      setNotice(`${group.label} settings applied for this session. To persist across restarts, set them as environment variables in your hosting platform (Vercel / Railway / .env.local).`);
     } catch (e: any) {
       setSaveError(e.message);
     } finally {
