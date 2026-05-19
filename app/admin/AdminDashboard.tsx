@@ -2,43 +2,41 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  LayoutDashboard, Users, Zap, LogOut,
+  LayoutDashboard, Users, LogOut,
   ChevronLeft, ChevronRight, MessageCircle, Sun, Moon, Terminal,
-  Bell, Command, Megaphone, Sparkles, Mail,
+  Bell, Command, Megaphone, Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import CRMPanel from './CRMPanel';
 import StatsPanel from './StatsPanel';
+import CRMPanel from './CRMPanel';
+import CampaignsPanel from './CampaignsPanel';
+import AIStudioPanel from './AIStudioPanel';
 import WhatsAppPanel from './WhatsAppPanel';
-import OutreachPanel from './OutreachPanel';
 import TerminalPanel from './TerminalPanel';
-import EmailGeneratorPanel from './EmailGeneratorPanel';
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard',  icon: LayoutDashboard, group: 'main' },
-  { id: 'crm',       label: 'CRM',        icon: Users,           group: 'main' },
-  { id: 'email',     label: 'Email',      icon: Mail,            group: 'main' },
-  { id: 'copy',      label: 'AI Copy',    icon: Sparkles,        group: 'main' },
-  { id: 'campaigns', label: 'Campaigns',  icon: Megaphone,       group: 'main' },
-  { id: 'whatsapp',  label: 'WhatsApp',   icon: MessageCircle,   group: 'main' },
-  { id: 'terminal',  label: 'Settings',   icon: Terminal,        group: 'system' },
+  { id: 'overview',   label: 'Overview',   icon: LayoutDashboard, group: 'main' },
+  { id: 'audience',   label: 'Audience',   icon: Users,           group: 'main' },
+  { id: 'campaigns',  label: 'Campaigns',  icon: Megaphone,       group: 'main' },
+  { id: 'ai-studio',  label: 'AI Studio',  icon: Sparkles,        group: 'main' },
+  { id: 'whatsapp',   label: 'WhatsApp',   icon: MessageCircle,   group: 'main' },
+  { id: 'settings',   label: 'Settings',   icon: Terminal,        group: 'system' },
 ];
 
 const pageInfo: Record<string, { title: string; subtitle: string }> = {
-  dashboard: { title: 'Dashboard',        subtitle: 'Overview & analytics' },
-  crm:       { title: 'CRM',              subtitle: 'Manage leads & outreach' },
-  email:     { title: 'Email Outreach',   subtitle: '4-step AI email sequence per lead' },
-  copy:      { title: 'AI Copy',          subtitle: 'Generate outreach copy per channel' },
-  campaigns: { title: 'Campaigns',        subtitle: 'Sequences & scheduled messages' },
-  whatsapp:  { title: 'WhatsApp',         subtitle: 'Bulk messaging via Baileys' },
-  terminal:  { title: 'Settings',         subtitle: 'API keys & configuration' },
+  overview:  { title: 'Overview',    subtitle: 'Analytics & performance at a glance' },
+  audience:  { title: 'Audience',    subtitle: 'Leads, segments & outreach status' },
+  campaigns: { title: 'Campaigns',   subtitle: 'Multi-channel sequences & scheduling' },
+  'ai-studio': { title: 'AI Studio', subtitle: 'Copy generator & email sequences' },
+  whatsapp:  { title: 'WhatsApp',    subtitle: 'Bulk messaging via Baileys' },
+  settings:  { title: 'Settings',    subtitle: 'API keys & configuration' },
 };
 
 function useKeyboardNav(setActive: (id: string) => void) {
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if (e.altKey) {
-        const map: Record<string, string> = { '1': 'dashboard', '2': 'crm', '3': 'email', '4': 'copy', '5': 'campaigns', '6': 'whatsapp', '7': 'terminal' };
+        const map: Record<string, string> = { '1': 'overview', '2': 'audience', '3': 'campaigns', '4': 'ai-studio', '5': 'whatsapp', '6': 'settings' };
         if (map[e.key]) { e.preventDefault(); setActive(map[e.key]); }
       }
     }
@@ -70,7 +68,7 @@ function NavButton({ id, label, Icon, active, collapsed, onClick }: {
 }
 
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
-  const [active, setActive]       = useState('dashboard');
+  const [active, setActive]       = useState('overview');
   const [collapsed, setCollapsed] = useState(false);
   const [theme, setTheme]         = useState<'dark' | 'light'>('dark');
 
@@ -208,13 +206,12 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <AnimatePresence mode="wait">
             <motion.div key={active} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }}>
-              {active === 'dashboard' && <StatsPanel onNavigate={setActive} />}
-              {active === 'crm'       && <CRMPanel />}
-              {active === 'email'     && <EmailGeneratorPanel />}
-              {active === 'copy'      && <OutreachPanel defaultTab="copy" />}
-              {active === 'campaigns' && <OutreachPanel defaultTab="campaigns" />}
+              {active === 'overview'   && <StatsPanel onNavigate={setActive} />}
+              {active === 'audience'  && <CRMPanel />}
+              {active === 'campaigns' && <CampaignsPanel />}
+              {active === 'ai-studio' && <AIStudioPanel />}
               {active === 'whatsapp'  && <WhatsAppPanel />}
-              {active === 'terminal'  && <TerminalPanel />}
+              {active === 'settings'  && <TerminalPanel />}
             </motion.div>
           </AnimatePresence>
         </main>

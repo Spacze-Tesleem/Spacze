@@ -318,9 +318,9 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
         {/* Quick actions */}
         <motion.div {...fu} transition={{ delay: 0.22 }} className="flex flex-col gap-3">
           {[
-            { tab: 'crm',      icon: Users,    accent: GREEN,  title: 'CRM Pipeline',      sub: `${stats.pending} pending` },
-            { tab: 'outreach', icon: Sparkles, accent: BLUE,   title: 'Outreach Studio',   sub: 'Copy & campaigns' },
-            { tab: 'whatsapp', icon: MessageCircle, accent: '#25D366', title: 'WhatsApp', sub: 'Bulk messaging' },
+            { tab: 'audience',  icon: Users,         accent: GREEN,     title: 'Audience',   sub: `${stats.pending} pending` },
+            { tab: 'campaigns', icon: Sparkles,      accent: BLUE,      title: 'Campaigns',  sub: 'Sequences & scheduling' },
+            { tab: 'whatsapp',  icon: MessageCircle, accent: '#25D366', title: 'WhatsApp',   sub: 'Bulk messaging' },
           ].map(({ tab, icon: Icon, accent, title, sub }) => (
             <button key={tab} onClick={() => onNavigate(tab)}
               className="admin-card p-4 text-left flex items-center justify-between gap-3 admin-hover transition-all hover:-translate-y-0.5 group">
@@ -394,7 +394,7 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
       <motion.div {...fu} transition={{ delay: 0.3 }} className="admin-card overflow-hidden">
         <div className="px-5 py-4 border-b admin-border flex items-center justify-between">
           <div className="flex items-center gap-2"><Users size={13} className="admin-muted" /><span className="label-xs">Recent Leads</span></div>
-          <button onClick={() => onNavigate('crm')} className="text-[11px] admin-muted hover:accent-text transition-colors">View all →</button>
+          <button onClick={() => onNavigate('audience')} className="text-[11px] admin-muted hover:accent-text transition-colors">View all →</button>
         </div>
         {loading ? (
           <div className="p-5 space-y-3">{[1,2,3].map(i => <div key={i} className="skeleton h-10 w-full rounded-lg" />)}</div>
