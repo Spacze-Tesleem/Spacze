@@ -168,14 +168,14 @@ export default function WhatsAppPanel() {
   const leadsWithoutNumber = /* shown as info */ 0;
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto lg:mx-0">
+    <div className="space-y-4 max-w-4xl">
 
       {/* ── Connection Card ── */}
-      <motion.div {...fadeUp} className="p-5 lg:p-6 rounded-2xl admin-surface border admin-border">
+      <motion.div {...fadeUp} className="admin-card p-5 lg:p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="font-bold mb-0.5">WhatsApp Connection</h2>
-            <p className="admin-muted text-sm">Powered by Baileys worker on Railway</p>
+            <h2 className="font-bold text-[15px] admin-text mb-0.5">WhatsApp Connection</h2>
+            <p className="admin-muted text-[12px]">Powered by Baileys worker on Railway</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`flex items-center gap-1.5 text-xs font-mono font-bold px-3 py-1.5 rounded-full border ${badge.color}`}>
@@ -242,11 +242,11 @@ export default function WhatsAppPanel() {
       </motion.div>
 
       {/* ── Bulk Send Card ── */}
-      <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="p-5 lg:p-6 rounded-2xl admin-surface border admin-border">
+      <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="admin-card p-5 lg:p-6">
         <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
           <div>
-            <h3 className="font-bold mb-0.5">Bulk WhatsApp Outreach</h3>
-            <p className="admin-muted text-sm">
+            <h3 className="font-bold text-[15px] admin-text mb-0.5">Bulk WhatsApp Outreach</h3>
+            <p className="admin-muted text-[12px]">
               AI generates a personalised message per lead. Sent with a 30–60s delay between each.
             </p>
           </div>
@@ -351,7 +351,7 @@ export default function WhatsAppPanel() {
             <button
               onClick={sendBulk}
               disabled={selectedIds.size === 0 || sending || status !== 'connected'}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#25D366] text-black font-bold text-sm hover:bg-[#20c05c] transition-colors disabled:opacity-40"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#25D366] text-black font-bold text-[13px] hover:bg-[#20c05c] transition-colors disabled:opacity-40"
             >
               {sending ? <RefreshCw size={15} className="animate-spin" /> : <Zap size={15} />}
               {sending ? 'Processing...' : `Send to ${selectedIds.size || 0} lead${selectedIds.size !== 1 ? 's' : ''}`}

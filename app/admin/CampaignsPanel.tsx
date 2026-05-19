@@ -112,11 +112,11 @@ function DetailModal({
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
-        className="w-full max-w-2xl admin-surface border admin-border rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        className="w-full max-w-2xl admin-surface border admin-border-md rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b admin-border">
           <div>
-            <h2 className="font-bold text-sm admin-text">{campaign.name}</h2>
+            <h2 className="font-bold text-[15px] admin-text">{campaign.name}</h2>
             <p className="text-[11px] admin-muted mt-0.5">{messages.length} scheduled messages</p>
           </div>
           <div className="flex items-center gap-2">
@@ -150,17 +150,17 @@ function DetailModal({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b admin-border">
-                  <th className="text-left px-5 py-3 text-[10px] font-mono admin-muted uppercase tracking-wider">Lead</th>
-                  <th className="text-left px-3 py-3 text-[10px] font-mono admin-muted uppercase tracking-wider">Channel</th>
-                  <th className="text-left px-3 py-3 text-[10px] font-mono admin-muted uppercase tracking-wider">Step</th>
-                  <th className="text-left px-3 py-3 text-[10px] font-mono admin-muted uppercase tracking-wider">Scheduled</th>
-                  <th className="text-left px-3 py-3 text-[10px] font-mono admin-muted uppercase tracking-wider">Status</th>
+                  <th className="text-left px-5 py-3 label-xs">Lead</th>
+                  <th className="text-left px-3 py-3 label-xs">Channel</th>
+                  <th className="text-left px-3 py-3 label-xs">Step</th>
+                  <th className="text-left px-3 py-3 label-xs">Scheduled</th>
+                  <th className="text-left px-3 py-3 label-xs">Status</th>
                   <th className="px-3 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y admin-divider">
+              <tbody>
                 {messages.map(msg => (
-                  <tr key={msg.id} className="admin-hover transition-colors">
+                  <tr key={msg.id} className="border-b admin-border last:border-0 admin-hover transition-colors">
                     <td className="px-5 py-3 admin-text font-medium truncate max-w-[140px]">
                       {leadMap[msg.lead_id] || msg.lead_id.slice(0, 8)}
                     </td>
@@ -241,12 +241,13 @@ export default function CampaignsPanel() {
       {/* Header */}
       <motion.div {...fadeUp} className="flex items-center justify-between">
         <div>
-          <h2 className="font-bold admin-text">Campaigns</h2>
-          <p className="text-xs admin-muted mt-0.5">Multi-channel outreach campaigns</p>
+          <h2 className="font-bold text-[15px] admin-text">Campaigns</h2>
+          <p className="text-[12px] admin-muted mt-0.5">Multi-channel outreach campaigns</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00D67D] text-black font-bold text-sm hover:bg-[#00c06e] transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-black font-bold text-[13px] transition-colors"
+          style={{ background: 'var(--accent)' }}
         >
           <Plus size={15} /> New Campaign
         </button>
@@ -273,7 +274,7 @@ export default function CampaignsPanel() {
               key={c.id}
               {...fadeUp}
               transition={{ delay: i * 0.05 }}
-              className="p-4 lg:p-5 rounded-2xl admin-surface border admin-border"
+              className="admin-card p-4 lg:p-5"
             >
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0 flex-1">
@@ -477,40 +478,43 @@ function CreateModal({
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
-        className="w-full max-w-lg admin-surface border admin-border rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        className="w-full max-w-lg admin-surface border admin-border-md rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b admin-border">
-          <h2 className="font-bold text-sm admin-text">New Campaign</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg admin-muted admin-hover transition-colors"><X size={15} /></button>
+          <div>
+            <h2 className="font-bold text-[15px] admin-text">New Campaign</h2>
+            <p className="text-[11px] admin-muted mt-0.5">Configure channels, leads & schedule</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-xl admin-muted admin-hover border admin-border transition-colors"><X size={14} /></button>
         </div>
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {/* Name */}
           <div>
-            <label className="text-xs admin-muted mb-1 block">Campaign Name *</label>
+            <label className="label-xs mb-1.5 block">Campaign Name *</label>
             <input
               value={name} onChange={e => setName(e.target.value)}
               placeholder="e.g. Lagos Restaurants Q3"
-              className="w-full admin-input border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#00D67D]/40 transition-colors"
+              className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="text-xs admin-muted mb-1 block">Description</label>
+            <label className="label-xs mb-1.5 block">Description</label>
             <textarea
               value={description} onChange={e => setDescription(e.target.value)}
               placeholder="Optional notes about this campaign…"
               rows={2}
-              className="w-full admin-input border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#00D67D]/40 transition-colors resize-none"
+              className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors resize-none"
             />
           </div>
 
           {/* Channels */}
           <div>
-            <label className="text-xs admin-muted mb-2 block">Channels *</label>
+            <label className="label-xs mb-2 block">Channels *</label>
             <div className="flex gap-2 flex-wrap">
               {(['email', 'whatsapp', 'linkedin'] as CampaignChannel[]).map(ch => (
                 <button
@@ -531,7 +535,7 @@ function CreateModal({
           {/* Lead selection */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs admin-muted">Leads *</label>
+              <label className="label-xs">Leads *</label>
               <button onClick={toggleAllLeads} className="text-[10px] text-[#00D67D] hover:underline">
                 {selectedLeadIds.length === leads.length ? 'Deselect all' : 'Select all'}
               </button>
@@ -561,7 +565,7 @@ function CreateModal({
 
           {/* Scheduling */}
           <div>
-            <label className="text-xs admin-muted mb-2 block">Scheduling</label>
+            <label className="label-xs mb-2 block">Scheduling</label>
             <div className="flex gap-2 mb-3">
               {[true, false].map(v => (
                 <button
@@ -579,12 +583,12 @@ function CreateModal({
             </div>
 
             <div>
-              <label className="text-xs admin-muted mb-1 block">Start Date & Time</label>
+              <label className="label-xs mb-1.5 block">Start Date & Time</label>
               <input
                 type="datetime-local"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                className="w-full admin-input border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#00D67D]/40 transition-colors"
+                className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
               />
             </div>
 
@@ -631,14 +635,15 @@ function CreateModal({
           <button
             onClick={() => save(false)}
             disabled={saving}
-            className="flex-1 py-2.5 rounded-xl border admin-border text-sm admin-muted admin-hover transition-colors disabled:opacity-40"
+            className="flex-1 py-2.5 rounded-xl border admin-border text-[13px] admin-muted admin-hover transition-colors disabled:opacity-40"
           >
             Save as Draft
           </button>
           <button
             onClick={() => save(true)}
             disabled={saving}
-            className="flex-1 py-2.5 rounded-xl bg-[#00D67D] text-black font-bold text-sm hover:bg-[#00c06e] transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-xl text-black font-bold text-[13px] transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+            style={{ background: 'var(--accent)' }}
           >
             {saving ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
             {saving ? 'Saving…' : 'Activate'}

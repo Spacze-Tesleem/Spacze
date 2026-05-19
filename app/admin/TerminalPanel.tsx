@@ -179,8 +179,8 @@ function SecretField({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <label className="text-xs admin-muted">{field.label}</label>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="label-xs">{field.label}</label>
         {field.link && (
           <a
             href={field.link}
@@ -193,13 +193,13 @@ function SecretField({
         )}
       </div>
       <div className="relative">
-        <Key size={13} className="absolute left-3 top-1/2 -translate-y-1/2 admin-muted" />
+        <Key size={12} className="absolute left-3 top-1/2 -translate-y-1/2 admin-subtle pointer-events-none" />
         <input
           type={show ? 'text' : 'password'}
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={field.placeholder}
-          className="w-full admin-input border rounded-xl pl-8 pr-16 py-2.5 text-sm font-mono outline-none focus:border-[#00D67D]/40 transition-colors"
+          className="w-full admin-input border rounded-xl pl-8 pr-16 py-2.5 text-[12px] font-mono outline-none transition-colors"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
           {saved && <CheckCircle2 size={13} className="text-[#00D67D]" />}
@@ -239,24 +239,29 @@ function GroupCard({
   const [open, setOpen] = useState(true);
 
   return (
-    <motion.div {...fadeUp} transition={{ delay }} className="rounded-2xl admin-surface border admin-border overflow-hidden">
+    <motion.div {...fadeUp} transition={{ delay }} className="admin-card overflow-hidden">
       {/* Header */}
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-5 py-4 admin-hover transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className={group.color}>{group.icon}</span>
-          <span className="font-bold text-sm admin-text">{group.label}</span>
-          <span className="text-[10px] admin-muted hidden sm:inline">{group.description}</span>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: 'var(--admin-surface-3)' }}>
+            <span className={group.color}>{group.icon}</span>
+          </div>
+          <div className="text-left">
+            <div className="font-semibold text-[13px] admin-text">{group.label}</div>
+            <div className="text-[10px] admin-muted hidden sm:block">{group.description}</div>
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {group.fields.every(f => savedKeys.has(f.key)) && (
-            <span className="text-[10px] font-mono text-[#00D67D] border border-[#00D67D]/20 bg-[#00D67D]/5 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-mono accent-text border accent-border accent-bg px-2 py-0.5 rounded-full">
               configured
             </span>
           )}
-          {open ? <ChevronDown size={14} className="admin-muted" /> : <ChevronRight size={14} className="admin-muted" />}
+          {open ? <ChevronDown size={13} className="admin-muted" /> : <ChevronRight size={13} className="admin-muted" />}
         </div>
       </button>
 
@@ -282,7 +287,8 @@ function GroupCard({
               <button
                 onClick={() => onSave(group.id)}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00D67D] text-black font-bold text-xs hover:bg-[#00c06e] transition-colors disabled:opacity-40"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-black font-bold text-[12px] transition-colors disabled:opacity-40"
+                style={{ background: 'var(--accent)' }}
               >
                 {saving ? <RefreshCw size={12} className="animate-spin" /> : <Save size={12} />}
                 {saving ? 'Saving…' : 'Save'}
@@ -372,13 +378,14 @@ export default function TerminalPanel() {
       {/* Header */}
       <motion.div {...fadeUp}>
         <div className="flex items-center gap-3 mb-1">
-          <Terminal size={18} className="text-[#00D67D]" />
-          <h2 className="font-bold admin-text">Terminal</h2>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent-dim)' }}>
+            <Terminal size={15} style={{ color: 'var(--accent)' }} />
+          </div>
+          <div>
+            <h2 className="font-bold text-[15px] admin-text">Settings</h2>
+            <p className="text-[11px] admin-muted">API keys & integrations</p>
+          </div>
         </div>
-        <p className="text-xs admin-muted">
-          Configure API keys and integrations. Values are stored server-side in environment variables.
-          Changes require a server restart to take effect.
-        </p>
       </motion.div>
 
       {/* Notice / error banners */}
@@ -405,7 +412,7 @@ export default function TerminalPanel() {
 
       {/* Security notice */}
       <motion.div {...fadeUp} transition={{ delay: 0.05 }}
-        className="flex items-start gap-3 p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/15 text-yellow-400 text-xs"
+        className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/15 text-amber-400 text-[12px]"
       >
         <Shield size={14} className="flex-shrink-0 mt-0.5" />
         <span>

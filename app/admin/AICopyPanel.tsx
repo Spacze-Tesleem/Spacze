@@ -280,8 +280,8 @@ export default function AICopyPanel() {
         <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="space-y-4">
 
           {/* Platform picker */}
-          <div className="p-4 rounded-2xl admin-surface border admin-border">
-            <div className="text-[10px] font-mono admin-muted uppercase tracking-wider mb-3">Platform</div>
+          <div className="admin-card p-4">
+            <div className="label-xs mb-3">Platform</div>
             <div className="grid grid-cols-3 gap-2">
               {PLATFORMS.map(p => (
                 <button
@@ -300,7 +300,7 @@ export default function AICopyPanel() {
 
           {/* Lead selector (lead mode) */}
           {mode === 'lead' && (
-            <div className="p-4 rounded-2xl admin-surface border admin-border">
+            <div className="admin-card p-4">
               <div className="text-[10px] font-mono admin-muted uppercase tracking-wider mb-2">Select Lead</div>
               <div className="relative">
                 <button
@@ -348,42 +348,42 @@ export default function AICopyPanel() {
 
           {/* Standalone brief fields */}
           {mode === 'standalone' && (
-            <div className="p-4 rounded-2xl admin-surface border admin-border space-y-3">
-              <div className="text-[10px] font-mono admin-muted uppercase tracking-wider">Brief</div>
+            <div className="admin-card p-4 space-y-3">
+              <div className="label-xs">Brief</div>
               <div>
-                <label className="text-xs admin-muted mb-1 block">Product / Service *</label>
+                <label className="label-xs mb-1.5 block">Product / Service *</label>
                 <input
                   value={productName}
                   onChange={e => setProductName(e.target.value)}
                   placeholder="e.g. Spacze AI Marketing Engine"
-                  className="w-full admin-input border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#00D67D]/40 transition-colors"
+                  className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
                 />
               </div>
               <div>
-                <label className="text-xs admin-muted mb-1 block">Target Audience</label>
+                <label className="label-xs mb-1.5 block">Target Audience</label>
                 <input
                   value={targetAudience}
                   onChange={e => setTargetAudience(e.target.value)}
                   placeholder="e.g. SME owners in Lagos"
-                  className="w-full admin-input border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#00D67D]/40 transition-colors"
+                  className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors"
                 />
               </div>
               <div>
-                <label className="text-xs admin-muted mb-1 block">Key Message</label>
+                <label className="label-xs mb-1.5 block">Key Message</label>
                 <textarea
                   value={keyMessage}
                   onChange={e => setKeyMessage(e.target.value)}
                   placeholder="What's the one thing you want them to know or do?"
                   rows={2}
-                  className="w-full admin-input border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#00D67D]/40 transition-colors resize-none"
+                  className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors resize-none"
                 />
               </div>
             </div>
           )}
 
           {/* Tone & Goal (shared) */}
-          <div className="p-4 rounded-2xl admin-surface border admin-border">
-            <div className="text-[10px] font-mono admin-muted uppercase tracking-wider mb-3">Tone & Goal</div>
+          <div className="admin-card p-4">
+            <div className="label-xs mb-3">Tone & Goal</div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs admin-muted mb-1 block">Tone</label>
@@ -426,14 +426,14 @@ export default function AICopyPanel() {
 
           {/* Lead-linked key message */}
           {mode === 'lead' && (
-            <div className="p-4 rounded-2xl admin-surface border admin-border">
-              <label className="text-xs admin-muted mb-1 block">Additional Key Message (optional)</label>
+            <div className="admin-card p-4">
+              <label className="label-xs mb-1.5 block">Additional Key Message (optional)</label>
               <textarea
                 value={keyMessage}
                 onChange={e => setKeyMessage(e.target.value)}
                 placeholder="Any extra context or angle to emphasise…"
                 rows={2}
-                className="w-full admin-input border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#00D67D]/40 transition-colors resize-none"
+                className="w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors resize-none"
               />
             </div>
           )}
@@ -441,7 +441,8 @@ export default function AICopyPanel() {
           <button
             onClick={generate}
             disabled={generating || !canGenerate}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00D67D] text-black font-bold text-sm hover:bg-[#00c06e] transition-colors disabled:opacity-40"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-black font-bold text-[13px] transition-colors disabled:opacity-40"
+            style={{ background: 'var(--accent)' }}
           >
             {generating ? <RefreshCw size={15} className="animate-spin" /> : <Sparkles size={15} />}
             {generating ? 'Generating…' : `Generate ${activePlatform.label} Copy`}
@@ -450,7 +451,7 @@ export default function AICopyPanel() {
 
         {/* ── Right: Output ── */}
         <motion.div {...fadeUp} transition={{ delay: 0.1 }}>
-          <div className="p-5 rounded-2xl admin-surface border admin-border min-h-[400px] flex flex-col">
+          <div className="admin-card p-5 min-h-[400px] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <span className={activePlatform.color}>{activePlatform.icon}</span>
