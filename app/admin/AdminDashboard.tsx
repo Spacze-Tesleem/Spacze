@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, Sparkles, Megaphone, BarChart2, LogOut, ChevronLeft, ChevronRight, MessageCircle, Sun, Moon, Terminal } from 'lucide-react';
+import { LayoutDashboard, Users, Sparkles, Megaphone, LogOut, ChevronLeft, ChevronRight, MessageCircle, Sun, Moon, Terminal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CRMPanel from './CRMPanel';
 import StatsPanel from './StatsPanel';
 import WhatsAppPanel from './WhatsAppPanel';
 import AICopyPanel from './AICopyPanel';
 import CampaignsPanel from './CampaignsPanel';
-import AnalyticsPanel from './AnalyticsPanel';
 import TerminalPanel from './TerminalPanel';
 
 const navItems = [
@@ -16,9 +15,8 @@ const navItems = [
   { id: 'crm',       label: 'CRM',       icon: Users },
   { id: 'copy',      label: 'AI Copy',   icon: Sparkles },
   { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
-  { id: 'analytics', label: 'Analytics', icon: BarChart2 },
   { id: 'whatsapp',  label: 'WhatsApp',  icon: MessageCircle },
-  { id: 'terminal',  label: 'Terminal',  icon: Terminal },
+  { id: 'terminal',  label: 'Settings',  icon: Terminal },
 ];
 
 const pageTitle: Record<string, string> = {
@@ -26,9 +24,8 @@ const pageTitle: Record<string, string> = {
   crm: 'CRM Pipeline',
   copy: 'AI Copy Generator',
   campaigns: 'Campaigns',
-  analytics: 'Analytics',
   whatsapp: 'WhatsApp Outreach',
-  terminal: 'Terminal',
+  terminal: 'Settings',
 };
 
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
@@ -147,7 +144,6 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {active === 'crm'       && <CRMPanel />}
               {active === 'copy'      && <AICopyPanel />}
               {active === 'campaigns' && <CampaignsPanel />}
-              {active === 'analytics' && <AnalyticsPanel />}
               {active === 'whatsapp'  && <WhatsAppPanel />}
               {active === 'terminal'  && <TerminalPanel />}
             </motion.div>
