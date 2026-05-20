@@ -59,70 +59,101 @@ const inputBaseClasses = "w-full admin-input border admin-border-md rounded-xl p
 // ─── COPY OUTPUT RENDERER ─────────────────────────────────────────────────────
 
 function renderOutput(platform: Platform, raw: string) {
+  if (!raw || typeof raw !== 'string') return <p className="text-sm admin-text">{String(raw)}</p>;
+
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
 
-  const OutputSection = ({ title, content, meta }: { title: string, content: string, meta?: string }) => (
-    <div className="mb-4 last:mb-0">
-      <div className="flex items-center justify-between mb-2">
-        <div className="label-xs">{title}</div>
-        {meta && <div className="text-[10px] admin-muted">{meta}</div>}
-      </div>
-      <p className="text-sm admin-text leading-relaxed whitespace-pre-wrap admin-surface-2 p-4 rounded-xl border admin-border">
-        {content}
-      </p>
-    </div>
-  );
-
   if (platform === 'instagram') {
-    const captionIdx = lines.findIndex(l => l.startsWith('CAPTION:'));
-    const hashtagIdx = lines.findIndex(l => l.startsWith('HASHTAGS:'));
-    const caption = captionIdx >= 0 ? lines.slice(captionIdx + 1, hashtagIdx >= 0 ? hashtagIdx : undefined).join('\n') : raw;
-    const hashtags = hashtagIdx >= 0 ? lines.slice(hashtagIdx + 1).join(' ') : '';
-    
+    const captionIdx = lines.findIndex(l => /^caption\s*:?/i.test(l));
+    const hashtagIdx = lines.findIndex(l => /^hashtags?\s*:?/i.test(l));
+    const caption = captionIdx >= 0
+      ? lines.slice(captionIdx + 1, hashtagIdx >= 0 ? hashtagIdx : undefined).join('\n')
+      : raw.replace(/^caption\s*:?/i, '');
+    const hashtags = hashtagIdx >= 0
+      ? lines.slice(hashtagIdx + 1).join(' ')
+      : lines.find(l => l.includes('#')) || '';
+
     return (
-      <>
-        <OutputSection title="Caption" content={caption} />
-        {hashtags && <OutputSection title="Hashtags" content={hashtags} />}
-      </>
+      <div className="space-y-4">
+        <div>
+          <div className="text-[10px] font-mono admin-muted uppercase tracking-wider mb-2">Caption</div>
+          <div className="p-4 rounded-xl admin-surface-3 border admin-border">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap admin-text">{caption || raw}</p>
+          </div>
+        </div>
+        {hashtags && (
+          <div>
+            <div className="text-[10px] font-mono admin-muted uppercase tracking-wider mb-2">Hashtags</div>
+            <div className="p-3 rounded-xl admin-surface-3 border admin-border">
+              <p className="text-xs text-pink-400 leading-relaxed font-mono">{hashtags}</p>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 
   if (platform === 'twitter') {
-    const tweetIdx = lines.findIndex(l => l.startsWith('TWEET:'));
-    const replyIdx = lines.findIndex(l => l.startsWith('REPLY'));
-    const tweet = tweetIdx >= 0 ? lines.slice(tweetIdx + 1, replyIdx >= 0 ? replyIdx : undefined).join('\n') : raw;
+    const tweetIdx = lines.findIndex(l => /^tweet\s*:?/i.test(l));
+    const replyIdx = lines.findIndex(l => /^reply\s*:?/i.test(l));
+    const tweet = tweetIdx >= 0
+      ? lines.slice(tweetIdx + 1, replyIdx >= 0 ? replyIdx : undefined).join('\n')
+      : raw.replace(/^tweet\s*:?/i, '');
     const reply = replyIdx >= 0 ? lines.slice(replyIdx + 1).join('\n') : '';
-    
+
     return (
-      <>
-        <OutputSection title="Tweet" content={tweet} meta={`${tweet.length} / 280 chars`} />
-        {reply && <OutputSection title="Reply Thread" content={reply} />}
-      </>
+      <div className="space-y-4">
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] font-mono admin-muted uppercase tracking-wider">Tweet</div>
+            <div className={`text-[10px] font-mono ${tweet.length > 280 ? 'text-red-400' : 'admin-muted'}`}>
+              {tweet.length} / 280 chars
+            </div>
+          </div>
+          <div className="p-4 rounded-xl admin-surface-3 border admin-border">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap admin-text">{tweet || raw}</p>
+          </div>
+        </div>
+        {reply && (
+          <div>
+            <div className="text-[10px] font-mono admin-muted uppercase tracking-wider mb-2">Reply Thread</div>
+            <div className="p-4 rounded-xl admin-surface-3 border admin-border opacity-80">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap admin-text">{reply}</p>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 
   if (platform === 'google_ads') {
     const fields: { label: string; value: string; max: number }[] = [];
-    ['HEADLINE_1','HEADLINE_2','HEADLINE_3'].forEach(key => {
-      const line = lines.find(l => l.startsWith(key + ':'));
-      if (line) fields.push({ label: key.replace(/_/g,' '), value: line.replace(key+':','').trim(), max: 30 });
+    [
+      { key: /headline\s*1\s*:?/i,     label: 'Headline 1',     max: 30 },
+      { key: /headline\s*2\s*:?/i,     label: 'Headline 2',     max: 30 },
+      { key: /headline\s*3\s*:?/i,     label: 'Headline 3',     max: 30 },
+      { key: /description\s*1\s*:?/i,  label: 'Description 1',  max: 90 },
+      { key: /description\s*2\s*:?/i,  label: 'Description 2',  max: 90 },
+    ].forEach(({ key, label, max }) => {
+      const line = lines.find(l => key.test(l));
+      if (line) fields.push({ label, value: line.replace(key, '').trim(), max });
     });
-    ['DESCRIPTION_1','DESCRIPTION_2'].forEach(key => {
-      const line = lines.find(l => l.startsWith(key + ':'));
-      if (line) fields.push({ label: key.replace(/_/g,' '), value: line.replace(key+':','').trim(), max: 90 });
-    });
-    
+
+    if (fields.length === 0) {
+      return <p className="text-sm leading-relaxed admin-text">{raw}</p>;
+    }
+
     return (
-      <div className="grid gap-3">
+      <div className="space-y-3">
         {fields.map(f => (
-          <div key={f.label} className="admin-surface-2 p-3 rounded-xl border admin-border">
-            <div className="flex items-center justify-between mb-1">
-              <div className="label-xs">{f.label}</div>
+          <div key={f.label} className="p-3 rounded-xl admin-surface-3 border admin-border flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-mono admin-muted uppercase tracking-wider">{f.label}</div>
               <span className={`text-[10px] font-mono ${f.value.length > f.max ? 'text-red-400' : 'admin-muted'}`}>
                 {f.value.length}/{f.max}
               </span>
             </div>
-            <p className="text-sm admin-text">{f.value}</p>
+            <p className="text-sm admin-text font-medium">{f.value}</p>
           </div>
         ))}
       </div>
@@ -130,8 +161,8 @@ function renderOutput(platform: Platform, raw: string) {
   }
 
   return (
-    <div className="admin-surface-2 p-4 rounded-xl border admin-border space-y-2">
-      {lines.map((line, i) => <p key={i} className="text-sm admin-text leading-relaxed">{line}</p>)}
+    <div className="p-4 rounded-xl admin-surface-3 border admin-border space-y-2">
+      {lines.map((line, i) => <p key={i} className="text-sm leading-relaxed admin-text">{line}</p>)}
     </div>
   );
 }
@@ -163,8 +194,9 @@ function CopyTab({ leads }: { leads: Lead[] }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
       setOutput(data.copy || data.content || JSON.stringify(data));
-    } catch (e: any) { setError(e.message); }
-    finally { setGenerating(false); }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Generation failed');
+    } finally { setGenerating(false); }
   }
 
   function copyOutput() {
@@ -174,145 +206,161 @@ function CopyTab({ leads }: { leads: Lead[] }) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Configuration Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Left Column: Core Setup */}
-        <div className="lg:col-span-5 space-y-6">
-          <Card>
-            <Label>Select Target Lead</Label>
-            <div className="relative group">
-              <select 
-                value={selectedId} 
-                onChange={e => setSelectedId(e.target.value)}
-                className={`${inputBaseClasses} appearance-none pr-10 cursor-pointer`}
-              >
-                <option value="">— Select a business profile —</option>
-                {leads.map(l => <option key={l.id} value={l.id}>{l.business_name} ({l.contact_email})</option>)}
-              </select>
-              <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 group-hover:text-zinc-300 pointer-events-none transition-colors" />
-            </div>
-          </Card>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
 
-          <Card>
-            <Label>Destination Platform</Label>
-            <div className="grid grid-cols-3 gap-3">
-              {PLATFORMS.map(p => {
-                const isActive = platform === p.id;
-                return (
-                  <motion.button 
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    key={p.id} 
-                    onClick={() => setPlatform(p.id)}
-                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all duration-300 ${
-                      isActive 
-                        ? `${p.bg} ${p.activeBorder}` 
-                        : 'admin-hover admin-border admin-muted'
-                    }`}
-                  >
-                    <div className={`${isActive ? p.color : 'admin-muted'}`}>{p.icon}</div>
-                    <span className={`text-[11px] font-medium tracking-wide ${isActive ? p.color : 'admin-muted'}`}>
-                      {p.label}
-                    </span>
-                  </motion.button>
-                )
-              })}
-            </div>
-          </Card>
-        </div>
+      {/* ── Left: Configuration ── */}
+      <div className="lg:col-span-5 space-y-5">
 
-        {/* Right Column: Creative Direction */}
-        <div className="lg:col-span-7">
-          <Card className="h-full flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <Label>Brand Tone</Label>
-                <div className="flex flex-wrap gap-2">
-                  {TONES.map(t => (
-                    <button key={t} onClick={() => setTone(t)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
-                        tone === t 
-                          ? 'bg-[#00D67D]/10 border-[#00D67D]/30 text-[#00D67D]' 
-                          : 'admin-hover admin-border admin-muted'
-                      }`}>{t}</button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <Label>Campaign Goal</Label>
-                <div className="flex flex-wrap gap-2">
-                  {GOALS.map(g => (
-                    <button key={g} onClick={() => setGoal(g)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
-                        goal === g 
-                          ? 'bg-[#00D67D]/10 border-[#00D67D]/30 text-[#00D67D]' 
-                          : 'admin-hover admin-border admin-muted'
-                      }`}>{g}</button>
-                  ))}
-                </div>
+        {/* Lead selector */}
+        <motion.div {...fadeUp} className="admin-card p-5 space-y-3">
+          <label className="label-xs block">Target Prospect</label>
+          <div className="relative group">
+            <select value={selectedId} onChange={e => setSelectedId(e.target.value)}
+              className="admin-input w-full appearance-none pr-10 py-3 text-sm cursor-pointer">
+              <option value="">— Select a prospect profile —</option>
+              {leads.map(l => (
+                <option key={l.id} value={l.id}>
+                  {l.business_name} ({l.contact_email || 'No email'})
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 admin-muted group-hover:admin-text transition-colors pointer-events-none" />
+          </div>
+        </motion.div>
+
+        {/* Platform picker */}
+        <motion.div {...fadeUp} transition={{ delay: 0.04 }} className="admin-card p-5 space-y-4">
+          <label className="label-xs block">Destination Platform</label>
+          <div className="grid grid-cols-3 gap-3">
+            {PLATFORMS.map(p => {
+              const isActive = platform === p.id;
+              return (
+                <button key={p.id} onClick={() => setPlatform(p.id)}
+                  className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all duration-200 ${
+                    isActive
+                      ? 'bg-white/10 border-white/20 shadow-lg'
+                      : 'admin-surface-2 border-transparent admin-hover admin-muted hover:admin-text'
+                  }`}>
+                  <div className={isActive ? p.color : 'opacity-60'}>{p.icon}</div>
+                  <span className={`text-[10px] font-semibold tracking-wide ${isActive ? 'admin-text' : ''}`}>{p.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* Tone, goal, key message, generate */}
+        <motion.div {...fadeUp} transition={{ delay: 0.06 }} className="admin-card p-5 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="label-xs mb-3 block">Voice Tone</label>
+              <div className="flex flex-wrap gap-2">
+                {TONES.map(t => (
+                  <button key={t} onClick={() => setTone(t)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium ring-1 ring-inset transition-all ${
+                      tone === t
+                        ? 'bg-[#00D67D]/10 text-[#00D67D] ring-[#00D67D]/30'
+                        : 'admin-surface-2 admin-muted ring-white/5 hover:ring-white/10 hover:admin-text'
+                    }`}>{t}</button>
+                ))}
               </div>
             </div>
-
-            <div className="flex-grow mb-6">
-              <Label>Key Message / Offer <span className="normal-case font-normal admin-muted ml-1">(Optional)</span></Label>
-              <textarea 
-                value={keyMessage} 
-                onChange={e => setKeyMessage(e.target.value)}
-                placeholder="e.g. We just launched a new feature that helps restaurants get 3× more bookings..."
-                className={`${inputBaseClasses} resize-none h-24`} 
-              />
+            <div>
+              <label className="label-xs mb-3 block">Campaign Goal</label>
+              <div className="flex flex-wrap gap-2">
+                {GOALS.map(g => (
+                  <button key={g} onClick={() => setGoal(g)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium ring-1 ring-inset transition-all ${
+                      goal === g
+                        ? 'bg-[#00D67D]/10 text-[#00D67D] ring-[#00D67D]/30'
+                        : 'admin-surface-2 admin-muted ring-white/5 hover:ring-white/10 hover:admin-text'
+                    }`}>{g}</button>
+                ))}
+              </div>
             </div>
+          </div>
 
-            <motion.button 
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              onClick={generate} 
-              disabled={!selectedLead || generating}
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-[#00D67D] to-[#00b868] hover:to-[#00a35c] transition-all disabled:opacity-50 shadow-lg shadow-[#00D67D]/20 disabled:shadow-none"
-            >
-              {generating ? <RefreshCw size={18} className="animate-spin" /> : <Sparkles size={18} />}
-              {generating ? 'Crafting the perfect copy…' : 'Generate Copy'}
-            </motion.button>
-          </Card>
-        </div>
+          <div>
+            <label className="label-xs mb-2 block">
+              Key Message{' '}
+              <span className="normal-case font-normal admin-muted">— Optional</span>
+            </label>
+            <textarea value={keyMessage} onChange={e => setKeyMessage(e.target.value)}
+              placeholder="e.g. We just launched a feature that helps you get 3× more bookings..."
+              className="admin-input w-full resize-none h-20 py-3 text-sm" />
+          </div>
+
+          <button onClick={generate} disabled={!selectedLead || generating}
+            className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl font-bold text-sm text-black transition-all disabled:opacity-50 hover:opacity-90 shadow-[0_0_20px_rgba(0,214,125,0.1)]"
+            style={{ background: 'var(--accent)' }}>
+            {generating
+              ? <RefreshCw size={16} className="animate-spin" />
+              : <Sparkles size={16} />}
+            {generating ? 'Drafting content…' : 'Generate Copy'}
+          </button>
+        </motion.div>
       </div>
 
-      {/* Output Area */}
-      <AnimatePresence>
-        {error && (
-          <motion.div {...fadeUp} className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-            <AlertCircle size={18} className="flex-shrink-0" /> {error}
-          </motion.div>
-        )}
+      {/* ── Right: Output ── */}
+      <div className="lg:col-span-7">
+        <AnimatePresence mode="wait">
+          {!output && !error && !generating && (
+            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="admin-card h-full min-h-[300px] flex flex-col items-center justify-center text-center p-8 border-dashed">
+              <div className="w-12 h-12 rounded-full admin-surface-2 flex items-center justify-center mb-4">
+                <Sparkles size={20} className="admin-subtle" />
+              </div>
+              <h3 className="text-sm font-semibold admin-text mb-1">Ready to generate</h3>
+              <p className="text-xs admin-muted max-w-xs leading-relaxed">
+                Select a prospect and click generate to create highly personalised, platform-specific copy.
+              </p>
+            </motion.div>
+          )}
 
-        {output && (
-          <motion.div {...fadeUp} className="rounded-2xl admin-surface border admin-border overflow-hidden shadow-2xl">
-            <div className="flex items-center justify-between px-6 py-4 border-b admin-border admin-surface-2">
-              <div className="flex items-center gap-2 admin-text">
-                <LayoutTemplate size={16} className="text-[#00D67D]" />
-                <span className="text-sm font-semibold">Generated Output</span>
+          {generating && (
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="admin-card h-full min-h-[300px] flex flex-col items-center justify-center p-8">
+              <RefreshCw size={24} className="animate-spin text-[#00D67D] mb-4" />
+              <p className="text-sm admin-muted animate-pulse">Analysing profile & writing copy…</p>
+            </motion.div>
+          )}
+
+          {error && !generating && (
+            <motion.div key="error" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+              className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />{error}
+            </motion.div>
+          )}
+
+          {output && !generating && (
+            <motion.div key="output" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="admin-card overflow-hidden shadow-2xl">
+              <div className="flex items-center justify-between px-6 py-4 border-b admin-border admin-surface-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#00D67D] animate-pulse" />
+                  <span className="text-sm font-semibold admin-text">Generated Result</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={generate} disabled={generating}
+                    className="flex items-center gap-1.5 text-xs font-medium admin-muted hover:admin-text px-3 py-1.5 rounded-lg admin-hover transition-colors">
+                    <RefreshCw size={13} /> Regenerate
+                  </button>
+                  <button onClick={copyOutput}
+                    className="flex items-center gap-1.5 text-xs font-medium admin-surface-2 hover:bg-white/10 admin-text px-3 py-1.5 rounded-lg transition-colors border admin-border">
+                    {copied
+                      ? <CheckCircle2 size={13} className="text-[#00D67D]" />
+                      : <Copy size={13} />}
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={generate} disabled={generating}
-                  className="flex items-center gap-2 text-xs font-medium admin-muted hover:admin-text px-3 py-1.5 rounded-lg admin-hover border admin-border transition-colors">
-                  <RefreshCw size={14} className={generating ? "animate-spin" : ""} /> 
-                  <span className="hidden sm:inline">Regenerate</span>
-                </button>
-                <button onClick={copyOutput}
-                  className="flex items-center gap-2 text-xs font-medium admin-muted hover:admin-text px-3 py-1.5 rounded-lg admin-hover border admin-border transition-colors">
-                  {copied ? <CheckCircle2 size={14} className="text-[#00D67D]" /> : <Copy size={14} />}
-                  <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy to Clipboard'}</span>
-                </button>
+              <div className="p-6">
+                {renderOutput(platform, output)}
               </div>
-            </div>
-            <div className="p-6 admin-surface-2">
-              {renderOutput(platform, output)}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
