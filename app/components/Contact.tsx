@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { submitContactForm } from './contact-submit';
 import { 
   Mail, 
   MessageSquare, 
@@ -19,8 +20,10 @@ import {
 
 const ContactPage = () => {
   const [copied, setCopied] = useState(false);
-  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [formError, setFormError] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ name: '', email: '', budget: '', message: '' });
 
   // Email Copy Logic
   const handleCopyEmail = () => {
@@ -29,12 +32,23 @@ const ContactPage = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Simulated Form Logic
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormStatus('submitting');
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setFormStatus('success');
+    setFormError('');
+
+    const result = await submitContactForm(formData);
+
+    if (result.ok) {
+      setFormStatus('success');
+    } else {
+      setFormError(result.message);
+      setFormStatus('error');
+    }
   };
 
   return (
@@ -193,7 +207,10 @@ const ContactPage = () => {
                                 Thank you for reaching out. We will analyze your request and reply within 24 hours.
                             </p>
                             <button 
-                                onClick={() => setFormStatus('idle')}
+                                onClick={() => {
+                                    setFormStatus('idle');
+                                    setFormData({ name: '', email: '', budget: '', message: '' });
+                                }}
                                 className="px-6 py-2 rounded-full border border-white/10 text-sm font-medium hover:bg-white hover:text-black transition-all"
                             >
                                 Send another
@@ -213,7 +230,10 @@ const ContactPage = () => {
                                     label="Name" 
                                     placeholder="John Doe" 
                                     type="text" 
-                                    id="name" 
+                                    id="name"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
                                     focusedField={focusedField} 
                                     setFocusedField={setFocusedField} 
                                 />
@@ -221,7 +241,10 @@ const ContactPage = () => {
                                     label="Email" 
                                     placeholder="john@company.com" 
                                     type="email" 
-                                    id="email" 
+                                    id="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
                                     focusedField={focusedField} 
                                     setFocusedField={setFocusedField} 
                                 />
@@ -231,7 +254,10 @@ const ContactPage = () => {
                                 label="Budget Range (USD)" 
                                 placeholder="e.g. $5k - $10k" 
                                 type="text" 
-                                id="budget" 
+                                id="budget"
+                                name="budget"
+                                value={formData.budget}
+                                onChange={handleChange}
                                 focusedField={focusedField} 
                                 setFocusedField={setFocusedField} 
                             />
@@ -242,13 +268,20 @@ const ContactPage = () => {
                                 </label>
                                 <textarea 
                                     required 
+                                    name="message"
                                     rows={4}
+                                    value={formData.message}
+                                    onChange={handleChange}
                                     onFocus={() => setFocusedField('message')}
                                     onBlur={() => setFocusedField(null)}
                                     placeholder="Tell us about your goals, timeline, and requirements..." 
                                     className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-[#00D67D] focus:ring-1 focus:ring-[#00D67D] transition-all placeholder:text-slate-700 resize-none text-sm"
                                 />
                             </div>
+
+                            {formStatus === 'error' && (
+                                <p className="text-red-400 text-sm text-center">{formError}</p>
+                            )}
 
                             <button 
                                 type="submit"
@@ -281,7 +314,7 @@ const ContactPage = () => {
 };
 
 // --- Helper Component: Input Field with focus effects ---
-const InputField = ({ label, placeholder, type, id, focusedField, setFocusedField }: any) => {
+const InputField = ({ label, placeholder, type, id, name, value, onChange, focusedField, setFocusedField }: any) => {
     const isActive = focusedField === id;
     
     return (
@@ -293,8 +326,11 @@ const InputField = ({ label, placeholder, type, id, focusedField, setFocusedFiel
                 <input 
                     type={type} 
                     id={id}
+                    name={name}
                     required 
-                    placeholder={placeholder} 
+                    placeholder={placeholder}
+                    value={value}
+                    onChange={onChange}
                     onFocus={() => setFocusedField(id)}
                     onBlur={() => setFocusedField(null)}
                     className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-[#00D67D] focus:ring-1 focus:ring-[#00D67D] transition-all placeholder:text-slate-700 text-sm peer"
