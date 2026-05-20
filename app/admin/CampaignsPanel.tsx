@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   RefreshCw, Plus, X, Play, Pause, Trash2,
   Calendar, Users, Eye, Megaphone, Mail, MessageCircle, Linkedin, Twitter,
-  Facebook, Search,
+  Facebook, Search, Wand2, ArrowLeft, Sparkles,
 } from 'lucide-react';
 import { Campaign, CampaignChannel, Lead, ScheduledMessage } from '@/lib/supabase';
+import { useToast, ToastStack } from '@/app/components/Toast';
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
@@ -215,16 +216,60 @@ function DetailModal({ campaign, leads, onClose }: { campaign: Campaign; leads: 
   );
 }
 
-// ─── CREATE MODAL ─────────────────────────────────────────────────────────────
+// ─── HELPERS: parse /api/generate-copy output for google_ads ─────────────────
+
+function parseGoogleAdsCopy(raw: string): { headlines: string[]; descriptions: string[] } {
+  const headlines: string[] = [];
+  const descriptions: string[] = [];
+  for (const line of raw.split('\n')) {
+    const hl = line.match(/^HEADLINE_\d+:\s*(.+)/);
+    if (hl) headlines.push(hl[1].trim());
+    const desc = line.match(/^DESCRIPTION_\d+:\s*(.+)/);
+    if (desc) descriptions.push(desc[1].trim());
+  }
+  return {
+    headlines:    headlines.length    >= 3 ? headlines    : ['Boost Your Business', 'Expert Tech Audits', 'Spacze Web Solutions'],
+    descriptions: descriptions.length >= 2 ? descriptions : ['Uncover technical weak points holding your site back.', 'Transform your digital presence with our expert team.'],
+  };
+}
+
+function parseMetaCopy(raw: string): { primaryText: string; headline: string } {
+  let primaryText = '';
+  let headline = '';
+  const lines = raw.split('\n');
+  let inBody = false;
+  for (const line of lines) {
+    if (/^PRIMARY_TEXT:|^CAPTION:|^BODY:/i.test(line)) { inBody = true; primaryText = line.replace(/^[^:]+:\s*/, '').trim(); continue; }
+    if (/^HEADLINE:/i.test(line)) { headline = line.replace(/^HEADLINE:\s*/i, '').trim(); inBody = false; continue; }
+    if (inBody && line.trim()) primaryText += (primaryText ? ' ' : '') + line.trim();
+  }
+  if (!primaryText) primaryText = raw.split('\n').find(l => l.trim().length > 20) ?? raw.slice(0, 150);
+  if (!headline)    headline    = 'Free Website Tech Audit';
+  return { primaryText, headline };
+}
+
+// ─── CREATE MODAL (multi-step wizard) ────────────────────────────────────────
 
 function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: () => void; onCreated: (c: Campaign) => void }) {
-  const [name, setName]               = useState('');
-  const [description, setDescription] = useState('');
-  const [channels, setChannels]       = useState<CampaignChannel[]>(['email']);
+  const { toast, toasts, dismiss } = useToast();
+
+  // Step management
+  const [step, setStep]           = useState<1 | 2>(1);
+  const [generating, setGenerating] = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState('');
+
+  // Step 1 state
+  const [name, setName]           = useState('');
+  const [targetUrl, setTargetUrl] = useState('https://spacze.vercel.app');
+  const [dailyBudget, setDailyBudget] = useState('500');
+  const [channels, setChannels]   = useState<CampaignChannel[]>(['email']);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
-  const [startDate, setStartDate]     = useState(() => new Date().toISOString().slice(0, 16));
-  const [saving, setSaving]           = useState(false);
-  const [error, setError]             = useState('');
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 16));
+
+  // Step 2 state — ad copy drafts
+  const [googleDraft, setGoogleDraft] = useState({ headlines: ['', '', ''], descriptions: ['', ''] });
+  const [metaDraft, setMetaDraft]     = useState({ primaryText: '', headline: '', cta: 'Learn More' });
 
   const inp = 'w-full admin-input border admin-border-md rounded-xl px-3 py-2.5 text-[13px] admin-text outline-none transition-colors placeholder:admin-subtle';
 
@@ -238,33 +283,77 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
     setSelectedLeadIds(prev => prev.length === leads.length ? [] : leads.map(l => l.id!));
   }
 
-  async function save(activate: boolean) {
+  const outreachChannels = channels.filter(ch => !AD_CHANNELS.includes(ch));
+  const hasAds           = channels.some(ch => AD_CHANNELS.includes(ch));
+
+  // ── Step 1 → Step 2: validate, then generate AI copy for ad channels ────────
+  async function handleNext() {
     if (!name.trim())          { setError('Campaign name is required.'); return; }
     if (channels.length === 0) { setError('Select at least one channel.'); return; }
-    // Require leads only when outreach channels are selected
-    const outreachChannels = channels.filter(ch => !AD_CHANNELS.includes(ch));
     if (outreachChannels.length > 0 && selectedLeadIds.length === 0) {
       setError('Select at least one lead for outreach channels.'); return;
     }
+    setError('');
+
+    if (!hasAds) {
+      // No ad networks — skip Step 2 and publish directly
+      await publishCampaign(true, { headlines: [], descriptions: [] }, { primaryText: '', headline: '', cta: 'Learn More' });
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const brief = { productName: 'Spacze Web Agency', targetAudience: 'Business owners', tone: 'Professional', goal: 'Leads', keyMessage: name };
+
+      const [googleRaw, metaRaw] = await Promise.all([
+        channels.includes('google_ads')
+          ? fetch('/api/generate-copy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform: 'google_ads', ...brief }) })
+              .then(r => r.json()).then(d => d.output ?? '')
+          : Promise.resolve(''),
+        channels.includes('facebook')
+          ? fetch('/api/generate-copy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform: 'instagram', ...brief }) })
+              .then(r => r.json()).then(d => d.output ?? '')
+          : Promise.resolve(''),
+      ]);
+
+      if (channels.includes('google_ads')) setGoogleDraft(parseGoogleAdsCopy(googleRaw));
+      if (channels.includes('facebook'))   setMetaDraft({ ...parseMetaCopy(metaRaw), cta: 'Learn More' });
+
+      setStep(2);
+    } catch {
+      setError('Failed to generate ad copy. You can still edit the fields manually.');
+      setStep(2);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  // ── Final publish: save to DB + dispatch to ad networks ─────────────────────
+  async function publishCampaign(
+    activate: boolean,
+    gDraft: typeof googleDraft,
+    mDraft: typeof metaDraft,
+  ) {
     setSaving(true); setError('');
     try {
-      const res = await fetch('/api/campaigns', {
+      // 1. Create campaign record
+      const dbRes = await fetch('/api/campaigns', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim(), description: description.trim(),
+          name: name.trim(),
+          description: targetUrl ? `Target URL: ${targetUrl}` : '',
           status: activate ? 'active' : 'draft',
           channels, lead_ids: selectedLeadIds,
           auto_sequence: true, start_date: startDate,
         }),
       });
-      const campaignData = await res.json();
-      if (!res.ok) throw new Error(campaignData.error || 'Failed to create campaign');
-      const campaign: Campaign = campaignData;
-      if (activate && campaign.id) {
+      const campaign: Campaign = await dbRes.json();
+      if (!dbRes.ok) throw new Error((campaign as any).error || 'Failed to create campaign');
+
+      // 2. Schedule outreach messages for per-lead channels
+      if (activate && campaign.id && outreachChannels.length > 0 && selectedLeadIds.length > 0) {
         const base = new Date(startDate);
         const rows: Omit<ScheduledMessage, 'id' | 'created_at'>[] = [];
-
-        // Per-lead outreach channels (email, whatsapp, linkedin, twitter)
         for (const leadId of selectedLeadIds) {
           for (const channel of outreachChannels) {
             const steps = (channel === 'linkedin' || channel === 'twitter') ? [1] : [1, 2, 3, 4];
@@ -277,18 +366,6 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
             }
           }
         }
-
-        // Ad channels (facebook, google_ads) — one scheduled entry per channel,
-        // using the first selected lead as the brief source (or a placeholder)
-        const briefLeadId = selectedLeadIds[0] ?? null;
-        for (const channel of channels.filter(ch => AD_CHANNELS.includes(ch))) {
-          rows.push({
-            campaign_id: campaign.id!, lead_id: briefLeadId!, channel,
-            sequence_step: 1, scheduled_at: addDays(base, 0),
-            status: 'pending', sent_at: null, message_body: null, subject: null,
-          });
-        }
-
         if (rows.length > 0) {
           await fetch('/api/scheduled-messages', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -296,144 +373,266 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
           });
         }
       }
+
+      // 3. Dispatch to ad networks (fire-and-forget with toast feedback)
+      if (activate) {
+        if (channels.includes('google_ads')) {
+          const gRes = await fetch('/api/send-google-ads', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              headlines:    gDraft.headlines.filter(Boolean),
+              descriptions: gDraft.descriptions.filter(Boolean),
+              finalUrl: targetUrl, campaignName: name,
+            }),
+          });
+          toast(gRes.ok ? 'success' : 'error', gRes.ok ? 'Google Ad created (paused — review in Ads UI)' : 'Google Ads push failed — check API keys');
+        }
+        if (channels.includes('facebook')) {
+          const fRes = await fetch('/api/send-facebook', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              primaryText: mDraft.primaryText, headline: mDraft.headline,
+              description: '', cta: mDraft.cta,
+              targetUrl, campaignName: name,
+              dailyBudget: parseInt(dailyBudget) || 500,
+            }),
+          });
+          toast(fRes.ok ? 'success' : 'error', fRes.ok ? 'Meta Ad created (paused — review in Ads Manager)' : 'Facebook Ads push failed — check API keys');
+        }
+      }
+
       onCreated(campaign);
       onClose();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to save campaign');
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <motion.div
-        initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '100%', opacity: 0 }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="w-full sm:max-w-xl bg-zinc-900/90 backdrop-blur-2xl border border-white/10 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] sm:max-h-[88vh] flex flex-col">
+    <>
+      <ToastStack toasts={toasts} onDismiss={dismiss} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+        onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+        <motion.div
+          initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          exit={{ y: '100%', opacity: 0 }}
+          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+          className="w-full sm:max-w-2xl bg-zinc-900/90 backdrop-blur-2xl border border-white/10 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] sm:max-h-[88vh] flex flex-col">
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 flex-shrink-0">
-          <div>
-            <h2 className="font-bold text-[15px] admin-text">New Campaign</h2>
-            <p className="text-[11px] admin-muted mt-0.5">Configure channels, leads &amp; schedule</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 rounded-xl admin-muted hover:admin-text hover:bg-white/5 border border-white/8 transition-colors">
-            <X size={14} />
-          </button>
-        </div>
-
-        {/* Body — scrollable */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
-
-          {/* Name + Description side by side on wider screens */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 flex-shrink-0">
             <div>
-              <label className="label-xs mb-1.5 block">Campaign Name *</label>
-              <input value={name} onChange={e => setName(e.target.value)}
-                placeholder="e.g. Lagos Restaurants Q3" className={inp} />
+              <h2 className="font-bold text-[15px] admin-text flex items-center gap-2">
+                <Wand2 size={14} className="text-[#00D67D]" />
+                {step === 1 ? 'New Campaign' : 'Review Ad Creative'}
+              </h2>
+              <p className="text-[11px] admin-muted mt-0.5">
+                Step {step} of {hasAds ? 2 : 1}: {step === 1 ? 'Strategy & targeting' : 'AI-generated copy — edit before launch'}
+              </p>
             </div>
-            <div>
-              <label className="label-xs mb-1.5 block">Description</label>
-              <input value={description} onChange={e => setDescription(e.target.value)}
-                placeholder="Optional notes…" className={inp} />
-            </div>
+            <button onClick={onClose} className="p-1.5 rounded-xl admin-muted hover:admin-text hover:bg-white/5 border border-white/8 transition-colors">
+              <X size={14} />
+            </button>
           </div>
 
-          {/* Channels — all 6 in a 3-col grid */}
-          <div>
-            <label className="label-xs mb-2 block">Channels</label>
-            <div className="grid grid-cols-3 gap-2">
-              {ALL_CHANNELS.map(ch => {
-                const active = channels.includes(ch);
-                const isAd   = AD_CHANNELS.includes(ch);
-                return (
-                  <button key={ch} onClick={() => toggleChannel(ch)}
-                    className={`relative flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border text-xs font-medium transition-all ${
-                      active
-                        ? `${CHANNEL_COLORS[ch]} bg-white/8 border-white/15`
-                        : 'admin-muted border-white/8 hover:bg-white/5 hover:border-white/12 hover:admin-text'
-                    }`}>
-                    <span className={`${active ? CHANNEL_COLORS[ch] : 'opacity-50'}`}>{CHANNEL_ICONS[ch]}</span>
-                    <span className="text-center leading-tight">{CHANNEL_LABELS[ch]}</span>
-                    {isAd && (
-                      <span className="absolute top-1.5 right-1.5 text-[8px] font-bold px-1 py-0.5 rounded bg-white/10 admin-muted leading-none">AD</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[10px] admin-muted mt-2">
-              Channels marked <span className="font-bold admin-text">AD</span> publish one AI-generated ad per campaign — no per-lead contact needed.
-            </p>
-          </div>
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
+            {error && <p className="text-red-400 text-xs px-3 py-2 rounded-xl bg-red-500/8 border border-red-500/20">{error}</p>}
 
-          {/* Leads */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="label-xs">
-                Leads <span className="normal-case font-normal admin-muted">({selectedLeadIds.length} selected)</span>
-              </label>
-              <button onClick={toggleAllLeads} className="text-[11px] font-medium text-[#00D67D] hover:opacity-80 transition-opacity">
-                {selectedLeadIds.length === leads.length ? 'Deselect all' : 'Select all'}
-              </button>
-            </div>
-            <div className="max-h-44 overflow-y-auto rounded-xl border border-white/8 divide-y divide-white/5">
-              {leads.map(l => {
-                const sel = selectedLeadIds.includes(l.id!);
-                return (
-                  <button key={l.id} onClick={() => toggleLead(l.id!)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                      sel ? 'bg-[#00D67D]/6' : 'hover:bg-white/3'
-                    }`}>
-                    <div className={`w-4 h-4 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${
-                      sel ? 'bg-[#00D67D] border-[#00D67D]' : 'border-white/20'
-                    }`}>
-                      {sel && <span className="text-black text-[9px] font-black leading-none">✓</span>}
+            {/* ── STEP 1 ── */}
+            {step === 1 && (
+              <motion.div key="step1" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="label-xs mb-1.5 block">Campaign Name *</label>
+                    <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Q3 Tech Audits" className={inp} />
+                  </div>
+                  <div>
+                    <label className="label-xs mb-1.5 block">Target URL</label>
+                    <input value={targetUrl} onChange={e => setTargetUrl(e.target.value)} placeholder="https://spacze.vercel.app" className={inp} />
+                  </div>
+                </div>
+
+                {/* Channels */}
+                <div>
+                  <label className="label-xs mb-2 block">Channels</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {ALL_CHANNELS.map(ch => {
+                      const active = channels.includes(ch);
+                      const isAd   = AD_CHANNELS.includes(ch);
+                      return (
+                        <button key={ch} onClick={() => toggleChannel(ch)}
+                          className={`relative flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border text-xs font-medium transition-all ${
+                            active
+                              ? `${CHANNEL_COLORS[ch]} bg-white/8 border-white/15`
+                              : 'admin-muted border-white/8 hover:bg-white/5 hover:border-white/12 hover:admin-text'
+                          }`}>
+                          <span className={`${active ? CHANNEL_COLORS[ch] : 'opacity-50'}`}>{CHANNEL_ICONS[ch]}</span>
+                          <span className="text-center leading-tight">{CHANNEL_LABELS[ch]}</span>
+                          {isAd && <span className="absolute top-1.5 right-1.5 text-[8px] font-bold px-1 py-0.5 rounded bg-white/10 admin-muted leading-none">AD</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] admin-muted mt-2">
+                    Channels marked <span className="font-bold admin-text">AD</span> push one AI-generated ad per campaign — no per-lead contact needed.
+                  </p>
+                </div>
+
+                {/* Daily budget — only shown when ad channels are selected */}
+                {hasAds && (
+                  <div>
+                    <label className="label-xs mb-1.5 block">Daily Ad Budget (cents — 500 = $5.00)</label>
+                    <input type="number" value={dailyBudget} onChange={e => setDailyBudget(e.target.value)} placeholder="500" className={inp} />
+                  </div>
+                )}
+
+                {/* Leads */}
+                {outreachChannels.length > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="label-xs">
+                        Leads <span className="normal-case font-normal admin-muted">({selectedLeadIds.length} selected)</span>
+                      </label>
+                      <button onClick={toggleAllLeads} className="text-[11px] font-medium text-[#00D67D] hover:opacity-80 transition-opacity">
+                        {selectedLeadIds.length === leads.length ? 'Deselect all' : 'Select all'}
+                      </button>
                     </div>
-                    <div className="w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
-                      style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
-                      {l.business_name.charAt(0).toUpperCase()}
+                    <div className="max-h-44 overflow-y-auto rounded-xl border border-white/8 divide-y divide-white/5">
+                      {leads.map(l => {
+                        const sel = selectedLeadIds.includes(l.id!);
+                        return (
+                          <button key={l.id} onClick={() => toggleLead(l.id!)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${sel ? 'bg-[#00D67D]/6' : 'hover:bg-white/3'}`}>
+                            <div className={`w-4 h-4 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${sel ? 'bg-[#00D67D] border-[#00D67D]' : 'border-white/20'}`}>
+                              {sel && <span className="text-black text-[9px] font-black leading-none">✓</span>}
+                            </div>
+                            <div className="w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
+                              style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
+                              {l.business_name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className={`text-[12px] font-semibold truncate ${sel ? 'text-[#00D67D]' : 'admin-text'}`}>{l.business_name}</div>
+                              <div className="text-[10px] admin-muted truncate">{l.contact_email}</div>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className={`text-[12px] font-semibold truncate ${sel ? 'text-[#00D67D]' : 'admin-text'}`}>
-                        {l.business_name}
+                  </div>
+                )}
+
+                {/* Start date */}
+                <div>
+                  <label className="label-xs mb-1.5 block">Start Date &amp; Time</label>
+                  <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} className={inp} />
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── STEP 2 ── */}
+            {step === 2 && (
+              <motion.div key="step2" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+                <div className="p-3 rounded-xl border border-blue-500/20 bg-blue-500/5 text-[12px] text-blue-300 leading-relaxed">
+                  AI has drafted your ad assets. Edit them below, then click <strong>Launch</strong>. Ads are pushed in a <strong>PAUSED</strong> state — activate them in Google Ads / Meta Ads Manager after review.
+                </div>
+
+                {channels.includes('google_ads') && (
+                  <div className="p-4 rounded-2xl border border-white/10 bg-black/20 space-y-3">
+                    <h3 className="text-[12px] font-bold text-yellow-400 flex items-center gap-2"><Search size={13}/> Google Search Ads</h3>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] admin-muted">Headlines (max 30 chars each)</label>
+                        {googleDraft.headlines.map((hl, i) => (
+                          <input key={i} value={hl} maxLength={30}
+                            onChange={e => { const h = [...googleDraft.headlines]; h[i] = e.target.value; setGoogleDraft({ ...googleDraft, headlines: h }); }}
+                            className={inp} />
+                        ))}
                       </div>
-                      <div className="text-[10px] admin-muted truncate">{l.contact_email}</div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] admin-muted">Descriptions (max 90 chars each)</label>
+                        {googleDraft.descriptions.map((desc, i) => (
+                          <textarea key={i} value={desc} rows={2} maxLength={90}
+                            onChange={e => { const d = [...googleDraft.descriptions]; d[i] = e.target.value; setGoogleDraft({ ...googleDraft, descriptions: d }); }}
+                            className={`${inp} resize-none`} />
+                        ))}
+                      </div>
                     </div>
-                  </button>
-                );
-              })}
-            </div>
+                  </div>
+                )}
+
+                {channels.includes('facebook') && (
+                  <div className="p-4 rounded-2xl border border-white/10 bg-black/20 space-y-3">
+                    <h3 className="text-[12px] font-bold text-[#1877F2] flex items-center gap-2"><Facebook size={13}/> Meta Ads (Facebook &amp; Instagram)</h3>
+                    <div>
+                      <label className="text-[10px] admin-muted mb-1 block">Primary Text</label>
+                      <textarea rows={3} value={metaDraft.primaryText}
+                        onChange={e => setMetaDraft({ ...metaDraft, primaryText: e.target.value })}
+                        className={`${inp} resize-none`} />
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] admin-muted mb-1 block">Headline</label>
+                        <input value={metaDraft.headline} onChange={e => setMetaDraft({ ...metaDraft, headline: e.target.value })} className={inp} />
+                      </div>
+                      <div>
+                        <label className="text-[10px] admin-muted mb-1 block">Call To Action</label>
+                        <select value={metaDraft.cta} onChange={e => setMetaDraft({ ...metaDraft, cta: e.target.value })} className={inp}>
+                          <option>Learn More</option>
+                          <option>Sign Up</option>
+                          <option>Get Quote</option>
+                          <option>Contact Us</option>
+                          <option>Book Now</option>
+                        </select>
+                      </div>
+                    </div>
+                    <p className="text-[10px] admin-muted flex items-center gap-1">
+                      <Sparkles size={10} className="text-purple-400" />
+                      Image/video generation is processed asynchronously — attach creatives in Meta Ads Manager.
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </div>
 
-          {/* Start date */}
-          <div>
-            <label className="label-xs mb-1.5 block">Start Date &amp; Time</label>
-            <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} className={inp} />
+          {/* Footer */}
+          <div className="px-5 py-4 border-t border-white/8 flex gap-3 flex-shrink-0">
+            {step === 1 ? (
+              <>
+                <button onClick={handleNext} disabled={generating || saving}
+                  className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-40 shadow-[0_0_20px_rgba(0,214,125,0.15)] hover:opacity-90"
+                  style={{ background: 'var(--accent)' }}>
+                  {generating ? <RefreshCw size={14} className="animate-spin" /> : hasAds ? <Wand2 size={14} /> : <Play size={14} />}
+                  {generating ? 'Generating copy…' : hasAds ? 'Generate Ad Creative' : 'Activate Campaign'}
+                </button>
+                <button onClick={() => { setError(''); publishCampaign(false, googleDraft, metaDraft); }} disabled={saving || generating}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl admin-muted hover:admin-text hover:bg-white/5 border border-white/8 font-semibold text-[13px] transition-all disabled:opacity-40">
+                  {saving ? <RefreshCw size={14} className="animate-spin" /> : null}
+                  Save Draft
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => { setStep(1); setError(''); }}
+                  className="flex items-center gap-1.5 px-4 py-3 rounded-xl admin-muted hover:admin-text hover:bg-white/5 border border-white/8 font-semibold text-[13px] transition-all">
+                  <ArrowLeft size={13} /> Back
+                </button>
+                <button onClick={() => publishCampaign(true, googleDraft, metaDraft)} disabled={saving}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-40 shadow-[0_0_20px_rgba(0,214,125,0.15)] hover:opacity-90"
+                  style={{ background: 'var(--accent)' }}>
+                  {saving ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
+                  {saving ? 'Publishing…' : 'Launch Campaign'}
+                </button>
+              </>
+            )}
           </div>
-
-          {error && (
-            <p className="text-red-400 text-xs px-3 py-2 rounded-xl bg-red-500/8 border border-red-500/20">{error}</p>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-5 py-4 border-t border-white/8 flex gap-3 flex-shrink-0">
-          <button onClick={() => save(true)} disabled={saving}
-            className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-40 shadow-[0_0_20px_rgba(0,214,125,0.15)] hover:opacity-90"
-            style={{ background: 'var(--accent)' }}>
-            {saving ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
-            Activate
-          </button>
-          <button onClick={() => save(false)} disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl admin-muted hover:admin-text hover:bg-white/5 border border-white/8 font-semibold text-[13px] transition-all disabled:opacity-40">
-            Save as Draft
-          </button>
-        </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </>
   );
 }
 
@@ -474,9 +673,9 @@ export default function CampaignsPanel() {
       <div className="flex items-center justify-between">
         <p className="text-[12px] admin-muted">Multi-channel outreach sequences</p>
         <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-black font-bold text-[13px] transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-black font-bold text-[13px] transition-colors shadow-[0_0_20px_rgba(0,214,125,0.15)] hover:opacity-90"
           style={{ background: 'var(--accent)' }}>
-          <Plus size={15} /> New Campaign
+          <Wand2 size={15} /> New Campaign
         </button>
       </div>
 
