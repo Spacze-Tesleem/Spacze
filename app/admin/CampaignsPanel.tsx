@@ -205,7 +205,7 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
 
-  const inp = 'w-full admin-input border admin-border-md rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors';
+  const inp = 'w-full admin-input border admin-border-md rounded-xl px-3 py-2.5 text-[13px] admin-text outline-none transition-colors placeholder:admin-subtle';
 
   function toggleChannel(ch: CampaignChannel) {
     setChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
@@ -266,85 +266,125 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
-        className="w-full max-w-lg admin-surface border admin-border-md rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b admin-border">
+        className="w-full max-w-lg bg-zinc-900/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
           <div>
             <h2 className="font-bold text-[15px] admin-text">New Campaign</h2>
-            <p className="text-[11px] admin-muted mt-0.5">Configure channels, leads & schedule</p>
+            <p className="text-[11px] admin-muted mt-0.5">Configure channels, leads &amp; schedule</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-xl admin-muted admin-hover border admin-border transition-colors"><X size={14} /></button>
+          <button onClick={onClose} className="p-1.5 rounded-xl admin-muted hover:admin-text hover:bg-white/5 border border-white/8 transition-colors">
+            <X size={14} />
+          </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+
+          {/* Name */}
           <div>
             <label className="label-xs mb-1.5 block">Campaign Name *</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Lagos Restaurants Q3" className={inp} />
+            <input value={name} onChange={e => setName(e.target.value)}
+              placeholder="e.g. Lagos Restaurants Q3" className={inp} />
           </div>
+
+          {/* Description */}
           <div>
             <label className="label-xs mb-1.5 block">Description</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional notes…" rows={2}
-              className={`${inp} resize-none`} />
+            <textarea value={description} onChange={e => setDescription(e.target.value)}
+              placeholder="Optional notes…" rows={2} className={`${inp} resize-none`} />
           </div>
+
+          {/* Channels */}
           <div>
-            <label className="label-xs mb-2 block">Channels</label>
+            <label className="label-xs mb-2.5 block">Channels</label>
             <div className="grid grid-cols-2 gap-2">
-              {ALL_CHANNELS.map(ch => (
-                <button key={ch} onClick={() => toggleChannel(ch)}
-                  className={`flex flex-col gap-1 p-3 rounded-xl border text-left transition-all ${
-                    channels.includes(ch)
-                      ? `${CHANNEL_COLORS[ch]} bg-white/5 border-white/15`
-                      : 'admin-hover admin-border admin-muted'
-                  }`}>
-                  <div className="flex items-center gap-2 text-xs font-semibold">
-                    {CHANNEL_ICONS[ch]} {ch}
-                  </div>
-                  {channels.includes(ch) && selectedLeadIds.length > 0 && (
-                    <ChannelCoverage channel={ch} leads={leads.filter(l => selectedLeadIds.includes(l.id!))} />
-                  )}
-                </button>
-              ))}
+              {ALL_CHANNELS.map(ch => {
+                const active = channels.includes(ch);
+                return (
+                  <button key={ch} onClick={() => toggleChannel(ch)}
+                    className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
+                      active
+                        ? `${CHANNEL_COLORS[ch]} bg-white/8 border-white/15`
+                        : 'admin-muted border-white/8 hover:bg-white/5 hover:border-white/12 hover:admin-text'
+                    }`}>
+                    <span className={active ? CHANNEL_COLORS[ch] : 'opacity-50'}>{CHANNEL_ICONS[ch]}</span>
+                    <span className="capitalize">{ch}</span>
+                    {active && selectedLeadIds.length > 0 && (
+                      <span className="ml-auto">
+                        <ChannelCoverage channel={ch} leads={leads.filter(l => selectedLeadIds.includes(l.id!))} />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
+
+          {/* Leads */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="label-xs">Leads ({selectedLeadIds.length} selected)</label>
-              <button onClick={toggleAllLeads} className="text-[10px] text-[#00D67D] hover:underline">
+              <label className="label-xs">
+                Leads{' '}
+                <span className="normal-case font-normal admin-muted">({selectedLeadIds.length} selected)</span>
+              </label>
+              <button onClick={toggleAllLeads} className="text-[11px] font-medium text-[#00D67D] hover:opacity-80 transition-opacity">
                 {selectedLeadIds.length === leads.length ? 'Deselect all' : 'Select all'}
               </button>
             </div>
-            <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
-              {leads.map(l => (
-                <button key={l.id} onClick={() => toggleLead(l.id!)}
-                  className={`w-full flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all text-xs ${
-                    selectedLeadIds.includes(l.id!)
-                      ? 'bg-[#00D67D]/8 border-[#00D67D]/25 text-[#00D67D]'
-                      : 'admin-hover admin-border admin-muted'
-                  }`}>
-                  <div className={`w-3.5 h-3.5 rounded flex-shrink-0 border flex items-center justify-center transition-all ${
-                    selectedLeadIds.includes(l.id!) ? 'bg-[#00D67D] border-[#00D67D]' : 'border-white/20'
-                  }`}>
-                    {selectedLeadIds.includes(l.id!) && <span className="text-black text-[8px] font-bold">✓</span>}
-                  </div>
-                  <span className="truncate font-medium admin-text">{l.business_name}</span>
-                  <span className="admin-muted truncate">{l.contact_email}</span>
-                </button>
-              ))}
+            <div className="max-h-48 overflow-y-auto rounded-xl border border-white/8 divide-y divide-white/5">
+              {leads.map(l => {
+                const sel = selectedLeadIds.includes(l.id!);
+                return (
+                  <button key={l.id} onClick={() => toggleLead(l.id!)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                      sel ? 'bg-[#00D67D]/6' : 'hover:bg-white/3'
+                    }`}>
+                    {/* Checkbox */}
+                    <div className={`w-4 h-4 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${
+                      sel ? 'bg-[#00D67D] border-[#00D67D]' : 'border-white/20'
+                    }`}>
+                      {sel && <span className="text-black text-[9px] font-black leading-none">✓</span>}
+                    </div>
+                    {/* Avatar */}
+                    <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-[11px] font-bold"
+                      style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
+                      {l.business_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-[13px] font-semibold truncate ${sel ? 'text-[#00D67D]' : 'admin-text'}`}>
+                        {l.business_name}
+                      </div>
+                      <div className="text-[11px] admin-muted truncate">{l.contact_email}</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
+
+          {/* Start date */}
           <div>
-            <label className="label-xs mb-1.5 block">Start Date & Time</label>
+            <label className="label-xs mb-1.5 block">Start Date &amp; Time</label>
             <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} className={inp} />
           </div>
-          {error && <p className="text-red-400 text-xs">{error}</p>}
+
+          {error && (
+            <p className="text-red-400 text-xs px-3 py-2 rounded-xl bg-red-500/8 border border-red-500/20">{error}</p>
+          )}
         </div>
-        <div className="px-5 py-4 border-t admin-border flex gap-3">
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-white/8 flex gap-3">
           <button onClick={() => save(true)} disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-[13px] transition-colors disabled:opacity-40"
+            className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-40 shadow-[0_0_20px_rgba(0,214,125,0.15)] hover:opacity-90"
             style={{ background: 'var(--accent)' }}>
             {saving ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
             Activate
           </button>
           <button onClick={() => save(false)} disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl admin-muted admin-hover border admin-border font-semibold text-[13px] transition-colors disabled:opacity-40">
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl admin-muted hover:admin-text hover:bg-white/5 border border-white/8 font-semibold text-[13px] transition-all disabled:opacity-40">
             Save as Draft
           </button>
         </div>

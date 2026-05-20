@@ -193,7 +193,10 @@ function CopyTab({ leads }: { leads: Lead[] }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
-      setOutput(data.output || data.copy || data.content || JSON.stringify(data));
+      const raw = data.output || data.copy || data.content;
+      if (!raw || typeof raw !== 'string') throw new Error('Unexpected response format from AI provider');
+      // Unescape literal \n sequences the AI sometimes returns inside JSON strings
+      setOutput(raw.replace(/\\n/g, '\n'));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Generation failed');
     } finally { setGenerating(false); }
