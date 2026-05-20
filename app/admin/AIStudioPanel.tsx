@@ -193,7 +193,7 @@ function CopyTab({ leads }: { leads: Lead[] }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
-      setOutput(data.copy || data.content || JSON.stringify(data));
+      setOutput(data.output || data.copy || data.content || JSON.stringify(data));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Generation failed');
     } finally { setGenerating(false); }
