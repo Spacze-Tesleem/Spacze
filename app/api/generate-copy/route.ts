@@ -243,16 +243,45 @@ async function generateWithFallback(prompt: string): Promise<{ raw: string; prov
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const brief: CopyBrief = body;
 
-    if (!brief.platform) {
+    if (!body.platform) {
       return NextResponse.json({ error: 'Missing required field: platform' }, { status: 400 });
     }
+
+    // Map snake_case lead fields → CopyBrief camelCase fields
+    const brief: CopyBrief = {
+      platform:            body.platform,
+      tone:                body.tone,
+      goal:                body.goal,
+      keyMessage:          body.keyMessage,
+      productName:         body.productName,
+      targetAudience:      body.targetAudience,
+      // Lead fields (snake_case from Supabase)
+      businessName:        body.businessName        || body.business_name,
+      industry:            body.industry,
+      aiOpportunity:       body.aiOpportunity        || body.ai_opportunity,
+      weakPoints:          body.weakPoints           || body.weak_points,
+      possibleImprovements:body.possibleImprovements || body.possible_improvements,
+      website:             body.website,
+    };
 
     const prompt = buildPrompt(brief);
     const { raw, provider } = await generateWithFallback(prompt);
 
-    return NextResponse.json({ platform: brief.platform, output: raw.trim(), provider });
+    // Strip any JSON wrapping the AI may have added (some models wrap output in ```json ... ```)
+    let output = raw.trim();
+    const jsonFenceMatch = output.match(/^```(?:json)?\s*([\s\S]*?)```$/);
+    if (jsonFenceMatch) output = jsonFenceMatch[1].trim();
+
+    // If the AI returned a JSON object, try to extract the output field
+    if (output.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(output);
+        output = parsed.output || parsed.content || parsed.text || output;
+      } catch { /* not valid JSON, use as-is */ }
+    }
+
+    return NextResponse.json({ platform: brief.platform, output, provider });
   } catch (err: any) {
     console.error('generate-copy error:', err);
     return NextResponse.json({ error: err.message || 'Failed to generate copy' }, { status: 500 });
