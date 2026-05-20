@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, Save, Trash2, Search, ChevronDown, Mail,
   MessageCircle, Linkedin, Twitter, Filter, Download,
-  CheckSquare, Square, ArrowUpDown,
+  CheckSquare, Square,
 } from 'lucide-react';
 import { Lead } from '@/lib/supabase';
 import { OUTREACH_STATUSES, RESPONSE_STATUSES } from '@/lib/constants';
@@ -22,23 +22,23 @@ const EMPTY_LEAD: Omit<Lead, 'id' | 'created_at'> = {
   generated_subject: '', generated_email: '',
 };
 
-const statusColor: Record<string, string> = {
-  Pending:          'text-amber-600 bg-amber-50 border-amber-200',
-  Sent:             'text-emerald-700 bg-emerald-50 border-emerald-200',
-  Replied:          'text-blue-600 bg-blue-50 border-blue-200',
-  'Meeting Booked': 'text-purple-600 bg-purple-50 border-purple-200',
-  'Not Interested': 'text-red-500 bg-red-50 border-red-200',
+const statusBadge = (status: string) => {
+  const map: Record<string, string> = {
+    'Pending':        'bg-amber-500/10 text-amber-500 ring-amber-500/20',
+    'Sent':           'bg-emerald-500/10 text-emerald-500 ring-emerald-500/20',
+    'Replied':        'bg-blue-500/10 text-blue-400 ring-blue-500/20',
+    'Meeting Booked': 'bg-purple-500/10 text-purple-400 ring-purple-500/20',
+    'Not Interested': 'bg-red-500/10 text-red-400 ring-red-500/20',
+  };
+  return map[status] || 'bg-zinc-500/10 text-zinc-400 ring-zinc-500/20';
 };
 
-const scoreColor = (score: number | null) => {
-  if (score === null) return 'text-slate-500 bg-slate-100 border border-slate-200';
-  if (score >= 7) return 'text-emerald-700 bg-emerald-100';
-  if (score >= 4) return 'text-yellow-700 bg-yellow-100';
-  return 'text-red-600 bg-red-100';
+const scoreBadge = (score: number | null) => {
+  if (score === null) return 'bg-zinc-500/10 text-zinc-400 ring-zinc-500/20';
+  if (score >= 7) return 'bg-emerald-500/10 text-emerald-500 ring-emerald-500/20';
+  if (score >= 4) return 'bg-amber-500/10 text-amber-500 ring-amber-500/20';
+  return 'bg-red-500/10 text-red-400 ring-red-500/20';
 };
-
-type SortKey = 'business_name' | 'follow_up_date' | 'website_quality_score' | 'outreach_status' | 'created_at';
-type SortDir = 'asc' | 'desc';
 
 // ─── CSV export ───────────────────────────────────────────────────────────────
 function exportCSV(leads: Lead[]) {
@@ -60,36 +60,6 @@ function exportCSV(leads: Lead[]) {
   const a    = document.createElement('a');
   a.href = url; a.download = `spacze-leads-${new Date().toISOString().slice(0,10)}.csv`;
   a.click(); URL.revokeObjectURL(url);
-}
-
-// ─── Sort helper ──────────────────────────────────────────────────────────────
-function sortLeads(leads: Lead[], key: SortKey, dir: SortDir): Lead[] {
-  return [...leads].sort((a, b) => {
-    let av: string | number | null = (a as Record<string, unknown>)[key] as string | number | null;
-    let bv: string | number | null = (b as Record<string, unknown>)[key] as string | number | null;
-    if (av == null) av = dir === 'asc' ? '\uffff' : '';
-    if (bv == null) bv = dir === 'asc' ? '\uffff' : '';
-    const cmp = av < bv ? -1 : av > bv ? 1 : 0;
-    return dir === 'asc' ? cmp : -cmp;
-  });
-}
-
-// ─── SortButton ───────────────────────────────────────────────────────────────
-function SortButton({ label, sortKey, current, dir, onSort }: {
-  label: string; sortKey: SortKey;
-  current: SortKey; dir: SortDir;
-  onSort: (k: SortKey) => void;
-}) {
-  const active = current === sortKey;
-  return (
-    <button
-      onClick={() => onSort(sortKey)}
-      className={`flex items-center gap-1 whitespace-nowrap label-xs hover:admin-text transition-colors ${active ? 'accent-text' : ''}`}
-    >
-      {label}
-      <ArrowUpDown size={10} className={active ? 'opacity-100' : 'opacity-30'} />
-    </button>
-  );
 }
 
 // ─── LeadModal ────────────────────────────────────────────────────────────────
@@ -138,7 +108,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
         initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: '100%', opacity: 0 }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="admin-surface border admin-border-md rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[92vh] sm:max-h-[90vh] flex flex-col outline-none"
+        className="bg-zinc-900/80 backdrop-blur-2xl border border-white/10 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-2xl max-h-[92vh] sm:max-h-[90vh] flex flex-col outline-none shadow-2xl"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b admin-border flex-shrink-0">
           <div>
@@ -211,7 +181,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
                 ].map(({ label, key }) => (
                   <label key={key} className="flex items-center gap-2.5 cursor-pointer p-3 rounded-xl admin-hover border admin-border hover:admin-border-md transition-colors">
                     <input type="checkbox" checked={!!(form as Record<string,unknown>)[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} className="w-4 h-4 accent-[#00D67D] flex-shrink-0" />
-                    <span className="text-xs text-slate-300 leading-tight">{label}</span>
+                    <span className="text-xs admin-text-2 leading-tight">{label}</span>
                   </label>
                 ))}
               </div>
@@ -252,8 +222,7 @@ export default function CRMPanel() {
   const [loading, setLoading]       = useState(true);
   const [search, setSearch]         = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [sortKey, setSortKey]       = useState<SortKey>('created_at');
-  const [sortDir, setSortDir]       = useState<SortDir>('desc');
+
   const [showForm, setShowForm]     = useState(false);
   const [editId, setEditId]         = useState<string | null>(null);
   const [form, setForm]             = useState<Omit<Lead, 'id' | 'created_at'>>(EMPTY_LEAD);
@@ -274,25 +243,16 @@ export default function CRMPanel() {
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
-  // ── Sort ──
-  function handleSort(key: SortKey) {
-    if (key === sortKey) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortKey(key); setSortDir('asc'); }
-  }
-
-  // ── Filter + sort ──
-  const filtered = useMemo(() => sortLeads(
-    leads.filter(l => {
-      const q = search.toLowerCase();
-      const matchSearch =
-        l.business_name?.toLowerCase().includes(q) ||
-        l.contact_email?.toLowerCase().includes(q) ||
-        l.industry?.toLowerCase().includes(q);
-      const matchStatus = statusFilter === 'All' || l.outreach_status === statusFilter;
-      return matchSearch && matchStatus;
-    }),
-    sortKey, sortDir,
-  ), [leads, search, statusFilter, sortKey, sortDir]);
+  // ── Filter ──
+  const filtered = useMemo(() => leads.filter(l => {
+    const q = search.toLowerCase();
+    const matchSearch =
+      l.business_name?.toLowerCase().includes(q) ||
+      l.contact_email?.toLowerCase().includes(q) ||
+      l.industry?.toLowerCase().includes(q);
+    const matchStatus = statusFilter === 'All' || l.outreach_status === statusFilter;
+    return matchSearch && matchStatus;
+  }), [leads, search, statusFilter]);
 
   // ── Selection ──
   const allSelected = filtered.length > 0 && filtered.every(l => selected.has(l.id!));
@@ -357,151 +317,146 @@ export default function CRMPanel() {
     else toast('error', 'Failed to delete lead');
   }
 
-  const inp = 'w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] admin-text outline-none transition-colors placeholder:admin-subtle';
-
   return (
-    <div className="space-y-4 max-w-full min-w-0">
+    <div className="space-y-6 max-w-full min-w-0 pb-12">
       <ToastStack toasts={toasts} onDismiss={dismiss} />
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-        <div className="flex flex-1 gap-2 flex-wrap">
-          <div className="relative flex-1 sm:max-w-xs">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 admin-subtle pointer-events-none" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads…" className={`${inp} pl-9`} />
+      <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
+        <div className="flex flex-1 gap-3 flex-wrap">
+          <div className="relative flex-1 sm:max-w-md group">
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-[#00D67D] transition-colors" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads by name, email, or industry…" className="admin-input w-full pl-11 pr-4 py-3 text-sm" />
           </div>
-          <div className="relative">
-            <Filter size={12} className="absolute left-3 top-1/2 -translate-y-1/2 admin-subtle pointer-events-none" />
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className={`${inp} pl-8 pr-8 cursor-pointer appearance-none min-w-[140px]`}>
+          <div className="relative min-w-[160px]">
+            <Filter size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="admin-input w-full pl-10 pr-10 py-3 text-sm cursor-pointer appearance-none">
               <option value="All">All Statuses</option>
               {OUTREACH_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <ChevronDown size={11} className="absolute right-3 top-1/2 -translate-y-1/2 admin-subtle pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-[11px] font-mono admin-muted hidden sm:block">{filtered.length} lead{filtered.length !== 1 ? 's' : ''}</span>
-          <button onClick={() => exportCSV(filtered)} title="Export CSV" className="p-2.5 rounded-xl border admin-border admin-hover admin-muted hover:admin-text transition-colors">
-            <Download size={14} />
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <button onClick={() => exportCSV(filtered)} className="flex items-center gap-2 px-4 py-3 rounded-xl border admin-border admin-surface-2 admin-hover admin-text-2 text-sm font-medium transition-all">
+            <Download size={16} /> <span className="hidden sm:inline">Export</span>
           </button>
-          <button onClick={openAdd} className="flex items-center justify-center gap-2 px-4 py-2.5 text-black font-bold text-[13px] rounded-xl transition-colors" style={{ background: 'var(--accent)' }}>
-            <Plus size={15} /> Add Lead
-          </button>
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={openAdd}
+            className="flex items-center justify-center gap-2 px-5 py-3 text-black font-semibold text-sm rounded-xl transition-all shadow-[0_0_20px_rgba(0,214,125,0.2)]"
+            style={{ background: 'var(--accent)' }}>
+            <Plus size={16} /> Add Prospect
+          </motion.button>
         </div>
       </div>
 
-      {/* Bulk action bar */}
+      {/* Floating Bulk Action Bar */}
       <AnimatePresence>
         {selected.size > 0 && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-            className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl border admin-border-md admin-surface-2">
-            <span className="text-[12px] font-mono accent-text">{selected.size} selected</span>
-            <div className="relative flex-1 min-w-[160px] max-w-xs">
-              <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)} className={`${inp} py-1.5 pr-8 cursor-pointer appearance-none text-[12px]`}>
-                <option value="">Set status…</option>
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-6 py-4 rounded-2xl bg-zinc-900/90 backdrop-blur-xl border border-white/10 shadow-2xl">
+            <div className="flex items-center gap-3 border-r border-white/10 pr-4">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#00D67D]/20 text-[#00D67D] text-xs font-bold">{selected.size}</span>
+              <span className="text-sm font-medium text-zinc-200">Selected</span>
+            </div>
+            <div className="relative min-w-[180px]">
+              <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-zinc-200 outline-none appearance-none cursor-pointer hover:border-white/20 transition-colors">
+                <option value="">Change status to…</option>
                 {OUTREACH_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
-              <ChevronDown size={11} className="absolute right-3 top-1/2 -translate-y-1/2 admin-subtle pointer-events-none" />
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
             </div>
             <button onClick={applyBulkStatus} disabled={!bulkStatus || bulkUpdating}
-              className="px-3 py-1.5 rounded-lg text-black font-bold text-[12px] disabled:opacity-40 transition-colors"
+              className="px-5 py-2.5 rounded-xl text-black font-semibold text-sm transition-all disabled:opacity-50 hover:opacity-90"
               style={{ background: 'var(--accent)' }}>
-              {bulkUpdating ? 'Updating…' : 'Apply'}
+              {bulkUpdating ? 'Applying…' : 'Apply Change'}
             </button>
-            <button onClick={() => setSelected(new Set())} className="text-[12px] admin-muted hover:admin-text transition-colors">Clear</button>
+            <button onClick={() => setSelected(new Set())} className="p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+              <X size={18} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Desktop table */}
-      <div className="hidden md:block admin-card overflow-hidden">
+      {/* Premium Desktop Table */}
+      <div className="hidden md:block border border-white/10 bg-zinc-900/30 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b admin-border">
-                <th className="px-4 py-3 w-10">
-                  <button onClick={toggleAll} aria-label="Select all" className="admin-muted hover:admin-text transition-colors">
-                    {allSelected ? <CheckSquare size={14} className="accent-text" /> : <Square size={14} />}
+          <table className="w-full text-sm text-left">
+            <thead className="bg-zinc-900/80 border-b border-white/10 text-xs uppercase tracking-wider text-zinc-500 font-medium">
+              <tr>
+                <th className="px-6 py-4 w-12">
+                  <button onClick={toggleAll} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+                    {allSelected ? <CheckSquare size={16} className="text-[#00D67D]" /> : <Square size={16} />}
                   </button>
                 </th>
-                {([
-                  { label: 'Business',  key: 'business_name' },
-                  { label: 'Follow-up', key: 'follow_up_date' },
-                  { label: 'Score',     key: 'website_quality_score' },
-                ] as { label: string; key: SortKey }[]).map(({ label, key }) => (
-                  <th key={key} className="px-4 py-3 text-left">
-                    <SortButton label={label} sortKey={key} current={sortKey} dir={sortDir} onSort={handleSort} />
-                  </th>
-                ))}
-                {['Email', 'Industry', 'SEO', 'AI Opp.', 'Channels', 'Outreach', 'Flags', ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left label-xs whitespace-nowrap">{h}</th>
-                ))}
+                <th className="px-6 py-4">Business</th>
+                <th className="px-6 py-4">Contact</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Score</th>
+                <th className="px-6 py-4">Channels</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-white/5">
               {loading ? (
-                <tr><td colSpan={13} className="px-4 py-14 text-center admin-subtle text-sm">Loading...</td></tr>
+                <tr><td colSpan={7} className="px-6 py-14 text-center text-zinc-500 text-sm">Loading…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={13} className="px-4 py-14 text-center admin-subtle text-sm">No leads found.</td></tr>
-              ) : filtered.map(lead => (
-                <tr key={lead.id} className={`border-b admin-border last:border-0 transition-colors group ${selected.has(lead.id!) ? 'bg-[#00D67D]/4' : 'admin-hover'}`}>
-                  <td className="px-4 py-3">
-                    <button onClick={() => toggleOne(lead.id!)} aria-label={`Select ${lead.business_name}`} className="admin-muted hover:admin-text transition-colors">
-                      {selected.has(lead.id!) ? <CheckSquare size={14} className="accent-text" /> : <Square size={14} />}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-[11px] font-bold" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
-                        {lead.business_name.charAt(0).toUpperCase()}
+                <tr><td colSpan={7} className="px-6 py-14 text-center text-zinc-500 text-sm">No leads found.</td></tr>
+              ) : filtered.map(lead => {
+                const isSelected = selected.has(lead.id!);
+                return (
+                  <tr key={lead.id} className={`group transition-colors ${isSelected ? 'bg-[#00D67D]/5' : 'hover:bg-white/[0.02]'}`}>
+                    <td className="px-6 py-4">
+                      <button onClick={() => toggleOne(lead.id!)} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+                        {isSelected ? <CheckSquare size={16} className="text-[#00D67D]" /> : <Square size={16} />}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 flex items-center justify-center text-xs font-bold text-zinc-300 shadow-inner flex-shrink-0">
+                          {lead.business_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-zinc-200 truncate max-w-[160px]">{lead.business_name}</div>
+                          <div className="text-xs text-zinc-500">{lead.industry || 'No industry'}</div>
+                        </div>
                       </div>
-                      <span className="font-medium text-[13px] admin-text whitespace-nowrap max-w-[120px] truncate">{lead.business_name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 admin-muted text-[12px] whitespace-nowrap">
-                    {lead.follow_up_date ? (
-                      <span className={new Date(lead.follow_up_date) < new Date() ? 'text-red-400 font-mono' : 'font-mono'}>
-                        {lead.follow_up_date}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-zinc-300 text-sm truncate max-w-[180px]">{lead.contact_email}</div>
+                      {lead.follow_up_date && (
+                        <div className={`text-xs mt-0.5 font-mono ${new Date(lead.follow_up_date) < new Date() ? 'text-red-400' : 'text-zinc-500'}`}>
+                          Follow up: {lead.follow_up_date}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ring-1 ring-inset ${statusBadge(lead.outreach_status)}`}>
+                        {lead.outreach_status}
                       </span>
-                    ) : '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`font-mono text-[11px] px-2 py-0.5 rounded-md ${scoreColor(lead.website_quality_score)}`}>
-                      {lead.website_quality_score != null ? `${lead.website_quality_score}/10` : '—'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 admin-muted text-[12px] whitespace-nowrap max-w-[160px] truncate">{lead.contact_email}</td>
-                  <td className="px-4 py-3 admin-muted text-[12px]">{lead.industry || '—'}</td>
-                  <td className="px-4 py-3 admin-muted text-[12px]">{lead.seo_quality || '—'}</td>
-                  <td className="px-4 py-3 admin-muted text-[12px] max-w-[120px] truncate">{lead.ai_opportunity || '—'}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1">
-                      <span title="Email"    className={lead.contact_email   ? 'text-blue-400'    : 'text-slate-700'}><Mail          size={12} /></span>
-                      <span title="WhatsApp" className={lead.whatsapp_number ? 'text-[#25D366]'   : 'text-slate-700'}><MessageCircle size={12} /></span>
-                      <span title="LinkedIn" className={lead.linkedin_url    ? 'text-blue-500'    : 'text-slate-700'}><Linkedin      size={12} /></span>
-                      <span title="Twitter"  className={lead.twitter_handle  ? 'text-sky-400'     : 'text-slate-700'}><Twitter       size={12} /></span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${statusColor[lead.outreach_status] || 'text-slate-400 bg-white/5 border-white/10'}`}>
-                      {lead.outreach_status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1 text-[10px] font-mono">
-                      {lead.email_sent     && <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Sent</span>}
-                      {lead.reply_received && <span className="px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">Reply</span>}
-                      {lead.meeting_booked && <span className="px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20">Mtg</span>}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => openEdit(lead)} className="admin-muted hover:admin-text text-[12px] px-2.5 py-1 rounded-lg border admin-border admin-hover transition-colors">Edit</button>
-                      <button onClick={() => deleteLead(lead.id!, lead.business_name)} aria-label={`Delete ${lead.business_name}`} className="text-red-400 hover:text-red-300 p-1.5 rounded-lg bg-red-500/5 hover:bg-red-500/10 transition-colors"><Trash2 size={12} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold font-mono ring-1 ring-inset ${scoreBadge(lead.website_quality_score)}`}>
+                        {lead.website_quality_score != null ? `${lead.website_quality_score}/10` : 'N/A'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <span className={`p-1.5 rounded-md ${lead.contact_email   ? 'bg-blue-500/10 text-blue-400'   : 'bg-white/5 text-zinc-600'}`}><Mail          size={14} /></span>
+                        <span className={`p-1.5 rounded-md ${lead.whatsapp_number ? 'bg-[#25D366]/10 text-[#25D366]' : 'bg-white/5 text-zinc-600'}`}><MessageCircle size={14} /></span>
+                        <span className={`p-1.5 rounded-md ${lead.linkedin_url    ? 'bg-blue-500/10 text-blue-500'   : 'bg-white/5 text-zinc-600'}`}><Linkedin      size={14} /></span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => openEdit(lead)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors">Edit</button>
+                        <button onClick={() => deleteLead(lead.id!, lead.business_name)} className="p-1.5 rounded-lg text-red-400/70 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors"><Trash2 size={14} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -510,33 +465,43 @@ export default function CRMPanel() {
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {loading ? (
-          <div className="py-12 text-center admin-subtle text-sm">Loading...</div>
+          <div className="py-12 text-center text-zinc-500 text-sm">Loading…</div>
         ) : filtered.length === 0 ? (
-          <div className="py-12 text-center admin-subtle text-sm">No leads found.</div>
+          <div className="py-12 text-center text-zinc-500 text-sm">No leads found.</div>
         ) : filtered.map(lead => (
-          <div key={lead.id} className="admin-card p-4 space-y-3">
+          <div key={lead.id} className="border border-white/10 bg-zinc-900/40 rounded-2xl p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center text-[12px] font-bold" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 flex items-center justify-center text-xs font-bold text-zinc-300 flex-shrink-0">
                   {lead.business_name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-semibold text-[13px] admin-text truncate">{lead.business_name}</div>
-                  <div className="text-[11px] admin-muted truncate mt-0.5">{lead.contact_email}</div>
+                  <div className="font-semibold text-sm text-zinc-200 truncate">{lead.business_name}</div>
+                  <div className="text-xs text-zinc-500 truncate mt-0.5">{lead.contact_email}</div>
                 </div>
               </div>
-              <span className={`flex-shrink-0 text-[10px] font-mono px-2 py-0.5 rounded-full border ${statusColor[lead.outreach_status] || 'text-slate-400 bg-white/5 border-white/10'}`}>
+              <span className={`flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ring-1 ring-inset ${statusBadge(lead.outreach_status)}`}>
                 {lead.outreach_status}
               </span>
             </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className={`p-1.5 rounded-md ${lead.contact_email   ? 'bg-blue-500/10 text-blue-400'   : 'bg-white/5 text-zinc-600'}`}><Mail          size={13} /></span>
+                <span className={`p-1.5 rounded-md ${lead.whatsapp_number ? 'bg-[#25D366]/10 text-[#25D366]' : 'bg-white/5 text-zinc-600'}`}><MessageCircle size={13} /></span>
+                <span className={`p-1.5 rounded-md ${lead.linkedin_url    ? 'bg-blue-500/10 text-blue-500'   : 'bg-white/5 text-zinc-600'}`}><Linkedin      size={13} /></span>
+              </div>
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold font-mono ring-1 ring-inset ${scoreBadge(lead.website_quality_score)}`}>
+                {lead.website_quality_score != null ? `${lead.website_quality_score}/10` : 'N/A'}
+              </span>
+            </div>
             {lead.follow_up_date && (
-              <div className={`text-[10px] font-mono ${new Date(lead.follow_up_date) < new Date() ? 'text-red-400' : 'admin-subtle'}`}>
+              <div className={`text-[11px] font-mono ${new Date(lead.follow_up_date) < new Date() ? 'text-red-400' : 'text-zinc-500'}`}>
                 Follow-up: {lead.follow_up_date}
               </div>
             )}
             <div className="flex gap-2 pt-1">
-              <button onClick={() => openEdit(lead)} className="flex-1 py-2 rounded-xl text-[12px] font-medium border admin-border admin-hover admin-muted hover:admin-text transition-colors">Edit</button>
-              <button onClick={() => deleteLead(lead.id!, lead.business_name)} aria-label={`Delete ${lead.business_name}`} className="px-4 py-2 rounded-xl text-[12px] bg-red-500/5 hover:bg-red-500/10 text-red-400 hover:text-red-300 transition-colors"><Trash2 size={13} /></button>
+              <button onClick={() => openEdit(lead)} className="flex-1 py-2.5 rounded-xl text-xs font-medium border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300 transition-colors">Edit</button>
+              <button onClick={() => deleteLead(lead.id!, lead.business_name)} className="px-4 py-2.5 rounded-xl text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"><Trash2 size={13} /></button>
             </div>
           </div>
         ))}
