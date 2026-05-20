@@ -43,18 +43,18 @@ const EMAIL_STEPS = [
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 
 const Card = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-  <div className={`p-6 rounded-2xl bg-zinc-900/40 border border-white/5 backdrop-blur-md shadow-xl ${className}`}>
+  <div className={`p-6 rounded-2xl admin-surface border admin-border shadow-xl ${className}`}>
     {children}
   </div>
 );
 
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3 block">
+  <label className="label-xs mb-3 block">
     {children}
   </label>
 );
 
-const inputBaseClasses = "w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-zinc-200 outline-none focus:border-[#00D67D]/50 focus:bg-black/40 transition-all placeholder:text-zinc-600";
+const inputBaseClasses = "w-full admin-input border admin-border-md rounded-xl px-4 py-3 text-sm admin-text outline-none focus:border-[#00D67D]/50 transition-all placeholder:admin-subtle";
 
 // ─── COPY OUTPUT RENDERER ─────────────────────────────────────────────────────
 
@@ -64,10 +64,10 @@ function renderOutput(platform: Platform, raw: string) {
   const OutputSection = ({ title, content, meta }: { title: string, content: string, meta?: string }) => (
     <div className="mb-4 last:mb-0">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">{title}</div>
-        {meta && <div className="text-[10px] text-zinc-600">{meta}</div>}
+        <div className="label-xs">{title}</div>
+        {meta && <div className="text-[10px] admin-muted">{meta}</div>}
       </div>
-      <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap bg-black/20 p-4 rounded-xl border border-white/5">
+      <p className="text-sm admin-text leading-relaxed whitespace-pre-wrap admin-surface-2 p-4 rounded-xl border admin-border">
         {content}
       </p>
     </div>
@@ -115,14 +115,14 @@ function renderOutput(platform: Platform, raw: string) {
     return (
       <div className="grid gap-3">
         {fields.map(f => (
-          <div key={f.label} className="bg-black/20 p-3 rounded-xl border border-white/5">
+          <div key={f.label} className="admin-surface-2 p-3 rounded-xl border admin-border">
             <div className="flex items-center justify-between mb-1">
-              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">{f.label}</div>
-              <span className={`text-[10px] font-mono ${f.value.length > f.max ? 'text-red-400' : 'text-zinc-600'}`}>
+              <div className="label-xs">{f.label}</div>
+              <span className={`text-[10px] font-mono ${f.value.length > f.max ? 'text-red-400' : 'admin-muted'}`}>
                 {f.value.length}/{f.max}
               </span>
             </div>
-            <p className="text-sm text-zinc-300">{f.value}</p>
+            <p className="text-sm admin-text">{f.value}</p>
           </div>
         ))}
       </div>
@@ -130,8 +130,8 @@ function renderOutput(platform: Platform, raw: string) {
   }
 
   return (
-    <div className="bg-black/20 p-4 rounded-xl border border-white/5 space-y-2">
-      {lines.map((line, i) => <p key={i} className="text-sm text-zinc-300 leading-relaxed">{line}</p>)}
+    <div className="admin-surface-2 p-4 rounded-xl border admin-border space-y-2">
+      {lines.map((line, i) => <p key={i} className="text-sm admin-text leading-relaxed">{line}</p>)}
     </div>
   );
 }
@@ -208,12 +208,12 @@ function CopyTab({ leads }: { leads: Lead[] }) {
                     onClick={() => setPlatform(p.id)}
                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all duration-300 ${
                       isActive 
-                        ? `${p.bg} ${p.activeBorder} shadow-[0_0_15px_rgba(0,0,0,0.2)]` 
-                        : 'bg-black/20 border-white/5 hover:border-white/20 hover:bg-black/40 text-zinc-500'
+                        ? `${p.bg} ${p.activeBorder}` 
+                        : 'admin-hover admin-border admin-muted'
                     }`}
                   >
-                    <div className={`${isActive ? p.color : 'text-zinc-400'}`}>{p.icon}</div>
-                    <span className={`text-[11px] font-medium tracking-wide ${isActive ? 'text-zinc-200' : 'text-zinc-500'}`}>
+                    <div className={`${isActive ? p.color : 'admin-muted'}`}>{p.icon}</div>
+                    <span className={`text-[11px] font-medium tracking-wide ${isActive ? p.color : 'admin-muted'}`}>
                       {p.label}
                     </span>
                   </motion.button>
@@ -235,7 +235,7 @@ function CopyTab({ leads }: { leads: Lead[] }) {
                       className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
                         tone === t 
                           ? 'bg-[#00D67D]/10 border-[#00D67D]/30 text-[#00D67D]' 
-                          : 'bg-black/20 border-white/5 text-zinc-400 hover:border-white/20 hover:text-zinc-200'
+                          : 'admin-hover admin-border admin-muted'
                       }`}>{t}</button>
                   ))}
                 </div>
@@ -248,7 +248,7 @@ function CopyTab({ leads }: { leads: Lead[] }) {
                       className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
                         goal === g 
                           ? 'bg-[#00D67D]/10 border-[#00D67D]/30 text-[#00D67D]' 
-                          : 'bg-black/20 border-white/5 text-zinc-400 hover:border-white/20 hover:text-zinc-200'
+                          : 'admin-hover admin-border admin-muted'
                       }`}>{g}</button>
                   ))}
                 </div>
@@ -256,7 +256,7 @@ function CopyTab({ leads }: { leads: Lead[] }) {
             </div>
 
             <div className="flex-grow mb-6">
-              <Label>Key Message / Offer <span className="normal-case font-normal text-zinc-500 ml-1">(Optional)</span></Label>
+              <Label>Key Message / Offer <span className="normal-case font-normal admin-muted ml-1">(Optional)</span></Label>
               <textarea 
                 value={keyMessage} 
                 onChange={e => setKeyMessage(e.target.value)}
@@ -288,29 +288,26 @@ function CopyTab({ leads }: { leads: Lead[] }) {
         )}
 
         {output && (
-          <motion.div {...fadeUp} className="rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/50">
-              <div className="flex items-center gap-2 text-zinc-300">
+          <motion.div {...fadeUp} className="rounded-2xl admin-surface border admin-border overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b admin-border admin-surface-2">
+              <div className="flex items-center gap-2 admin-text">
                 <LayoutTemplate size={16} className="text-[#00D67D]" />
                 <span className="text-sm font-semibold">Generated Output</span>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={generate} disabled={generating}
-                  className="flex items-center gap-2 text-xs font-medium text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  className="flex items-center gap-2 text-xs font-medium admin-muted hover:admin-text px-3 py-1.5 rounded-lg admin-hover border admin-border transition-colors">
                   <RefreshCw size={14} className={generating ? "animate-spin" : ""} /> 
                   <span className="hidden sm:inline">Regenerate</span>
                 </button>
                 <button onClick={copyOutput}
-                  className="flex items-center gap-2 text-xs font-medium text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  className="flex items-center gap-2 text-xs font-medium admin-muted hover:admin-text px-3 py-1.5 rounded-lg admin-hover border admin-border transition-colors">
                   {copied ? <CheckCircle2 size={14} className="text-[#00D67D]" /> : <Copy size={14} />}
                   <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy to Clipboard'}</span>
                 </button>
               </div>
             </div>
-            
-            {/* Content */}
-            <div className="p-6 bg-[#0a0a0c]">
+            <div className="p-6 admin-surface-2">
               {renderOutput(platform, output)}
             </div>
           </motion.div>
@@ -388,19 +385,19 @@ function EmailTab({ leads }: { leads: Lead[] }) {
             <AnimatePresence>
               {selectedLead && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                  <div className="p-4 rounded-xl bg-black/20 border border-white/5 space-y-3 mt-4">
-                    <div className="flex items-center gap-3 border-b border-white/5 pb-3">
-                      <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400">
+                  <div className="p-4 rounded-xl admin-surface-2 border admin-border space-y-3 mt-4">
+                    <div className="flex items-center gap-3 border-b admin-border pb-3">
+                      <div className="w-10 h-10 rounded-full admin-surface-3 border admin-border flex items-center justify-center admin-muted font-semibold text-sm">
                         {selectedLead.business_name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="text-sm font-semibold text-zinc-200">{selectedLead.business_name}</div>
-                        <div className="text-xs text-zinc-500">{selectedLead.contact_email || 'No email on file'}</div>
+                        <div className="text-sm font-semibold admin-text">{selectedLead.business_name}</div>
+                        <div className="text-xs admin-muted">{selectedLead.contact_email || 'No email on file'}</div>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div><span className="text-zinc-500">Industry:</span> <span className="text-zinc-300">{selectedLead.industry || '—'}</span></div>
-                      <div><span className="text-zinc-500">Score:</span> <span className="text-[#00D67D] font-medium">{selectedLead.website_quality_score ? `${selectedLead.website_quality_score}/10` : '—'}</span></div>
+                      <div><span className="admin-muted">Industry:</span> <span className="admin-text">{selectedLead.industry || '—'}</span></div>
+                      <div><span className="admin-muted">Score:</span> <span className="text-[#00D67D] font-medium">{selectedLead.website_quality_score ? `${selectedLead.website_quality_score}/10` : '—'}</span></div>
                     </div>
                   </div>
                 </motion.div>
@@ -416,7 +413,7 @@ function EmailTab({ leads }: { leads: Lead[] }) {
                 return (
                   <button key={s.step} onClick={() => setActiveStep(s.step)}
                     className={`relative p-4 rounded-xl border text-left transition-all duration-300 ${
-                      isActive ? 'bg-zinc-800/50 border-zinc-600 shadow-lg' : 'bg-black/20 border-white/5 hover:border-white/20'
+                      isActive ? 'admin-surface-2 admin-border-md shadow-lg' : 'admin-hover admin-border'
                     }`}>
                     {isActive && (
                       <motion.div layoutId="active-step-border" className="absolute inset-0 rounded-xl"
@@ -427,8 +424,8 @@ function EmailTab({ leads }: { leads: Lead[] }) {
                         style={{ backgroundColor: `${s.color}15`, color: s.color, border: `1px solid ${s.color}30` }}>
                         {s.tag}
                       </span>
-                      <div className={`text-sm font-semibold mb-1 ${isActive ? 'text-zinc-100' : 'text-zinc-400'}`}>{s.label}</div>
-                      <div className="text-[10px] text-zinc-500 leading-snug">{s.desc}</div>
+                      <div className={`text-sm font-semibold mb-1 ${isActive ? 'admin-text' : 'admin-muted'}`}>{s.label}</div>
+                      <div className="text-[10px] admin-muted leading-snug">{s.desc}</div>
                     </div>
                   </button>
                 )
@@ -439,11 +436,11 @@ function EmailTab({ leads }: { leads: Lead[] }) {
             <div className="flex items-center gap-1 pt-2 px-2">
               {EMAIL_STEPS.map((s, i) => (
                 <React.Fragment key={s.step}>
-                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all duration-300 ${activeStep >= s.step ? 'scale-100 shadow-[0_0_8px_currentColor]' : 'scale-75'}`}
-                    style={{ backgroundColor: activeStep >= s.step ? s.color : '#3f3f46', color: s.color }} />
+                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all duration-300 ${activeStep >= s.step ? 'scale-100' : 'scale-75'}`}
+                    style={{ backgroundColor: activeStep >= s.step ? s.color : 'var(--admin-border-md)', color: s.color }} />
                   {i < EMAIL_STEPS.length - 1 && (
                     <div className="flex-1 h-0.5 transition-all duration-300"
-                      style={{ backgroundColor: activeStep > s.step ? EMAIL_STEPS[i].color : '#27272a' }} />
+                      style={{ backgroundColor: activeStep > s.step ? EMAIL_STEPS[i].color : 'var(--admin-border-md)' }} />
                   )}
                 </React.Fragment>
               ))}
@@ -469,39 +466,39 @@ function EmailTab({ leads }: { leads: Lead[] }) {
         )}
 
         {(subject || body) && (
-          <motion.div {...fadeUp} className="rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/50">
+          <motion.div {...fadeUp} className="rounded-2xl admin-surface border admin-border shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b admin-border admin-surface-2">
               <div className="flex items-center gap-3">
                 <div className="flex space-x-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+                  <div className="w-3 h-3 rounded-full bg-red-400/70"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-400/70"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-400/70"></div>
                 </div>
-                <span className="text-sm font-medium text-zinc-400 ml-2">New Message</span>
+                <span className="text-sm font-medium admin-muted ml-2">New Message</span>
               </div>
             </div>
 
-            <div className="p-6 bg-[#0a0a0c] space-y-4">
-              <div className="flex items-center gap-4 border-b border-white/5 pb-4">
-                <span className="text-zinc-500 text-sm font-medium w-16">To:</span>
-                <span className="text-zinc-300 text-sm bg-white/5 px-3 py-1 rounded-md border border-white/10">
+            <div className="p-6 admin-surface-2 space-y-4">
+              <div className="flex items-center gap-4 border-b admin-border pb-4">
+                <span className="admin-muted text-sm font-medium w-16">To:</span>
+                <span className="admin-text text-sm admin-surface px-3 py-1 rounded-md border admin-border">
                   {selectedLead?.contact_email || 'No email provided'}
                 </span>
               </div>
-              <div className="flex items-center gap-4 border-b border-white/5 pb-4">
-                <span className="text-zinc-500 text-sm font-medium w-16">Subject:</span>
+              <div className="flex items-center gap-4 border-b admin-border pb-4">
+                <span className="admin-muted text-sm font-medium w-16">Subject:</span>
                 <input value={subject} onChange={e => setSubject(e.target.value)}
-                  className="flex-1 bg-transparent text-zinc-200 text-sm outline-none font-medium placeholder:text-zinc-600" 
+                  className="flex-1 bg-transparent admin-text text-sm outline-none font-medium placeholder:admin-subtle" 
                   placeholder="Subject line..." />
               </div>
               <div className="pt-2">
                 <textarea value={body} onChange={e => setBody(e.target.value)} rows={12}
-                  className="w-full bg-transparent text-zinc-300 text-sm outline-none resize-none leading-relaxed placeholder:text-zinc-600" 
+                  className="w-full bg-transparent admin-text text-sm outline-none resize-none leading-relaxed placeholder:admin-subtle" 
                   placeholder="Write your message here..." />
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-4 border-t border-zinc-800 bg-zinc-900/50">
+            <div className="flex items-center justify-between p-4 border-t admin-border admin-surface-2">
               <div className="flex items-center gap-3">
                 <button onClick={sendEmail} disabled={sending || !selectedLead?.contact_email}
                   className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm bg-[#00D67D] hover:bg-[#00c271] text-black transition-colors disabled:opacity-50">
@@ -512,7 +509,7 @@ function EmailTab({ leads }: { leads: Lead[] }) {
                     navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
                     setCopied(true); setTimeout(() => setCopied(false), 2000);
                   }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm admin-muted hover:admin-text admin-hover transition-colors">
                   {copied ? <CheckCircle2 size={16} className="text-[#00D67D]" /> : <Copy size={16} />}
                 </button>
               </div>
@@ -552,19 +549,19 @@ export default function AIStudioPanel() {
       {/* Header & Animated Tab Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100 flex items-center gap-2">
+          <h1 className="text-2xl font-bold admin-text flex items-center gap-2">
             <Sparkles className="text-[#00D67D]" /> AI Content Studio
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">Generate high-converting copy and outreach sequences.</p>
+          <p className="text-sm admin-muted mt-1">Generate high-converting copy and outreach sequences.</p>
         </div>
 
-        <div className="inline-flex p-1 bg-zinc-900/50 border border-white/5 rounded-2xl backdrop-blur-md self-start">
+        <div className="inline-flex p-1 admin-surface border admin-border rounded-2xl self-start">
           {tabs.map(t => {
             const isActive = tab === t.id;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`relative flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors z-10 ${
-                  isActive ? 'text-[#00D67D]' : 'text-zinc-500 hover:text-zinc-300'
+                  isActive ? 'text-[#00D67D]' : 'admin-muted hover:admin-text'
                 }`}>
                 {isActive && (
                   <motion.div layoutId="active-tab" 
