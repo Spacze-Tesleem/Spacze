@@ -168,7 +168,7 @@ export default function WhatsAppPanel() {
     qr_ready:     { label: 'Scan QR',      color: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10', icon: <QrCode size={13} /> },
     connecting:   { label: 'Connecting…',  color: 'text-blue-400 border-blue-400/30 bg-blue-400/10', icon: <RefreshCw size={13} className="animate-spin" /> },
     disconnected: { label: 'Disconnected', color: 'text-red-400 border-red-400/30 bg-red-400/10', icon: <WifiOff size={13} /> },
-    unknown:      { label: 'Checking…',    color: 'text-slate-400 border-slate-400/30 bg-slate-400/10', icon: <RefreshCw size={13} className="animate-spin" /> },
+    unknown:      { label: 'Checking…',    color: 'text-zinc-400 border-zinc-400/30 bg-zinc-400/10', icon: <RefreshCw size={13} className="animate-spin" /> },
   };
   const badge = statusConfig[status];
 
@@ -201,7 +201,7 @@ export default function WhatsAppPanel() {
               <button
                 onClick={reconnect}
                 disabled={polling}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-white/5 border admin-border-md text-slate-300 admin-hover transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg admin-surface-2 border admin-border-md admin-text-2 admin-hover transition-colors disabled:opacity-50"
               >
                 <RefreshCw size={13} className={polling ? 'animate-spin' : ''} /> Reconnect
               </button>
@@ -216,8 +216,8 @@ export default function WhatsAppPanel() {
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="mt-5 flex flex-col items-center gap-3"
             >
-              <p className="text-sm text-slate-400 text-center">
-                Open WhatsApp on your dedicated number → <strong className="text-white">Linked Devices</strong> → <strong className="text-white">Link a Device</strong> → scan below
+              <p className="text-sm admin-muted text-center">
+                Open WhatsApp on your dedicated number → <strong className="admin-text">Linked Devices</strong> → <strong className="admin-text">Link a Device</strong> → scan below
               </p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qr} alt="WhatsApp QR Code" className="w-56 h-56 rounded-2xl border admin-border-md bg-white p-2" />
@@ -244,7 +244,7 @@ export default function WhatsAppPanel() {
 
         {(status === 'disconnected' || status === 'unknown') && !qr && !statusError && (
           <p className="mt-4 admin-subtle text-sm">
-            Worker is not connected. Click <strong className="text-slate-400">Reconnect</strong> to start, then scan the QR code.
+            Worker is not connected. Click <strong className="admin-text-2">Reconnect</strong> to start, then scan the QR code.
           </p>
         )}
       </motion.div>
@@ -267,7 +267,7 @@ export default function WhatsAppPanel() {
 
         {leadsWithNumber.length === 0 ? (
           <div className="py-8 text-center border border-dashed admin-border-md rounded-xl">
-            <MessageCircle size={28} className="text-slate-700 mx-auto mb-2" />
+            <MessageCircle size={28} className="admin-subtle mx-auto mb-2" />
             <p className="admin-muted text-sm">No leads with a WhatsApp number yet.</p>
             <p className="admin-subtle text-xs mt-1">Add WhatsApp numbers in the CRM panel.</p>
           </div>
@@ -275,7 +275,7 @@ export default function WhatsAppPanel() {
           <>
             {/* Select all */}
             <div className="flex items-center justify-between mb-3">
-              <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-sm admin-muted cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={selectedIds.size === leadsWithNumber.length}

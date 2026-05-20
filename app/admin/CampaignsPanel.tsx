@@ -13,7 +13,7 @@ const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, string> = {
-  draft:     'text-slate-400 bg-slate-400/10 border-slate-400/20',
+  draft:     'text-zinc-400 bg-zinc-400/10 border-zinc-400/20',
   active:    'text-[#00D67D] bg-[#00D67D]/10 border-[#00D67D]/20',
   paused:    'text-yellow-400 bg-yellow-400/10 border-yellow-400/20',
   completed: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
@@ -23,7 +23,7 @@ const MSG_STATUS_STYLES: Record<string, string> = {
   pending:   'text-yellow-500 bg-yellow-500/10',
   sent:      'text-[#00D67D] bg-[#00D67D]/10',
   failed:    'text-red-400 bg-red-400/10',
-  cancelled: 'text-slate-500 bg-slate-500/10',
+  cancelled: 'text-zinc-500 bg-zinc-500/10',
 };
 
 const CHANNEL_ICONS: Record<CampaignChannel, React.ReactNode> = {
@@ -400,7 +400,7 @@ export default function CampaignsPanel() {
         <div className="flex items-center justify-center py-16 admin-muted text-sm">Loading…</div>
       ) : campaigns.length === 0 ? (
         <motion.div {...fadeUp} className="flex flex-col items-center justify-center py-16 gap-3 border border-dashed admin-border rounded-2xl">
-          <Megaphone size={32} className="text-slate-700" />
+          <Megaphone size={32} className="admin-subtle" />
           <p className="text-sm admin-muted">No campaigns yet.</p>
           <button onClick={() => setShowCreate(true)} className="text-xs text-[#00D67D] hover:underline">
             Create your first campaign →

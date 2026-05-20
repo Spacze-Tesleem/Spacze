@@ -225,7 +225,7 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
     active:    'text-[#00D67D] bg-[#00D67D]/10 border-[#00D67D]/20',
     paused:    'text-amber-400 bg-amber-400/10 border-amber-400/20',
     completed: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-    draft:     'text-slate-400 bg-slate-400/10 border-slate-400/20',
+    draft:     'text-zinc-400 bg-zinc-400/10 border-zinc-400/20',
   };
   const leadStatusPill: Record<string, string> = {
     Pending:          'text-amber-500 bg-amber-500/10',

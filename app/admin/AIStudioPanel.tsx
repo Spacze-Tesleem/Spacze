@@ -408,7 +408,7 @@ function EmailTab({ leads }: { leads: Lead[] }) {
           <div className="lg:col-span-2 space-y-4">
             <Label>Sequence Journey</Label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {EMAIL_STEPS.map((s, idx) => {
+              {EMAIL_STEPS.map((s) => {
                 const isActive = activeStep === s.step;
                 return (
                   <button key={s.step} onClick={() => setActiveStep(s.step)}

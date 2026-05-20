@@ -93,10 +93,10 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const systemItems = navItems.filter(n => n.group === 'system');
 
   return (
-    <div className="min-h-screen flex bg-zinc-950 text-zinc-200 selection:bg-[#00D67D]/30" data-theme={theme}>
+    <div className="min-h-screen flex admin-bg admin-text selection:bg-[#00D67D]/30" data-theme={theme}>
       
-      {/* Sidebar - Sleek & Modern */}
-      <aside className={`hidden lg:flex fixed inset-y-0 left-0 z-50 ${sidebarW} bg-zinc-950/80 backdrop-blur-xl border-r border-white/5 flex-col transition-all duration-300 overflow-hidden`}>
+      {/* Sidebar */}
+      <aside className={`hidden lg:flex fixed inset-y-0 left-0 z-50 ${sidebarW} admin-sidebar border-r admin-border flex-col transition-all duration-300 overflow-hidden`}>
         {/* Logo area */}
         <div className={`flex items-center h-20 px-4 flex-shrink-0 ${collapsed ? 'justify-center' : 'justify-between'}`}>
           <div className="flex items-center gap-3 min-w-0">
@@ -106,8 +106,8 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <AnimatePresence initial={false}>
               {!collapsed && (
                 <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} className="overflow-hidden whitespace-nowrap">
-                  <div className="font-semibold text-sm tracking-tight text-white">Spacze</div>
-                  <div className="text-[10px] text-zinc-500 font-mono tracking-widest uppercase">Admin</div>
+                  <div className="font-semibold text-sm tracking-tight admin-text">Spacze</div>
+                  <div className="text-[10px] admin-muted font-mono tracking-widest uppercase">Admin</div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -116,38 +116,30 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
-          {!collapsed && <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider px-3 pb-2">Menu</p>}
-          {mainItems.map(({ id, label, icon: Icon }) => {
-            const isActive = active === id;
-            return (
-              <button key={id} onClick={() => setActive(id)} title={collapsed ? label : undefined}
-                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive ? 'text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`}>
-                {isActive && <motion.div layoutId="sidebar-active" className="absolute inset-0 bg-white/10 rounded-lg" />}
-                <Icon size={16} className={`relative z-10 ${isActive ? 'text-[#00D67D]' : 'group-hover:text-zinc-300'}`} />
-                {!collapsed && <span className="relative z-10">{label}</span>}
-              </button>
-            )
-          })}
+          {!collapsed && <p className="label-xs px-3 pb-2">Menu</p>}
+          {mainItems.map(({ id, label, icon: Icon }) => (
+            <NavButton key={id} id={id} label={label} Icon={Icon} active={active} collapsed={collapsed} onClick={() => setActive(id)} />
+          ))}
         </nav>
 
         {/* Footer actions */}
-        <div className="p-3 border-t border-white/5">
-           <button onClick={() => setCollapsed(!collapsed)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-all w-full mb-2">
-             {collapsed ? <ChevronRight size={16}/> : <ChevronLeft size={16}/>}
-             {!collapsed && <span>Collapse</span>}
+        <div className="p-3 border-t admin-border">
+           <button onClick={() => setCollapsed(!collapsed)} className="nav-item nav-item-inactive w-full mb-2">
+             {collapsed ? <ChevronRight size={14}/> : <ChevronLeft size={14}/>}
+             {!collapsed && <span className="text-[12px]">Collapse</span>}
            </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <div className={`flex-1 min-w-0 ${mainML} flex flex-col min-h-screen transition-all duration-300 bg-[#050505]`}>
+      <div className={`flex-1 min-w-0 ${mainML} flex flex-col min-h-screen transition-all duration-300 admin-bg`}>
         
         {/* Floating Topbar */}
         <div className="p-4 lg:p-6 pb-0 sticky top-0 z-40">
-          <header className="bg-zinc-900/50 backdrop-blur-md border border-white/5 rounded-2xl px-6 h-16 flex items-center justify-between shadow-sm">
+          <header className="admin-header backdrop-blur-md border rounded-2xl px-6 h-16 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-3 min-w-0">
               <div className="min-w-0">
-                <h1 className="font-semibold text-sm text-white tracking-tight">{page.title}</h1>
+                <h1 className="font-semibold text-sm admin-text tracking-tight">{page.title}</h1>
               </div>
               <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#00D67D]/10 border border-[#00D67D]/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#00D67D] animate-pulse" />
@@ -156,12 +148,12 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/40 border border-white/5 text-[11px] font-mono text-zinc-500">
+              <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg admin-surface-2 border admin-border text-[11px] font-mono admin-muted">
                 <Command size={12} /> K
               </div>
-              <div className="h-4 w-px bg-white/10 mx-2 hidden sm:block"></div>
-              <button className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"><Bell size={16} /></button>
-              <button onClick={toggleTheme} className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+              <div className="h-4 w-px admin-border mx-2 hidden sm:block"></div>
+              <button className="p-2 rounded-lg admin-muted hover:admin-text admin-hover transition-colors"><Bell size={16} /></button>
+              <button onClick={toggleTheme} className="p-2 rounded-lg admin-muted hover:admin-text admin-hover transition-colors">
                 {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
               </button>
               <button onClick={onLogout} className="p-2 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-500/10 transition-colors ml-1">
