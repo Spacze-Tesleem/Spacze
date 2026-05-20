@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   RefreshCw, Plus, X, Play, Pause, Trash2,
   Calendar, Users, Eye, Megaphone, Mail, MessageCircle, Linkedin, Twitter,
+  Facebook, Search,
 } from 'lucide-react';
 import { Campaign, CampaignChannel, Lead, ScheduledMessage } from '@/lib/supabase';
 
@@ -27,28 +28,45 @@ const MSG_STATUS_STYLES: Record<string, string> = {
 };
 
 const CHANNEL_ICONS: Record<CampaignChannel, React.ReactNode> = {
-  email:    <Mail size={13} />,
-  whatsapp: <MessageCircle size={13} />,
-  linkedin: <Linkedin size={13} />,
-  twitter:  <Twitter size={13} />,
+  email:      <Mail size={13} />,
+  whatsapp:   <MessageCircle size={13} />,
+  linkedin:   <Linkedin size={13} />,
+  twitter:    <Twitter size={13} />,
+  facebook:   <Facebook size={13} />,
+  google_ads: <Search size={13} />,
 };
 
 const CHANNEL_COLORS: Record<CampaignChannel, string> = {
-  email:    'text-blue-400',
-  whatsapp: 'text-[#25D366]',
-  linkedin: 'text-blue-500',
-  twitter:  'text-sky-400',
+  email:      'text-blue-400',
+  whatsapp:   'text-[#25D366]',
+  linkedin:   'text-blue-500',
+  twitter:    'text-sky-400',
+  facebook:   'text-[#1877F2]',
+  google_ads: 'text-yellow-400',
 };
 
-const CHANNEL_REQUIREMENTS: Record<CampaignChannel, { field: keyof Lead; label: string }> = {
+// Channels that target individual leads via contact fields
+const CHANNEL_REQUIREMENTS: Partial<Record<CampaignChannel, { field: keyof Lead; label: string }>> = {
   email:    { field: 'contact_email',   label: 'email' },
   whatsapp: { field: 'whatsapp_number', label: 'WhatsApp number' },
   linkedin: { field: 'linkedin_url',    label: 'LinkedIn URL' },
   twitter:  { field: 'twitter_handle',  label: 'Twitter handle' },
 };
 
+// Ad channels publish one ad per campaign (not per-lead)
+const AD_CHANNELS: CampaignChannel[] = ['facebook', 'google_ads'];
+
+const CHANNEL_LABELS: Record<CampaignChannel, string> = {
+  email:      'Email',
+  whatsapp:   'WhatsApp',
+  linkedin:   'LinkedIn',
+  twitter:    'Twitter / X',
+  facebook:   'Facebook Ads',
+  google_ads: 'Google Ads',
+};
+
 const STEP_OFFSETS = [0, 3, 7, 14];
-const ALL_CHANNELS: CampaignChannel[] = ['email', 'whatsapp', 'linkedin', 'twitter'];
+const ALL_CHANNELS: CampaignChannel[] = ['email', 'whatsapp', 'linkedin', 'twitter', 'facebook', 'google_ads'];
 
 function addDays(base: Date, days: number): string {
   const d = new Date(base);
@@ -61,7 +79,7 @@ function addDays(base: Date, days: number): string {
 function ChannelBadge({ channel }: { channel: CampaignChannel }) {
   return (
     <span className={`flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-md border ${CHANNEL_COLORS[channel]} bg-white/5 border-white/10`}>
-      {CHANNEL_ICONS[channel]} {channel}
+      {CHANNEL_ICONS[channel]} {CHANNEL_LABELS[channel]}
     </span>
   );
 }
@@ -70,7 +88,10 @@ function ChannelBadge({ channel }: { channel: CampaignChannel }) {
 
 function ChannelCoverage({ channel, leads }: { channel: CampaignChannel; leads: Lead[] }) {
   const req = CHANNEL_REQUIREMENTS[channel];
-  if (!req) return null;
+  if (!req) {
+    // Ad channels (facebook, google_ads) publish one ad — no per-lead requirement
+    return <span className="text-[10px] admin-muted">1 ad per campaign</span>;
+  }
   const covered = leads.filter(l => !!l[req.field]).length;
   const pct = leads.length > 0 ? Math.round((covered / leads.length) * 100) : 0;
   return (
@@ -218,9 +239,13 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
   }
 
   async function save(activate: boolean) {
-    if (!name.trim())                 { setError('Campaign name is required.'); return; }
-    if (channels.length === 0)        { setError('Select at least one channel.'); return; }
-    if (selectedLeadIds.length === 0) { setError('Select at least one lead.'); return; }
+    if (!name.trim())          { setError('Campaign name is required.'); return; }
+    if (channels.length === 0) { setError('Select at least one channel.'); return; }
+    // Require leads only when outreach channels are selected
+    const outreachChannels = channels.filter(ch => !AD_CHANNELS.includes(ch));
+    if (outreachChannels.length > 0 && selectedLeadIds.length === 0) {
+      setError('Select at least one lead for outreach channels.'); return;
+    }
     setSaving(true); setError('');
     try {
       const res = await fetch('/api/campaigns', {
@@ -238,8 +263,10 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
       if (activate && campaign.id) {
         const base = new Date(startDate);
         const rows: Omit<ScheduledMessage, 'id' | 'created_at'>[] = [];
+
+        // Per-lead outreach channels (email, whatsapp, linkedin, twitter)
         for (const leadId of selectedLeadIds) {
-          for (const channel of channels) {
+          for (const channel of outreachChannels) {
             const steps = (channel === 'linkedin' || channel === 'twitter') ? [1] : [1, 2, 3, 4];
             for (const step of steps) {
               rows.push({
@@ -250,15 +277,30 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
             }
           }
         }
-        await fetch('/api/scheduled-messages', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(rows),
-        });
+
+        // Ad channels (facebook, google_ads) — one scheduled entry per channel,
+        // using the first selected lead as the brief source (or a placeholder)
+        const briefLeadId = selectedLeadIds[0] ?? null;
+        for (const channel of channels.filter(ch => AD_CHANNELS.includes(ch))) {
+          rows.push({
+            campaign_id: campaign.id!, lead_id: briefLeadId!, channel,
+            sequence_step: 1, scheduled_at: addDays(base, 0),
+            status: 'pending', sent_at: null, message_body: null, subject: null,
+          });
+        }
+
+        if (rows.length > 0) {
+          await fetch('/api/scheduled-messages', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(rows),
+          });
+        }
       }
       onCreated(campaign);
       onClose();
-    } catch (e: any) { setError(e.message); }
-    finally { setSaving(false); }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to save campaign');
+    } finally { setSaving(false); }
   }
 
   return (
@@ -297,10 +339,11 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
           </div>
 
           {/* Channels */}
-          <div>
-            <label className="label-xs mb-2.5 block">Channels</label>
+          <div className="space-y-3">
+            <label className="label-xs block">Outreach Channels</label>
+            {/* Direct outreach (per-lead) */}
             <div className="grid grid-cols-2 gap-2">
-              {ALL_CHANNELS.map(ch => {
+              {(['email', 'whatsapp', 'linkedin', 'twitter'] as CampaignChannel[]).map(ch => {
                 const active = channels.includes(ch);
                 return (
                   <button key={ch} onClick={() => toggleChannel(ch)}
@@ -310,7 +353,7 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
                         : 'admin-muted border-white/8 hover:bg-white/5 hover:border-white/12 hover:admin-text'
                     }`}>
                     <span className={active ? CHANNEL_COLORS[ch] : 'opacity-50'}>{CHANNEL_ICONS[ch]}</span>
-                    <span className="capitalize">{ch}</span>
+                    <span>{CHANNEL_LABELS[ch]}</span>
                     {active && selectedLeadIds.length > 0 && (
                       <span className="ml-auto">
                         <ChannelCoverage channel={ch} leads={leads.filter(l => selectedLeadIds.includes(l.id!))} />
@@ -319,6 +362,32 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
                   </button>
                 );
               })}
+            </div>
+            {/* Paid ad platforms */}
+            <div>
+              <p className="label-xs mb-2 flex items-center gap-2">
+                Paid Ad Platforms
+                <span className="normal-case font-normal admin-muted">— AI generates &amp; submits one ad per campaign</span>
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {AD_CHANNELS.map(ch => {
+                  const active = channels.includes(ch);
+                  return (
+                    <button key={ch} onClick={() => toggleChannel(ch)}
+                      className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
+                        active
+                          ? `${CHANNEL_COLORS[ch]} bg-white/8 border-white/15`
+                          : 'admin-muted border-white/8 hover:bg-white/5 hover:border-white/12 hover:admin-text'
+                      }`}>
+                      <span className={active ? CHANNEL_COLORS[ch] : 'opacity-50'}>{CHANNEL_ICONS[ch]}</span>
+                      <span>{CHANNEL_LABELS[ch]}</span>
+                      {active && (
+                        <span className="ml-auto text-[10px] admin-muted">1 ad</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

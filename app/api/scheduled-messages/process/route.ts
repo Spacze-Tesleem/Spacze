@@ -117,6 +117,59 @@ export async function POST() {
           if (!s.ok) { const d = await s.json(); throw new Error(d.error || 'Twitter DM send failed'); }
           break;
         }
+        case 'facebook': {
+          // Generate ad copy
+          const g  = await fetch(`${baseUrl}/api/generate-facebook`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lead) });
+          const gd = await g.json();
+          if (!g.ok) throw new Error(gd.error || 'Facebook ad generation failed');
+
+          // Parse structured output
+          const lines = (gd.output || '').replace(/\\n/g, '\n').split('\n').map((l: string) => l.trim()).filter(Boolean);
+          const extract = (re: RegExp) => { const l = lines.find((x: string) => re.test(x)); return l ? l.replace(re, '').trim() : ''; };
+          const primaryTextLines: string[] = [];
+          const ptStart = lines.findIndex((l: string) => /^primary_text\s*:?/i.test(l));
+          const hlIdx   = lines.findIndex((l: string) => /^headline\s*:/i.test(l));
+          if (ptStart >= 0) primaryTextLines.push(...lines.slice(ptStart + 1, hlIdx >= 0 ? hlIdx : undefined));
+
+          const s = await fetch(`${baseUrl}/api/send-facebook`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              primaryText:  primaryTextLines.join('\n') || gd.output,
+              headline:     extract(/^headline\s*:/i),
+              description:  extract(/^description\s*:/i),
+              cta:          extract(/^cta\s*:/i) || 'Learn More',
+              campaignName: `Spacze — ${lead.business_name}`,
+            }),
+          });
+          if (!s.ok) { const d = await s.json(); throw new Error(d.error || 'Facebook ad send failed'); }
+          break;
+        }
+        case 'google_ads': {
+          // Generate ad copy
+          const g  = await fetch(`${baseUrl}/api/generate-google-ads`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lead) });
+          const gd = await g.json();
+          if (!g.ok) throw new Error(gd.error || 'Google Ads generation failed');
+
+          // Parse headlines and descriptions
+          const lines = (gd.output || '').replace(/\\n/g, '\n').split('\n').map((l: string) => l.trim()).filter(Boolean);
+          const headlines: string[]    = [];
+          const descriptions: string[] = [];
+          lines.forEach((l: string) => {
+            if (/^headline\s*\d+\s*:/i.test(l))     headlines.push(l.replace(/^headline\s*\d+\s*:/i, '').trim());
+            if (/^description\s*\d+\s*:/i.test(l))  descriptions.push(l.replace(/^description\s*\d+\s*:/i, '').trim());
+          });
+
+          const s = await fetch(`${baseUrl}/api/send-google-ads`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              headlines:    headlines.length >= 3 ? headlines : ['AI Solutions', 'Grow Your Business', 'Spacze Agency'],
+              descriptions: descriptions.length >= 2 ? descriptions : ['AI-powered software for your business.', 'Get a free consultation today.'],
+              campaignName: `Spacze — ${lead.business_name}`,
+            }),
+          });
+          if (!s.ok) { const d = await s.json(); throw new Error(d.error || 'Google Ads send failed'); }
+          break;
+        }
         default:
           throw new Error(`Unknown channel: ${msg.channel}`);
       }

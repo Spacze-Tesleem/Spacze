@@ -120,6 +120,15 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {mainItems.map(({ id, label, icon: Icon }) => (
             <NavButton key={id} id={id} label={label} Icon={Icon} active={active} collapsed={collapsed} onClick={() => setActive(id)} />
           ))}
+          {systemItems.length > 0 && (
+            <>
+              {!collapsed && <p className="label-xs px-3 pt-4 pb-2">System</p>}
+              {collapsed && <div className="my-2 border-t admin-border" />}
+              {systemItems.map(({ id, label, icon: Icon }) => (
+                <NavButton key={id} id={id} label={label} Icon={Icon} active={active} collapsed={collapsed} onClick={() => setActive(id)} />
+              ))}
+            </>
+          )}
         </nav>
 
         {/* Footer actions */}

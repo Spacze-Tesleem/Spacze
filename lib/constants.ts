@@ -12,7 +12,7 @@ export type ResponseStatus = typeof RESPONSE_STATUSES[number];
 export const CAMPAIGN_STATUSES = ['draft', 'active', 'paused', 'completed'] as const;
 export type CampaignStatus = typeof CAMPAIGN_STATUSES[number];
 
-export const CAMPAIGN_CHANNELS = ['email', 'whatsapp', 'linkedin', 'twitter'] as const;
+export const CAMPAIGN_CHANNELS = ['email', 'whatsapp', 'linkedin', 'twitter', 'facebook', 'google_ads'] as const;
 export type CampaignChannel = typeof CAMPAIGN_CHANNELS[number];
 
 export const SCHEDULED_MESSAGE_STATUSES = ['pending', 'processing', 'sent', 'failed', 'cancelled'] as const;

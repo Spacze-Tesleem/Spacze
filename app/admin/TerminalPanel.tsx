@@ -6,6 +6,7 @@ import {
   Terminal, Key, Eye, EyeOff, CheckCircle2, AlertCircle,
   Save, RefreshCw, Zap, Mail, MessageCircle, Database,
   Globe, Shield, ChevronDown, ChevronRight, Linkedin, Twitter,
+  Facebook, Search,
 } from 'lucide-react';
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
@@ -200,6 +201,72 @@ const API_GROUPS: ApiGroup[] = [
         label: 'Bearer Token',
         placeholder: 'AAAA...',
         hint: 'App-only bearer token — used for user lookups.',
+      },
+    ],
+  },
+  {
+    id: 'facebook',
+    label: 'Facebook Ads',
+    icon: <Facebook size={15} />,
+    color: 'text-[#1877F2]',
+    description: 'Meta Marketing API for automated ad creation.',
+    fields: [
+      {
+        key: 'FB_ACCESS_TOKEN',
+        label: 'Access Token',
+        placeholder: 'EAAxxxxxxxxxxxxxxxx',
+        hint: 'Long-lived system-user or page access token from Meta Business Suite.',
+      },
+      {
+        key: 'FB_AD_ACCOUNT_ID',
+        label: 'Ad Account ID',
+        placeholder: 'act_123456789',
+        hint: 'Your ad account ID — starts with act_. Found in Ads Manager.',
+      },
+      {
+        key: 'FB_PAGE_ID',
+        label: 'Page ID',
+        placeholder: '123456789012345',
+        hint: 'Facebook Page ID to run ads from. Found in Page Settings → About.',
+      },
+    ],
+  },
+  {
+    id: 'google_ads',
+    label: 'Google Ads',
+    icon: <Search size={15} />,
+    color: 'text-yellow-400',
+    description: 'Google Ads API for automated search ad creation.',
+    fields: [
+      {
+        key: 'GOOGLE_ADS_DEVELOPER_TOKEN',
+        label: 'Developer Token',
+        placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxx',
+        hint: 'From Google Ads API Center → API Access. Requires approved access.',
+      },
+      {
+        key: 'GOOGLE_ADS_CLIENT_ID',
+        label: 'OAuth Client ID',
+        placeholder: 'xxxxxxxxxx.apps.googleusercontent.com',
+        hint: 'OAuth 2.0 client ID from Google Cloud Console.',
+      },
+      {
+        key: 'GOOGLE_ADS_CLIENT_SECRET',
+        label: 'OAuth Client Secret',
+        placeholder: 'GOCSPX-xxxxxxxxxxxxxxxx',
+        hint: 'OAuth 2.0 client secret from Google Cloud Console.',
+      },
+      {
+        key: 'GOOGLE_ADS_REFRESH_TOKEN',
+        label: 'Refresh Token',
+        placeholder: '1//xxxxxxxxxxxxxxxxxxxxxxxx',
+        hint: 'Offline refresh token obtained via OAuth consent flow.',
+      },
+      {
+        key: 'GOOGLE_ADS_CUSTOMER_ID',
+        label: 'Customer ID',
+        placeholder: '1234567890',
+        hint: '10-digit Google Ads customer ID (no dashes). Found in the top-right of Google Ads UI.',
       },
     ],
   },
