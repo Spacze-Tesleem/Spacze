@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, Save, Trash2, Search, ChevronDown, Mail,
@@ -281,7 +281,7 @@ export default function CRMPanel() {
   }
 
   // ── Filter + sort ──
-  const filtered = sortLeads(
+  const filtered = useMemo(() => sortLeads(
     leads.filter(l => {
       const q = search.toLowerCase();
       const matchSearch =
@@ -292,7 +292,7 @@ export default function CRMPanel() {
       return matchSearch && matchStatus;
     }),
     sortKey, sortDir,
-  );
+  ), [leads, search, statusFilter, sortKey, sortDir]);
 
   // ── Selection ──
   const allSelected = filtered.length > 0 && filtered.every(l => selected.has(l.id!));
@@ -326,14 +326,14 @@ export default function CRMPanel() {
   }
 
   // ── CRUD ──
-  function openAdd() { setForm({ ...EMPTY_LEAD }); setEditId(null); setSaveError(''); setShowForm(true); }
-  function openEdit(lead: Lead) {
+  const openAdd = useCallback(() => { setForm({ ...EMPTY_LEAD }); setEditId(null); setSaveError(''); setShowForm(true); }, []);
+  const openEdit = useCallback((lead: Lead) => {
     const { id, created_at, ...fields } = lead as Lead & { id: string; created_at: string };
     setForm(fields); setEditId(id ?? null); setSaveError(''); setShowForm(true);
-  }
-  function closeForm() { setShowForm(false); setEditId(null); setSaveError(''); }
+  }, []);
+  const closeForm = useCallback(() => { setShowForm(false); setEditId(null); setSaveError(''); }, []);
 
-  async function saveLead() {
+  const saveLead = useCallback(async () => {
     if (!form.business_name.trim() || !form.contact_email.trim()) {
       setSaveError('Business name and contact email are required.'); return;
     }
@@ -348,7 +348,7 @@ export default function CRMPanel() {
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : 'Failed to save lead.');
     } finally { setSaving(false); }
-  }
+  }, [form, editId, closeForm, fetchLeads, toast]);
 
   async function deleteLead(id: string, name: string) {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
