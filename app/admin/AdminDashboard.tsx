@@ -93,120 +93,89 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const systemItems = navItems.filter(n => n.group === 'system');
 
   return (
-    <div className="min-h-screen flex admin-bg admin-text" data-theme={theme}>
-
-      {/* Sidebar */}
-      <aside className={`hidden lg:flex fixed inset-y-0 left-0 z-50 ${sidebarW} admin-sidebar border-r admin-border flex-col transition-all duration-200 overflow-hidden`}>
-        {/* Logo row */}
-        <div className={`flex items-center h-[56px] px-3 border-b admin-border flex-shrink-0 ${collapsed ? 'justify-center' : 'justify-between'}`}>
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 flex-shrink-0 rounded-lg bg-gradient-to-br from-[#00D67D] to-[#0066ff] flex items-center justify-center font-black text-white text-[11px] shadow-lg shadow-[#00D67D]/20">
+    <div className="min-h-screen flex bg-zinc-950 text-zinc-200 selection:bg-[#00D67D]/30" data-theme={theme}>
+      
+      {/* Sidebar - Sleek & Modern */}
+      <aside className={`hidden lg:flex fixed inset-y-0 left-0 z-50 ${sidebarW} bg-zinc-950/80 backdrop-blur-xl border-r border-white/5 flex-col transition-all duration-300 overflow-hidden`}>
+        {/* Logo area */}
+        <div className={`flex items-center h-20 px-4 flex-shrink-0 ${collapsed ? 'justify-center' : 'justify-between'}`}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#00D67D] to-emerald-900 flex items-center justify-center font-bold text-black text-sm shadow-[0_0_15px_rgba(0,214,125,0.2)]">
               S
             </div>
             <AnimatePresence initial={false}>
               {!collapsed && (
-                <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }}
-                  exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.15 }}
-                  className="overflow-hidden whitespace-nowrap">
-                  <div className="font-bold text-[13px] admin-text leading-tight tracking-tight">Spacze</div>
-                  <div className="text-[9px] admin-muted font-mono tracking-widest uppercase opacity-60">Command Centre</div>
+                <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} className="overflow-hidden whitespace-nowrap">
+                  <div className="font-semibold text-sm tracking-tight text-white">Spacze</div>
+                  <div className="text-[10px] text-zinc-500 font-mono tracking-widest uppercase">Admin</div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-          {!collapsed && (
-            <button onClick={() => setCollapsed(true)} className="flex-shrink-0 p-1.5 rounded-lg admin-muted admin-hover transition-colors" title="Collapse">
-              <ChevronLeft size={12} />
-            </button>
-          )}
         </div>
 
-        {collapsed && (
-          <div className="flex justify-center pt-2">
-            <button onClick={() => setCollapsed(false)} className="p-1.5 rounded-lg admin-muted admin-hover transition-colors" title="Expand">
-              <ChevronRight size={12} />
-            </button>
-          </div>
-        )}
-
-        {/* Nav */}
-        <nav className="flex-1 px-2 py-3 flex flex-col gap-0.5 overflow-y-auto">
-          {!collapsed && <p className="text-[9px] font-mono admin-subtle uppercase tracking-widest px-2 pb-1.5">Menu</p>}
-          {mainItems.map(({ id, label, icon: Icon }) => (
-            <NavButton key={id} id={id} label={label} Icon={Icon} active={active} collapsed={collapsed} onClick={() => setActive(id)} />
-          ))}
-          <div className="flex-1 min-h-[16px]" />
-          {!collapsed && <p className="text-[9px] font-mono admin-subtle uppercase tracking-widest px-2 pb-1.5">System</p>}
-          {systemItems.map(({ id, label, icon: Icon }) => (
-            <NavButton key={id} id={id} label={label} Icon={Icon} active={active} collapsed={collapsed} onClick={() => setActive(id)} />
-          ))}
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
+          {!collapsed && <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider px-3 pb-2">Menu</p>}
+          {mainItems.map(({ id, label, icon: Icon }) => {
+            const isActive = active === id;
+            return (
+              <button key={id} onClick={() => setActive(id)} title={collapsed ? label : undefined}
+                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive ? 'text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`}>
+                {isActive && <motion.div layoutId="sidebar-active" className="absolute inset-0 bg-white/10 rounded-lg" />}
+                <Icon size={16} className={`relative z-10 ${isActive ? 'text-[#00D67D]' : 'group-hover:text-zinc-300'}`} />
+                {!collapsed && <span className="relative z-10">{label}</span>}
+              </button>
+            )
+          })}
         </nav>
 
-        {/* Footer */}
-        <div className="px-2 py-3 border-t admin-border flex-shrink-0 space-y-0.5">
-          {!collapsed && (
-            <div className="flex items-center gap-2 px-2 py-1.5 mb-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00D67D] pulse-dot flex-shrink-0" />
-              <span className="text-[9px] font-mono admin-muted uppercase tracking-widest">System Online</span>
-            </div>
-          )}
-          <button onClick={onLogout} title={collapsed ? 'Sign Out' : undefined}
-            className={`nav-item nav-item-inactive hover:!text-red-400 hover:!bg-red-500/5 w-full ${collapsed ? 'justify-center !px-0' : ''}`}>
-            <LogOut size={14} className="flex-shrink-0" />
-            <AnimatePresence initial={false}>
-              {!collapsed && (
-                <motion.span initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }}
-                  exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.15 }}
-                  className="overflow-hidden whitespace-nowrap text-[12px]">
-                  Sign Out
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </button>
+        {/* Footer actions */}
+        <div className="p-3 border-t border-white/5">
+           <button onClick={() => setCollapsed(!collapsed)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-all w-full mb-2">
+             {collapsed ? <ChevronRight size={16}/> : <ChevronLeft size={16}/>}
+             {!collapsed && <span>Collapse</span>}
+           </button>
         </div>
       </aside>
 
-      {/* Main */}
-      <div className={`flex-1 min-w-0 ${mainML} flex flex-col min-h-screen pb-20 lg:pb-0 transition-all duration-200 overflow-x-hidden`}>
+      {/* Main Content Area */}
+      <div className={`flex-1 min-w-0 ${mainML} flex flex-col min-h-screen transition-all duration-300 bg-[#050505]`}>
+        
+        {/* Floating Topbar */}
+        <div className="p-4 lg:p-6 pb-0 sticky top-0 z-40">
+          <header className="bg-zinc-900/50 backdrop-blur-md border border-white/5 rounded-2xl px-6 h-16 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="min-w-0">
+                <h1 className="font-semibold text-sm text-white tracking-tight">{page.title}</h1>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#00D67D]/10 border border-[#00D67D]/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00D67D] animate-pulse" />
+                <span className="text-[10px] font-semibold text-[#00D67D] uppercase tracking-wider">Live System</span>
+              </div>
+            </div>
 
-        {/* Topbar */}
-        <header className="sticky top-0 z-30 admin-header backdrop-blur border-b admin-border px-5 lg:px-6 h-[56px] flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="hidden lg:flex items-center gap-1 text-[10px] font-mono admin-subtle mr-1">
-              <span>spacze</span><span className="opacity-40">/</span>
+            <div className="flex items-center gap-2">
+              <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/40 border border-white/5 text-[11px] font-mono text-zinc-500">
+                <Command size={12} /> K
+              </div>
+              <div className="h-4 w-px bg-white/10 mx-2 hidden sm:block"></div>
+              <button className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"><Bell size={16} /></button>
+              <button onClick={toggleTheme} className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              <button onClick={onLogout} className="p-2 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-500/10 transition-colors ml-1">
+                <LogOut size={16} />
+              </button>
             </div>
-            <div className="min-w-0">
-              <h1 className="font-bold text-[13px] admin-text leading-tight truncate">{page.title}</h1>
-              <p className="text-[10px] admin-muted font-mono truncate hidden sm:block">{page.subtitle}</p>
-            </div>
-          </div>
+          </header>
+        </div>
 
-          <div className="flex items-center gap-1.5">
-            <div className="hidden xl:flex items-center gap-1 px-2 py-1 rounded-lg border admin-border admin-muted text-[10px] font-mono opacity-40 select-none">
-              <Command size={10} /> K
-            </div>
-            <button className="p-2 rounded-xl admin-hover border admin-border transition-colors admin-muted" title="Notifications">
-              <Bell size={13} />
-            </button>
-            <button onClick={toggleTheme} className="p-2 rounded-xl admin-hover border admin-border transition-colors" title={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
-              {theme === 'dark' ? <Sun size={13} className="text-yellow-400" /> : <Moon size={13} className="text-slate-500" />}
-            </button>
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border accent-bg accent-border">
-              <span className="w-1.5 h-1.5 rounded-full pulse-dot" style={{ background: 'var(--accent)' }} />
-              <span className="text-[9px] font-mono font-semibold uppercase tracking-wider accent-text">Live</span>
-            </div>
-            <button onClick={onLogout} className="lg:hidden p-2 rounded-xl admin-muted hover:text-red-400 hover:bg-red-500/5 transition-colors" title="Sign out">
-              <LogOut size={14} />
-            </button>
-          </div>
-        </header>
-
-        {/* Content */}
-        <main className="flex-1 p-4 lg:p-6">
+        {/* Dashboard Views */}
+        <main className="flex-1 p-4 lg:p-6 overflow-x-hidden">
           <AnimatePresence mode="wait">
-            <motion.div key={active} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }}>
-              {active === 'overview'   && <StatsPanel onNavigate={setActive} />}
+            <motion.div key={active} initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }} transition={{ duration: 0.2 }}>
+              {active === 'overview'  && <StatsPanel onNavigate={setActive} />}
               {active === 'audience'  && <CRMPanel />}
               {active === 'campaigns' && <CampaignsPanel />}
               {active === 'ai-studio' && <AIStudioPanel />}
@@ -216,20 +185,6 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </AnimatePresence>
         </main>
       </div>
-
-      {/* Mobile bottom nav */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 backdrop-blur border-t admin-border flex" style={{ backgroundColor: 'var(--admin-mob-nav)' }}>
-        {navItems.map(({ id, label, icon: Icon }) => (
-          <button key={id} onClick={() => setActive(id)}
-            className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-[8px] font-mono uppercase tracking-wider transition-colors duration-200 ${active === id ? 'accent-text' : 'admin-muted'}`}>
-            {active === id && (
-              <motion.div layoutId="mob-nav-bar" className="absolute top-0 left-1/2 -translate-x-1/2 h-[2px] w-6 rounded-full" style={{ background: 'var(--accent)' }} />
-            )}
-            <Icon size={16} strokeWidth={active === id ? 2.5 : 1.5} />
-            {label}
-          </button>
-        ))}
-      </nav>
     </div>
   );
 }
