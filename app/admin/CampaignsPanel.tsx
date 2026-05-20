@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Campaign, CampaignChannel, Lead, ScheduledMessage } from '@/lib/supabase';
 import { useToast, ToastStack } from '@/app/components/Toast';
+import ModalPortal from '@/app/components/ModalPortal';
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
@@ -144,6 +145,7 @@ function DetailModal({ campaign, leads, onClose }: { campaign: Campaign; leads: 
   const failed  = messages.filter(m => m.status === 'failed');
 
   return (
+    <ModalPortal>
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -213,6 +215,7 @@ function DetailModal({ campaign, leads, onClose }: { campaign: Campaign; leads: 
         </div>
       </motion.div>
     </motion.div>
+    </ModalPortal>
   );
 }
 
@@ -411,7 +414,7 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
   }
 
   return (
-    <>
+    <ModalPortal>
       <ToastStack toasts={toasts} onDismiss={dismiss} />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
@@ -632,7 +635,7 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
           </div>
         </motion.div>
       </motion.div>
-    </>
+    </ModalPortal>
   );
 }
 

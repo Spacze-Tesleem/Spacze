@@ -7,6 +7,7 @@ import {
   AlertCircle, QrCode, MessageCircle, LogOut, Zap, Eye, Edit3, X,
 } from 'lucide-react';
 import { Lead } from '@/lib/supabase';
+import ModalPortal from '@/app/components/ModalPortal';
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'qr_ready' | 'connected' | 'unknown';
 
@@ -375,6 +376,7 @@ export default function WhatsAppPanel() {
       {/* Preview modal */}
       <AnimatePresence>
         {showPreview && previews.length > 0 && (
+          <ModalPortal>
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -439,6 +441,7 @@ export default function WhatsAppPanel() {
               </div>
             </motion.div>
           </motion.div>
+          </ModalPortal>
         )}
       </AnimatePresence>
     </div>

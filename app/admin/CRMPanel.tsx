@@ -10,6 +10,7 @@ import {
 import { Lead } from '@/lib/supabase';
 import { OUTREACH_STATUSES, RESPONSE_STATUSES } from '@/lib/constants';
 import { ToastStack, useToast } from '@/app/components/Toast';
+import ModalPortal from '@/app/components/ModalPortal';
 
 const EMPTY_LEAD: Omit<Lead, 'id' | 'created_at'> = {
   business_name: '', website: '', industry: '', contact_email: '',
@@ -96,6 +97,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
   }, [onClose]);
 
   return (
+    <ModalPortal>
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -213,6 +215,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
         </div>
       </motion.div>
     </motion.div>
+    </ModalPortal>
   );
 }
 
