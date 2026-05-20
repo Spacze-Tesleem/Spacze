@@ -109,7 +109,7 @@ body {
 .admin-subtle    { color: var(--admin-subtle); }
 
 .admin-hover:hover { background-color: var(--admin-hover-bg); }
-
+/* 
 .admin-input {
   background-color: var(--admin-input-bg);
   color: var(--admin-text);
@@ -120,6 +120,19 @@ body {
   border-color: var(--accent-border);
   outline: none;
   box-shadow: 0 0 0 3px var(--accent-dim);
+} */
+.admin-input {
+  background-color: rgba(0, 0, 0, 0.2);
+  color: #ededed;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.admin-input:focus {
+  background-color: rgba(0, 0, 0, 0.4);
+  border-color: rgba(0, 214, 125, 0.4);
+  box-shadow: 0 0 0 4px rgba(0, 214, 125, 0.1);
+  outline: none;
 }
 
 .admin-header {
@@ -132,6 +145,7 @@ body {
   border: 1px solid var(--admin-border);
   border-radius: 16px;
 }
+
 
 .accent-text   { color: var(--accent); }
 .accent-bg     { background-color: var(--accent-dim); }
