@@ -305,13 +305,16 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
-        className="w-full max-w-lg bg-zinc-900/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <motion.div
+        initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        className="w-full sm:max-w-xl bg-zinc-900/90 backdrop-blur-2xl border border-white/10 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] sm:max-h-[88vh] flex flex-col">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 flex-shrink-0">
           <div>
             <h2 className="font-bold text-[15px] admin-text">New Campaign</h2>
             <p className="text-[11px] admin-muted mt-0.5">Configure channels, leads &amp; schedule</p>
@@ -321,111 +324,83 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        {/* Body — scrollable */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
 
-          {/* Name */}
-          <div>
-            <label className="label-xs mb-1.5 block">Campaign Name *</label>
-            <input value={name} onChange={e => setName(e.target.value)}
-              placeholder="e.g. Lagos Restaurants Q3" className={inp} />
+          {/* Name + Description side by side on wider screens */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="label-xs mb-1.5 block">Campaign Name *</label>
+              <input value={name} onChange={e => setName(e.target.value)}
+                placeholder="e.g. Lagos Restaurants Q3" className={inp} />
+            </div>
+            <div>
+              <label className="label-xs mb-1.5 block">Description</label>
+              <input value={description} onChange={e => setDescription(e.target.value)}
+                placeholder="Optional notes…" className={inp} />
+            </div>
           </div>
 
-          {/* Description */}
+          {/* Channels — all 6 in a 3-col grid */}
           <div>
-            <label className="label-xs mb-1.5 block">Description</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)}
-              placeholder="Optional notes…" rows={2} className={`${inp} resize-none`} />
-          </div>
-
-          {/* Channels */}
-          <div className="space-y-3">
-            <label className="label-xs block">Outreach Channels</label>
-            {/* Direct outreach (per-lead) */}
-            <div className="grid grid-cols-2 gap-2">
-              {(['email', 'whatsapp', 'linkedin', 'twitter'] as CampaignChannel[]).map(ch => {
+            <label className="label-xs mb-2 block">Channels</label>
+            <div className="grid grid-cols-3 gap-2">
+              {ALL_CHANNELS.map(ch => {
                 const active = channels.includes(ch);
+                const isAd   = AD_CHANNELS.includes(ch);
                 return (
                   <button key={ch} onClick={() => toggleChannel(ch)}
-                    className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
+                    className={`relative flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border text-xs font-medium transition-all ${
                       active
                         ? `${CHANNEL_COLORS[ch]} bg-white/8 border-white/15`
                         : 'admin-muted border-white/8 hover:bg-white/5 hover:border-white/12 hover:admin-text'
                     }`}>
-                    <span className={active ? CHANNEL_COLORS[ch] : 'opacity-50'}>{CHANNEL_ICONS[ch]}</span>
-                    <span>{CHANNEL_LABELS[ch]}</span>
-                    {active && selectedLeadIds.length > 0 && (
-                      <span className="ml-auto">
-                        <ChannelCoverage channel={ch} leads={leads.filter(l => selectedLeadIds.includes(l.id!))} />
-                      </span>
+                    <span className={`${active ? CHANNEL_COLORS[ch] : 'opacity-50'}`}>{CHANNEL_ICONS[ch]}</span>
+                    <span className="text-center leading-tight">{CHANNEL_LABELS[ch]}</span>
+                    {isAd && (
+                      <span className="absolute top-1.5 right-1.5 text-[8px] font-bold px-1 py-0.5 rounded bg-white/10 admin-muted leading-none">AD</span>
                     )}
                   </button>
                 );
               })}
             </div>
-            {/* Paid ad platforms */}
-            <div>
-              <p className="label-xs mb-2 flex items-center gap-2">
-                Paid Ad Platforms
-                <span className="normal-case font-normal admin-muted">— AI generates &amp; submits one ad per campaign</span>
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {AD_CHANNELS.map(ch => {
-                  const active = channels.includes(ch);
-                  return (
-                    <button key={ch} onClick={() => toggleChannel(ch)}
-                      className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
-                        active
-                          ? `${CHANNEL_COLORS[ch]} bg-white/8 border-white/15`
-                          : 'admin-muted border-white/8 hover:bg-white/5 hover:border-white/12 hover:admin-text'
-                      }`}>
-                      <span className={active ? CHANNEL_COLORS[ch] : 'opacity-50'}>{CHANNEL_ICONS[ch]}</span>
-                      <span>{CHANNEL_LABELS[ch]}</span>
-                      {active && (
-                        <span className="ml-auto text-[10px] admin-muted">1 ad</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <p className="text-[10px] admin-muted mt-2">
+              Channels marked <span className="font-bold admin-text">AD</span> publish one AI-generated ad per campaign — no per-lead contact needed.
+            </p>
           </div>
 
           {/* Leads */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="label-xs">
-                Leads{' '}
-                <span className="normal-case font-normal admin-muted">({selectedLeadIds.length} selected)</span>
+                Leads <span className="normal-case font-normal admin-muted">({selectedLeadIds.length} selected)</span>
               </label>
               <button onClick={toggleAllLeads} className="text-[11px] font-medium text-[#00D67D] hover:opacity-80 transition-opacity">
                 {selectedLeadIds.length === leads.length ? 'Deselect all' : 'Select all'}
               </button>
             </div>
-            <div className="max-h-48 overflow-y-auto rounded-xl border border-white/8 divide-y divide-white/5">
+            <div className="max-h-44 overflow-y-auto rounded-xl border border-white/8 divide-y divide-white/5">
               {leads.map(l => {
                 const sel = selectedLeadIds.includes(l.id!);
                 return (
                   <button key={l.id} onClick={() => toggleLead(l.id!)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
                       sel ? 'bg-[#00D67D]/6' : 'hover:bg-white/3'
                     }`}>
-                    {/* Checkbox */}
                     <div className={`w-4 h-4 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${
                       sel ? 'bg-[#00D67D] border-[#00D67D]' : 'border-white/20'
                     }`}>
                       {sel && <span className="text-black text-[9px] font-black leading-none">✓</span>}
                     </div>
-                    {/* Avatar */}
-                    <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-[11px] font-bold"
+                    <div className="w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
                       style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
                       {l.business_name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className={`text-[13px] font-semibold truncate ${sel ? 'text-[#00D67D]' : 'admin-text'}`}>
+                      <div className={`text-[12px] font-semibold truncate ${sel ? 'text-[#00D67D]' : 'admin-text'}`}>
                         {l.business_name}
                       </div>
-                      <div className="text-[11px] admin-muted truncate">{l.contact_email}</div>
+                      <div className="text-[10px] admin-muted truncate">{l.contact_email}</div>
                     </div>
                   </button>
                 );
@@ -445,7 +420,7 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-white/8 flex gap-3">
+        <div className="px-5 py-4 border-t border-white/8 flex gap-3 flex-shrink-0">
           <button onClick={() => save(true)} disabled={saving}
             className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-40 shadow-[0_0_20px_rgba(0,214,125,0.15)] hover:opacity-90"
             style={{ background: 'var(--accent)' }}>
