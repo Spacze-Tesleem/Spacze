@@ -380,7 +380,7 @@ function EmailTab({ leads }: { leads: Lead[] }) {
     try {
       const res = await fetch('/api/send-email', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: selectedLead.contact_email, subject, body }),
+        body: JSON.stringify({ to: selectedLead.contact_email, subject, body, lead_id: selectedLead.id }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Send failed');
@@ -579,7 +579,7 @@ function SequenceTab({ leads }: { leads: Lead[] }) {
     try {
       const res = await fetch('/api/send-email', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: selectedLead.contact_email, subject: step.subject, body: step.body }),
+        body: JSON.stringify({ to: selectedLead.contact_email, subject: step.subject, body: step.body, lead_id: selectedLead.id }),
       });
       if (!res.ok) throw new Error('Send failed');
       setSendStatus(prev => ({ ...prev, [step.step]: 'success' }));

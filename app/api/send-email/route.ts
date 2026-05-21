@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
  * Escape the five characters that have special meaning in HTML.
@@ -16,7 +17,7 @@ function escapeHtml(str: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { to, subject, body } = await req.json();
+    const { to, subject, body, lead_id } = await req.json();
 
     if (!to || !subject || !body) {
       return NextResponse.json({ error: 'Missing required fields: to, subject, body' }, { status: 400 });
@@ -50,6 +51,42 @@ export async function POST(req: NextRequest) {
         ${safeBody.split('\n').map((line: string) => `<p style="margin: 0 0 12px 0;">${line}</p>`).join('')}
       </div>`,
     });
+
+    // Track the send in the DB if a lead_id was provided
+    if (lead_id) {
+      const db = getSupabaseAdmin();
+      const sentAt = new Date().toISOString();
+
+      await Promise.all([
+        // Update lead
+        db.from('leads').update({
+          email_sent:      true,
+          outreach_status: 'Sent',
+          last_contacted:  sentAt,
+        }).eq('id', lead_id),
+
+        // outreach_events record
+        db.from('outreach_events').insert({
+          lead_id,
+          event_type:  'message_sent',
+          channel:     'email',
+          metadata:    { source: 'ai_studio', subject },
+          occurred_at: sentAt,
+        }),
+
+        // scheduled_messages row so StatsPanel KPIs count it
+        db.from('scheduled_messages').insert({
+          lead_id,
+          channel:       'email',
+          sequence_step: 1,
+          scheduled_at:  sentAt,
+          sent_at:       sentAt,
+          status:        'sent',
+          subject,
+          message_body:  body,
+        }),
+      ]);
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

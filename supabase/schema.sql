@@ -82,7 +82,7 @@ create trigger campaigns_updated_at
 -- ── scheduled_messages ───────────────────────────────────────────────────────
 create table if not exists public.scheduled_messages (
   id             uuid primary key default gen_random_uuid(),
-  campaign_id    uuid not null references public.campaigns(id) on delete cascade,
+  campaign_id    uuid references public.campaigns(id) on delete cascade, -- nullable for direct sends
   lead_id        uuid not null references public.leads(id)     on delete cascade,
   channel        text not null check (channel in ('email','whatsapp','linkedin','twitter')),
   sequence_step  integer not null,
@@ -118,6 +118,12 @@ drop trigger if exists scheduled_messages_updated_at on public.scheduled_message
 create trigger scheduled_messages_updated_at
   before update on public.scheduled_messages
   for each row execute procedure public.set_updated_at();
+
+-- ── Migration: make campaign_id nullable on scheduled_messages ───────────────
+-- Required so direct sends (WhatsApp panel, AI Studio) can insert rows
+-- without belonging to a campaign.
+ALTER TABLE public.scheduled_messages
+  ALTER COLUMN campaign_id DROP NOT NULL;
 
 -- ── whatsapp_replies ─────────────────────────────────────────────────────────
 -- Stores inbound WhatsApp messages forwarded by the Baileys worker.

@@ -59,11 +59,33 @@ export async function POST(req: NextRequest) {
         throw new Error((d as { error?: string }).error || `Worker responded ${res.status}`);
       }
 
-      // Mark lead as sent
+      const sentAt = new Date().toISOString();
+
+      // Mark lead as contacted
       await db
         .from('leads')
-        .update({ outreach_status: 'Sent', email_sent: true })
+        .update({ outreach_status: 'Sent', email_sent: true, last_contacted: sentAt })
         .eq('id', leadId);
+
+      // Record in outreach_events so analytics can count it
+      await db.from('outreach_events').insert({
+        lead_id:    leadId,
+        event_type: 'message_sent',
+        channel:    'whatsapp',
+        metadata:   { source: 'whatsapp_panel', to },
+        occurred_at: sentAt,
+      });
+
+      // Insert a scheduled_messages row so the StatsPanel KPIs pick it up
+      await db.from('scheduled_messages').insert({
+        lead_id:       leadId,
+        channel:       'whatsapp',
+        sequence_step: 1,
+        scheduled_at:  sentAt,
+        sent_at:       sentAt,
+        status:        'sent',
+        message_body:  message,
+      });
 
       results.push({ leadId, status: 'sent' });
     } catch (err: unknown) {
