@@ -16,6 +16,7 @@ export type WhatsAppReply = {
   lead_id: string | null;
   phone: string;
   message: string;
+  direction: 'inbound' | 'outbound';
   received_at: string;
   created_at: string;
 };

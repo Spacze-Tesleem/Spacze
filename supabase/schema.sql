@@ -134,9 +134,13 @@ create table if not exists public.whatsapp_replies (
   lead_id     uuid references public.leads(id) on delete set null,
   phone       text not null,
   message     text not null,
+  direction   text not null default 'inbound' check (direction in ('inbound', 'outbound')),
   received_at timestamptz not null default now(),
   created_at  timestamptz default now()
 );
+
+-- Migration for existing deployments
+ALTER TABLE public.whatsapp_replies ADD COLUMN IF NOT EXISTS direction text not null default 'inbound';
 
 create index if not exists idx_whatsapp_replies_lead
   on public.whatsapp_replies(lead_id, received_at desc);

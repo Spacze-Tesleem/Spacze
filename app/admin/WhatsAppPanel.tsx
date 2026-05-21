@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Wifi, WifiOff, RefreshCw, Send, CheckCircle2,
-  AlertCircle, QrCode, MessageCircle, LogOut, Zap, Eye, Edit3, X,
+  AlertCircle, QrCode, MessageCircle, LogOut, Zap, Eye, X,
+  Inbox, ChevronLeft, ArrowUpRight,
 } from 'lucide-react';
 import { Lead } from '@/lib/supabase';
 import ModalPortal from '@/app/components/ModalPortal';
@@ -14,7 +15,233 @@ type ConnectionStatus = 'disconnected' | 'connecting' | 'qr_ready' | 'connected'
 
 interface PreviewMessage { leadId: string; to: string; businessName: string; message: string; }
 
+type WaMessage = {
+  id: string;
+  phone: string;
+  message: string;
+  direction: 'inbound' | 'outbound';
+  received_at: string;
+};
+
+type Conversation = {
+  phone: string;
+  lead_id: string | null;
+  business_name: string | null;
+  last_message: string;
+  last_at: string;
+  unread: number;
+  messages: WaMessage[];
+};
+
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
+
+// ─── INBOX COMPONENT ──────────────────────────────────────────────────────────
+
+function WhatsAppInbox({ status }: { status: ConnectionStatus }) {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading]             = useState(true);
+  const [active, setActive]               = useState<Conversation | null>(null);
+  const [reply, setReply]                 = useState('');
+  const [sending, setSending]             = useState(false);
+  const [sendError, setSendError]         = useState('');
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  async function loadInbox() {
+    setLoading(true);
+    const res = await fetch('/api/whatsapp-inbox');
+    const data = await res.json();
+    const convs: Conversation[] = Array.isArray(data) ? data : [];
+    setConversations(convs);
+    // Keep active thread in sync
+    if (active) {
+      const updated = convs.find(c => c.phone === active.phone);
+      if (updated) setActive(updated);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => { loadInbox(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll every 10s when connected
+  useEffect(() => {
+    if (status !== 'connected') return;
+    const t = setInterval(loadInbox, 10_000);
+    return () => clearInterval(t);
+  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Scroll to bottom when thread opens or new message arrives
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [active?.messages.length]);
+
+  async function sendReply() {
+    if (!active || !reply.trim()) return;
+    setSending(true); setSendError('');
+    try {
+      const res = await fetch('/api/whatsapp-inbox', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: active.phone, message: reply.trim(), lead_id: active.lead_id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      setReply('');
+      await loadInbox();
+    } catch (e: unknown) {
+      setSendError(e instanceof Error ? e.message : 'Send failed');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function formatTime(iso: string) {
+    const d = new Date(iso);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    return isToday
+      ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  return (
+    <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="admin-card overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b admin-border">
+        <div className="flex items-center gap-2">
+          {active && (
+            <button onClick={() => setActive(null)}
+              className="p-1 rounded-lg admin-muted hover:admin-text transition-colors mr-1">
+              <ChevronLeft size={16} />
+            </button>
+          )}
+          <Inbox size={14} className="admin-muted" />
+          <span className="font-bold text-[14px] admin-text">
+            {active ? (active.business_name ?? active.phone) : 'Inbox'}
+          </span>
+          {active && (
+            <span className="text-[10px] font-mono admin-muted">{active.phone}</span>
+          )}
+          {!active && conversations.length > 0 && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 admin-muted">
+              {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+        <button onClick={loadInbox} className="p-1.5 rounded-lg admin-muted hover:admin-text transition-colors" title="Refresh">
+          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="min-h-[320px] flex flex-col">
+        {loading && conversations.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center py-12 admin-muted text-sm gap-2">
+            <RefreshCw size={14} className="animate-spin" /> Loading…
+          </div>
+        ) : !active ? (
+          /* ── Conversation list ── */
+          conversations.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-14 gap-3">
+              <MessageCircle size={32} className="admin-muted opacity-30" />
+              <p className="text-sm admin-muted">No conversations yet.</p>
+              <p className="text-[11px] admin-muted opacity-60 text-center max-w-xs">
+                Messages sent and received via WhatsApp will appear here once the worker is connected.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y admin-border">
+              {conversations.map(conv => (
+                <button key={conv.phone} onClick={() => setActive(conv)}
+                  className="w-full flex items-center gap-3 px-5 py-3.5 admin-hover transition-colors text-left">
+                  {/* Avatar */}
+                  <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-[13px] font-bold"
+                    style={{ background: '#25D36620', color: '#25D366' }}>
+                    {(conv.business_name ?? conv.phone).charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-[13px] admin-text truncate">
+                        {conv.business_name ?? conv.phone}
+                      </span>
+                      <span className="text-[10px] admin-muted flex-shrink-0">{formatTime(conv.last_at)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-0.5">
+                      <p className="text-[11px] admin-muted truncate">{conv.last_message}</p>
+                      {conv.unread > 0 && (
+                        <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#25D366] text-black min-w-[18px] text-center">
+                          {conv.unread}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <ArrowUpRight size={13} className="admin-muted flex-shrink-0 opacity-40" />
+                </button>
+              ))}
+            </div>
+          )
+        ) : (
+          /* ── Chat thread ── */
+          <div className="flex flex-col flex-1">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2 max-h-[400px]">
+              {active.messages.map(msg => {
+                const isOut = msg.direction === 'outbound';
+                return (
+                  <div key={msg.id} className={`flex ${isOut ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl text-[12px] leading-relaxed ${
+                      isOut
+                        ? 'bg-[#25D366] text-black rounded-br-sm'
+                        : 'bg-white/8 admin-text rounded-bl-sm border admin-border'
+                    }`}>
+                      <p>{msg.message}</p>
+                      <p className={`text-[10px] mt-1 text-right ${isOut ? 'text-black/50' : 'admin-muted'}`}>
+                        {formatTime(msg.received_at)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Reply box */}
+            <div className="border-t admin-border px-4 py-3 flex-shrink-0">
+              {sendError && (
+                <p className="text-red-400 text-[11px] mb-2">{sendError}</p>
+              )}
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={reply}
+                  onChange={e => setReply(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
+                  placeholder="Type a message… (Enter to send)"
+                  rows={2}
+                  disabled={status !== 'connected'}
+                  className="flex-1 admin-input border admin-border rounded-xl px-3 py-2 text-[12px] admin-text outline-none resize-none transition-colors placeholder:admin-subtle disabled:opacity-40"
+                />
+                <button
+                  onClick={sendReply}
+                  disabled={!reply.trim() || sending || status !== 'connected'}
+                  className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors disabled:opacity-40"
+                  style={{ background: '#25D366' }}
+                  title="Send"
+                >
+                  {sending
+                    ? <RefreshCw size={14} className="animate-spin text-black" />
+                    : <Send size={14} className="text-black" />
+                  }
+                </button>
+              </div>
+              {status !== 'connected' && (
+                <p className="text-[10px] admin-muted mt-1.5">Connect WhatsApp to send replies.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
 
 export default function WhatsAppPanel() {
   const { leads: allLeads } = useLeads();
@@ -369,6 +596,9 @@ export default function WhatsAppPanel() {
           </>
         )}
       </motion.div>
+
+      {/* ── Inbox ── */}
+      <WhatsAppInbox status={status} />
 
       {/* Preview modal */}
       <AnimatePresence>

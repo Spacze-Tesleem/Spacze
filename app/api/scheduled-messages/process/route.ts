@@ -196,6 +196,17 @@ export async function POST() {
         metadata:             { subject: msg.subject ?? null },
       });
 
+      // For WhatsApp sends, record outbound message in whatsapp_replies for the inbox
+      if (msg.channel === 'whatsapp' && lead?.whatsapp_number) {
+        await db.from('whatsapp_replies').insert({
+          lead_id:     msg.lead_id,
+          phone:       lead.whatsapp_number,
+          message:     msg.message_body ?? '',
+          direction:   'outbound',
+          received_at: now,
+        });
+      }
+
       results.push({ id: msg.id, channel: msg.channel, status: 'sent' });
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);

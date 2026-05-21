@@ -76,6 +76,15 @@ export async function POST(req: NextRequest) {
         occurred_at: sentAt,
       });
 
+      // Record outbound message in whatsapp_replies for the inbox thread
+      await db.from('whatsapp_replies').insert({
+        lead_id:     leadId,
+        phone:       to,
+        message,
+        direction:   'outbound',
+        received_at: sentAt,
+      });
+
       // Insert a scheduled_messages row so the StatsPanel KPIs pick it up
       await db.from('scheduled_messages').insert({
         lead_id:       leadId,
