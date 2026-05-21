@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
+import { SPACZE_VOICE } from '@/lib/ai-persona';
 
 /**
  * POST /api/generate-sequence
@@ -20,21 +21,28 @@ import Groq from 'groq-sdk';
 // ── Prompt ────────────────────────────────────────────────────────────────────
 
 function buildSequencePrompt(lead: Record<string, unknown>): string {
-  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const weakPoints    = lead.weak_points         ? `- Weak Points Identified: ${lead.weak_points}`         : '';
+  const improvements  = lead.possible_improvements ? `- Possible Improvements: ${lead.possible_improvements}` : '';
+  const aiOpportunity = lead.ai_opportunity      ? `- AI/Automation Opportunity: ${lead.ai_opportunity}`   : '';
+  const qualityScore  = lead.website_quality_score != null ? `- Website Quality Score: ${lead.website_quality_score}/10` : '';
+  const mobileResp    = lead.mobile_responsiveness ? `- Mobile Responsiveness: ${lead.mobile_responsiveness}` : '';
+  const seoQuality    = lead.seo_quality         ? `- SEO Quality: ${lead.seo_quality}`                    : '';
+
+  return `${SPACZE_VOICE}
 
 Generate a complete 4-step cold email sequence for the prospect below. Every email must feel written by a real person who genuinely researched this business — not a template. Each step must be distinct in angle, tone, and content.
 
 PROSPECT:
 - Business Name: ${lead.business_name}
-- Website: ${lead.website || 'Not provided'}
-- Industry: ${lead.industry || 'Not specified'}
-- Website Quality Score: ${lead.website_quality_score ?? 'N/A'}/10
-- Mobile Responsiveness: ${lead.mobile_responsiveness || 'Unknown'}
-- SEO Quality: ${lead.seo_quality || 'Unknown'}
+${lead.website  ? `- Website: ${lead.website}`   : ''}
+${lead.industry ? `- Industry: ${lead.industry}` : ''}
+${qualityScore}
+${mobileResp}
+${seoQuality}
 - Has Internal Dashboard/System: ${lead.has_dashboard ? 'Yes' : 'No'}
-- Weak Points Identified: ${lead.weak_points || 'Not assessed'}
-- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
-- Possible Improvements: ${lead.possible_improvements || 'Not assessed'}
+${aiOpportunity}
+${weakPoints}
+${improvements}
 
 EMAIL STRUCTURE — every step must follow this structure:
 - Greeting: "Hi [Business Name] team," or "Hi [Business Name],"

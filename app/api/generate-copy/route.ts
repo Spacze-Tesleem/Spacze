@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
+import { SPACZE_VOICE } from '@/lib/ai-persona';
 
 // ─────────────────────────────────────────────
 // PLATFORM PROMPT BUILDERS
@@ -26,7 +27,9 @@ interface CopyBrief {
 }
 
 function buildInstagramPrompt(b: CopyBrief): string {
-  return `You are a social media copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const painPoint = b.weakPoints ? `- Pain point to address: ${b.weakPoints}` : '';
+
+  return `${SPACZE_VOICE}
 
 Write an Instagram caption for the following brief. Instagram captions are read while scrolling — the first line must stop the thumb.
 
@@ -36,7 +39,7 @@ BRIEF:
 - Tone: ${b.tone || 'Conversational'}
 - Goal: ${b.goal || 'Awareness'}
 - Key Message: ${b.keyMessage || b.aiOpportunity || 'Not specified'}
-${b.weakPoints ? `- Pain point to address: ${b.weakPoints}` : ''}
+${painPoint}
 
 STRUCTURE — the caption must follow this exact order:
 1. Hook (1 line): bold, specific statement or relatable pain point — NOT a question starting with "Are you…"
@@ -61,7 +64,7 @@ HASHTAGS:
 }
 
 function buildTwitterPrompt(b: CopyBrief): string {
-  return `You are a social media copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  return `${SPACZE_VOICE}
 
 Write a Twitter/X promotional post for the following brief. Twitter/X posts are read in a fast-moving feed — every word must earn its place.
 
@@ -93,7 +96,9 @@ REPLY:
 }
 
 function buildGoogleAdsPrompt(b: CopyBrief): string {
-  return `You are a Google Ads copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const keyBenefit = b.possibleImprovements ? `- Key benefit to highlight: ${b.possibleImprovements}` : '';
+
+  return `${SPACZE_VOICE}
 
 Write Google Ads Responsive Search Ad copy for the following brief. Google Ads copy is read by people actively searching — every character must be intentional and benefit-driven.
 
@@ -103,7 +108,7 @@ BRIEF:
 - Tone: ${b.tone || 'Professional'}
 - Goal: ${b.goal || 'Leads'}
 - Key Message: ${b.keyMessage || b.aiOpportunity || 'Not specified'}
-${b.possibleImprovements ? `- Key benefit to highlight: ${b.possibleImprovements}` : ''}
+${keyBenefit}
 
 STRUCTURE:
 - 3 Headlines: shown at the top of the ad, rotated by Google — each must work standalone AND in combination
@@ -131,7 +136,10 @@ DESCRIPTION_2: [text] ([X] chars)`;
 }
 
 function buildEmailPrompt(b: CopyBrief): string {
-  return `You are an email copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const painPoint  = b.weakPoints           ? `- Pain point to address: ${b.weakPoints}`           : '';
+  const solution   = b.possibleImprovements ? `- Solution to highlight: ${b.possibleImprovements}` : '';
+
+  return `${SPACZE_VOICE}
 
 Write a cold outreach or marketing email for the following brief. The reader should feel a real person wrote this specifically for them — not that they received a template.
 
@@ -141,8 +149,8 @@ BRIEF:
 - Tone: ${b.tone || 'Professional but conversational'}
 - Goal: ${b.goal || 'Start a conversation'}
 - Key Message: ${b.keyMessage || b.aiOpportunity || 'Not specified'}
-${b.weakPoints ? `- Pain point to address: ${b.weakPoints}` : ''}
-${b.possibleImprovements ? `- Solution to highlight: ${b.possibleImprovements}` : ''}
+${painPoint}
+${solution}
 
 STRUCTURE — the email must have all four of these parts:
 1. Greeting: "Hi [audience/name]," — not "Dear" or "To whom it may concern"
@@ -166,7 +174,9 @@ BODY:
 }
 
 function buildWhatsAppPrompt(b: CopyBrief): string {
-  return `You are a WhatsApp copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const painPoint = b.weakPoints ? `- Pain point to address: ${b.weakPoints}` : '';
+
+  return `${SPACZE_VOICE}
 
 Write a WhatsApp outreach message for the following brief. WhatsApp is a personal channel — it must read like a text from a real person, not a broadcast blast.
 
@@ -176,7 +186,7 @@ BRIEF:
 - Tone: ${b.tone || 'Friendly'}
 - Goal: ${b.goal || 'Start a conversation'}
 - Key Message: ${b.keyMessage || b.aiOpportunity || 'Not specified'}
-${b.weakPoints ? `- Pain point to address: ${b.weakPoints}` : ''}
+${painPoint}
 
 STRUCTURE — the message must follow this exact order:
 1. Greeting (1 line): casual and warm — "Hi [Name]," or "Hey [Business]," — no "Dear" or formal openers
@@ -199,7 +209,10 @@ MESSAGE:
 }
 
 function buildLinkedInPrompt(b: CopyBrief): string {
-  return `You are a LinkedIn copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const context     = b.weakPoints           ? `- Context/pain point: ${b.weakPoints}`           : '';
+  const improvement = b.possibleImprovements ? `- Relevant improvement: ${b.possibleImprovements}` : '';
+
+  return `${SPACZE_VOICE}
 
 Write LinkedIn outreach copy for the following brief. LinkedIn has two distinct touchpoints — a connection request note and a follow-up message — each with a different job and format.
 
@@ -209,8 +222,8 @@ BRIEF:
 - Tone: ${b.tone || 'Professional but warm'}
 - Goal: ${b.goal || 'Start a conversation'}
 - Key Message: ${b.keyMessage || b.aiOpportunity || 'Not specified'}
-${b.weakPoints ? `- Context/pain point: ${b.weakPoints}` : ''}
-${b.possibleImprovements ? `- Relevant improvement: ${b.possibleImprovements}` : ''}
+${context}
+${improvement}
 
 PART 1 — CONNECTION REQUEST NOTE (shown before they accept):
 - Hard limit: 300 characters including spaces — count carefully

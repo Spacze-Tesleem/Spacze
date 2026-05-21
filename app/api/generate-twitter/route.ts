@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
+import { SPACZE_VOICE } from '@/lib/ai-persona';
 
 /**
  * POST /api/generate-twitter
@@ -10,16 +11,19 @@ import Groq from 'groq-sdk';
  */
 
 function buildPrompt(lead: any): string {
-  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const aiOpportunity = lead.ai_opportunity      ? `- AI/Automation Opportunity: ${lead.ai_opportunity}` : '';
+  const improvements  = lead.possible_improvements ? `- Possible Improvements: ${lead.possible_improvements}` : '';
+
+  return `${SPACZE_VOICE}
 
 Write a Twitter/X Direct Message to the decision-maker at the business below.
 
 PROSPECT:
 - Business Name: ${lead.business_name}
-- Website: ${lead.website || 'Not provided'}
-- Industry: ${lead.industry || 'Not specified'}
-- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
-- Possible Improvements: ${lead.possible_improvements || 'Not specified'}
+${lead.website  ? `- Website: ${lead.website}`   : ''}
+${lead.industry ? `- Industry: ${lead.industry}` : ''}
+${aiOpportunity}
+${improvements}
 
 WRITING RULES:
 - Hard limit: 280 characters including spaces (Twitter DM limit — count carefully)

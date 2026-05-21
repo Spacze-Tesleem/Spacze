@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
+import { SPACZE_VOICE } from '@/lib/ai-persona';
 
 /**
  * POST /api/generate-linkedin
@@ -10,17 +11,21 @@ import Groq from 'groq-sdk';
  */
 
 function buildPrompt(lead: any): string {
-  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const aiOpportunity = lead.ai_opportunity      ? `- AI/Automation Opportunity: ${lead.ai_opportunity}` : '';
+  const weakPoints    = lead.weak_points         ? `- Weak Points: ${lead.weak_points}`                  : '';
+  const improvements  = lead.possible_improvements ? `- Possible Improvements: ${lead.possible_improvements}` : '';
+
+  return `${SPACZE_VOICE}
 
 Write a LinkedIn InMail to the decision-maker at the business below. LinkedIn InMails are read on mobile — keep it tight, human, and skimmable.
 
 PROSPECT:
 - Business Name: ${lead.business_name}
-- Website: ${lead.website || 'Not provided'}
-- Industry: ${lead.industry || 'Not specified'}
-- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
-- Weak Points: ${lead.weak_points || 'Not specified'}
-- Possible Improvements: ${lead.possible_improvements || 'Not specified'}
+${lead.website  ? `- Website: ${lead.website}`   : ''}
+${lead.industry ? `- Industry: ${lead.industry}` : ''}
+${aiOpportunity}
+${weakPoints}
+${improvements}
 
 WRITING RULES:
 - Subject line: under 8 words, curiosity-driven, no clickbait, no question marks

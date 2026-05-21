@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
+import { SPACZE_VOICE } from '@/lib/ai-persona';
 
 /**
  * POST /api/generate-facebook
@@ -10,18 +11,24 @@ import Groq from 'groq-sdk';
  */
 
 function buildPrompt(lead: any): string {
-  return `You are a Facebook Ads copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const aiOpportunity = lead.ai_opportunity ? `- AI/Automation Opportunity: ${lead.ai_opportunity}` : '';
+  const weakPoints    = lead.weak_points    ? `- Weak Points: ${lead.weak_points}`                  : '';
+  const keyMessage    = lead.keyMessage || lead.possible_improvements
+    ? `- Key Message: ${lead.keyMessage || lead.possible_improvements}`
+    : '';
+
+  return `${SPACZE_VOICE}
 
 Write a Facebook ad for the business below. Facebook ads interrupt a social feed — the first line of primary text must stop the scroll.
 
 PROSPECT:
-- Business: ${lead.business_name || 'Not specified'}
-- Industry: ${lead.industry || 'Not specified'}
-- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not specified'}
-- Weak Points: ${lead.weak_points || 'Not specified'}
+${lead.business_name ? `- Business: ${lead.business_name}` : ''}
+${lead.industry      ? `- Industry: ${lead.industry}`      : ''}
+${aiOpportunity}
+${weakPoints}
 - Tone: ${lead.tone || 'Conversational'}
 - Goal: ${lead.goal || 'Leads'}
-- Key Message: ${lead.keyMessage || lead.possible_improvements || 'Not specified'}
+${keyMessage}
 
 STRUCTURE:
 - Primary Text: the main ad copy shown in the feed

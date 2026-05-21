@@ -2,27 +2,35 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
+import { SPACZE_VOICE } from '@/lib/ai-persona';
 
 // ─────────────────────────────────────────────
 // SEQUENCE PROMPTS
 // ─────────────────────────────────────────────
 
 function buildStep1Prompt(lead: any): string {
-  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const weakPoints       = lead.weak_points        ? `- Weak Points Observed: ${lead.weak_points}`        : '';
+  const improvements     = lead.possible_improvements ? `- Possible Improvements: ${lead.possible_improvements}` : '';
+  const aiOpportunity    = lead.ai_opportunity     ? `- AI/Automation Opportunity: ${lead.ai_opportunity}` : '';
+  const qualityScore     = lead.website_quality_score != null ? `- Website Quality Score: ${lead.website_quality_score}/10` : '';
+  const mobileResp       = lead.mobile_responsiveness ? `- Mobile Responsiveness: ${lead.mobile_responsiveness}` : '';
+  const seoQuality       = lead.seo_quality        ? `- SEO Quality: ${lead.seo_quality}`                 : '';
+
+  return `${SPACZE_VOICE}
 
 Write a personalised cold outreach email for the prospect below. The reader should feel that a real person looked at their business and has something genuinely worth saying — not that they received a template.
 
 PROSPECT:
 - Business Name: ${lead.business_name}
-- Website: ${lead.website || 'Not provided'}
-- Industry: ${lead.industry || 'Not specified'}
-- Website Quality Score: ${lead.website_quality_score ?? 'N/A'}/10
-- Mobile Responsiveness: ${lead.mobile_responsiveness || 'Unknown'}
-- SEO Quality: ${lead.seo_quality || 'Unknown'}
+${lead.website ? `- Website: ${lead.website}` : ''}
+${lead.industry ? `- Industry: ${lead.industry}` : ''}
+${qualityScore}
+${mobileResp}
+${seoQuality}
 - Has Internal Dashboard/System: ${lead.has_dashboard ? 'Yes' : 'No'}
-- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
-- Weak Points Observed: ${lead.weak_points || 'Not specified'}
-- Possible Improvements: ${lead.possible_improvements || 'Not specified'}
+${aiOpportunity}
+${weakPoints}
+${improvements}
 
 STRUCTURE — the email must have all four of these parts:
 1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
@@ -65,16 +73,19 @@ BODY:
 }
 
 function buildStep2Prompt(lead: any): string {
-  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const aiOpportunity = lead.ai_opportunity      ? `- AI/Automation Opportunity: ${lead.ai_opportunity}` : '';
+  const improvements  = lead.possible_improvements ? `- Possible Improvements: ${lead.possible_improvements}` : '';
+
+  return `${SPACZE_VOICE}
 
 Write Follow-up #1 for the prospect below. This email is sent ~3–4 days after the initial outreach received no reply.
 
 PROSPECT:
 - Business Name: ${lead.business_name}
-- Website: ${lead.website || 'Not provided'}
-- Industry: ${lead.industry || 'Not specified'}
-- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
-- Possible Improvements: ${lead.possible_improvements || 'Not specified'}
+${lead.website  ? `- Website: ${lead.website}`   : ''}
+${lead.industry ? `- Industry: ${lead.industry}` : ''}
+${aiOpportunity}
+${improvements}
 
 STRUCTURE — the email must have all four of these parts:
 1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
@@ -101,15 +112,17 @@ BODY:
 }
 
 function buildStep3Prompt(lead: any): string {
-  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const aiOpportunity = lead.ai_opportunity ? `- AI/Automation Opportunity: ${lead.ai_opportunity}` : '';
+
+  return `${SPACZE_VOICE}
 
 Write Follow-up #2 for the prospect below. This email is sent ~9–10 days after the initial outreach received no reply. Two emails have already been sent with no response.
 
 PROSPECT:
 - Business Name: ${lead.business_name}
-- Website: ${lead.website || 'Not provided'}
-- Industry: ${lead.industry || 'Not specified'}
-- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
+${lead.website  ? `- Website: ${lead.website}`   : ''}
+${lead.industry ? `- Industry: ${lead.industry}` : ''}
+${aiOpportunity}
 
 STRUCTURE — the email must have all four of these parts:
 1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
@@ -136,13 +149,13 @@ BODY:
 }
 
 function buildStep4Prompt(lead: any): string {
-  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  return `${SPACZE_VOICE}
 
 Write the final "break-up" email for the prospect below. This is sent ~14–16 days after the initial outreach. Three emails have been sent with no reply. This is the last one.
 
 PROSPECT:
 - Business Name: ${lead.business_name}
-- Industry: ${lead.industry || 'Not specified'}
+${lead.industry ? `- Industry: ${lead.industry}` : ''}
 
 STRUCTURE — the email must have all three of these parts:
 1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
@@ -181,11 +194,12 @@ function buildPrompt(lead: any, step: number): string {
 // ─────────────────────────────────────────────
 
 function parseOutput(raw: string) {
-  const subjectMatch = raw.match(/SUBJECT:\s*(.+)/i);
-  const bodyMatch = raw.match(/BODY:\s*([\s\S]+)/i);
+  // Quote-agnostic: handles SUBJECT: "text", SUBJECT: text, Subject: text
+  const subjectMatch = raw.match(/SUBJECT:\s*["']?(.+?)["']?(?:\n|$)/i);
+  const bodyMatch    = raw.match(/BODY:\s*([\s\S]+)/i);
   return {
-    subject: subjectMatch ? subjectMatch[1].trim() : 'Quick thought about your website',
-    body: bodyMatch ? bodyMatch[1].trim() : raw,
+    subject: subjectMatch ? subjectMatch[1].trim() : 'Re: Quick thought',
+    body:    bodyMatch    ? bodyMatch[1].trim()    : raw.replace(/SUBJECT:.*(?:\n|$)/i, '').trim(),
   };
 }
 
@@ -198,7 +212,7 @@ async function generateWithOpenAI(prompt: string): Promise<string> {
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.85,
+    temperature: 0.6, // lower = more grounded, less hallucinated creativity for outbound email
     max_tokens: 600,
   });
   return completion.choices[0].message.content || '';
@@ -216,7 +230,7 @@ async function generateWithGroq(prompt: string): Promise<string> {
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.85,
+    temperature: 0.6, // lower = more grounded, less hallucinated creativity for outbound email
     max_tokens: 600,
   });
   return completion.choices[0].message.content || '';

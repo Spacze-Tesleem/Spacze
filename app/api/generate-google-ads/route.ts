@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
+import { SPACZE_VOICE } from '@/lib/ai-persona';
 
 /**
  * POST /api/generate-google-ads
@@ -9,17 +10,22 @@ import Groq from 'groq-sdk';
  */
 
 function buildPrompt(lead: any): string {
-  return `You are a Google Ads copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  const aiOpportunity = lead.ai_opportunity ? `- AI/Automation Opportunity: ${lead.ai_opportunity}` : '';
+  const keyMessage    = lead.keyMessage || lead.possible_improvements
+    ? `- Key Message: ${lead.keyMessage || lead.possible_improvements}`
+    : '';
+
+  return `${SPACZE_VOICE}
 
 Write Google Ads Responsive Search Ad copy for the business below. Google Ads copy is read by people actively searching — every character must be intentional and benefit-driven.
 
 PROSPECT:
-- Business: ${lead.business_name || 'Not specified'}
-- Industry: ${lead.industry || 'Not specified'}
-- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not specified'}
+${lead.business_name ? `- Business: ${lead.business_name}` : ''}
+${lead.industry      ? `- Industry: ${lead.industry}`      : ''}
+${aiOpportunity}
 - Tone: ${lead.tone || 'Professional'}
 - Goal: ${lead.goal || 'Leads'}
-- Key Message: ${lead.keyMessage || lead.possible_improvements || 'Not specified'}
+${keyMessage}
 
 STRUCTURE:
 - 3 Headlines: shown at the top of the ad, rotated by Google — each must work standalone AND in combination with the others
