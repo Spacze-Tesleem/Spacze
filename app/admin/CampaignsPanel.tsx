@@ -604,17 +604,17 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
           </div>
 
           {/* Footer */}
-          <div className="px-5 py-4 border-t border-white/8 flex gap-3 flex-shrink-0">
+          <div className="px-5 py-4 border-t admin-border flex gap-3 flex-shrink-0">
             {step === 1 ? (
               <>
                 <button onClick={handleNext} disabled={generating || saving}
-                  className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-40 shadow-[0_0_20px_rgba(0,214,125,0.15)] hover:opacity-90"
-                  style={{ background: 'var(--accent)' }}>
+                  className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-40 hover:opacity-90"
+                  style={{ background: '#00D67D', boxShadow: '0 0 20px rgba(0,214,125,0.25)' }}>
                   {generating ? <RefreshCw size={14} className="animate-spin" /> : hasAds ? <Wand2 size={14} /> : <Play size={14} />}
                   {generating ? 'Generating copy…' : hasAds ? 'Generate Ad Creative' : 'Activate Campaign'}
                 </button>
                 <button onClick={() => { setError(''); publishCampaign(false, googleDraft, metaDraft); }} disabled={saving || generating}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl admin-muted hover:admin-text hover:bg-white/5 border border-white/8 font-semibold text-[13px] transition-all disabled:opacity-40">
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl admin-muted hover:admin-text hover:bg-[var(--admin-hover-bg)] border admin-border font-semibold text-[13px] transition-all disabled:opacity-40">
                   {saving ? <RefreshCw size={14} className="animate-spin" /> : null}
                   Save Draft
                 </button>
@@ -622,7 +622,7 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
             ) : (
               <>
                 <button onClick={() => { setStep(1); setError(''); }}
-                  className="flex items-center gap-1.5 px-4 py-3 rounded-xl admin-muted hover:admin-text hover:bg-white/5 border border-white/8 font-semibold text-[13px] transition-all">
+                  className="flex items-center gap-1.5 px-4 py-3 rounded-xl admin-muted hover:admin-text hover:bg-[var(--admin-hover-bg)] border admin-border font-semibold text-[13px] transition-all">
                   <ArrowLeft size={13} /> Back
                 </button>
                 <button onClick={() => publishCampaign(true, googleDraft, metaDraft)} disabled={saving}
