@@ -109,8 +109,8 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
   // Shared class strings
   const inp = [
     'w-full rounded-xl px-4 py-3 text-[14px] leading-snug',
-    'bg-zinc-800/60 border border-white/8 text-zinc-100',
-    'placeholder:text-zinc-600',
+    'bg-[var(--admin-input-bg)] border admin-border-md admin-text',
+    'placeholder:admin-subtle',
     'focus:outline-none focus:border-[#00D67D]/50 focus:ring-1 focus:ring-[#00D67D]/20',
     'transition-colors duration-150',
   ].join(' ');
@@ -120,8 +120,8 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
   const Section = ({ title }: { title: string }) => (
     <div className="sm:col-span-2 pt-2 pb-1">
       <div className="flex items-center gap-3">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{title}</span>
-        <div className="flex-1 h-px bg-white/6" />
+        <span className="text-[10px] font-bold uppercase tracking-widest admin-muted">{title}</span>
+        <div className="flex-1 h-px bg-[var(--admin-divider)]" />
       </div>
     </div>
   );
@@ -130,7 +130,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
     <ModalPortal>
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-sm"
+        className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       >
         <motion.div
@@ -140,22 +140,22 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
           initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }}
           exit={{ y: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-          className="w-full sm:max-w-xl bg-zinc-900 border border-white/10 rounded-t-[2rem] sm:rounded-2xl shadow-2xl flex flex-col outline-none max-h-[92vh] sm:max-h-[88vh]"
+          className="w-full sm:max-w-xl bg-[var(--admin-surface)] border admin-border-md rounded-t-[2rem] sm:rounded-2xl shadow-2xl flex flex-col outline-none max-h-[92vh] sm:max-h-[88vh]"
         >
           {/* ── Header ── */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-white/8 flex-shrink-0">
+          <div className="flex items-center justify-between px-6 py-5 border-b admin-border flex-shrink-0">
             <div>
-              <h2 className="font-bold text-base text-zinc-100">
+              <h2 className="font-bold text-base admin-text">
                 {editId ? 'Edit Lead' : 'Add New Lead'}
               </h2>
-              <p className="text-[12px] text-zinc-500 mt-0.5">
+              <p className="text-[12px] admin-muted mt-0.5">
                 {editId ? 'Update the details below' : 'Fill in what you know — you can edit later'}
               </p>
             </div>
             <button
               onClick={onClose}
               aria-label="Close"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-white/8 transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center admin-muted hover:admin-text hover:bg-[var(--admin-hover-bg)] transition-colors"
             >
               <X size={16} />
             </button>
@@ -169,7 +169,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
               <Section title="Core Info" />
 
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Business Name <span className="text-[#00D67D]">*</span></label>
+                <label className="block text-[11px] font-semibold admin-muted mb-1.5">Business Name <span className="text-[#00D67D]">*</span></label>
                 <input
                   key={`bn-${editId}`}
                   defaultValue={form.business_name}
@@ -181,7 +181,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Contact Email <span className="text-[#00D67D]">*</span></label>
+                <label className="block text-[11px] font-semibold admin-muted mb-1.5">Contact Email <span className="text-[#00D67D]">*</span></label>
                 <input
                   key={`ce-${editId}`}
                   type="email"
@@ -195,7 +195,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Industry</label>
+                <label className="block text-[11px] font-semibold admin-muted mb-1.5">Industry</label>
                 <input
                   key={`ind-${editId}`}
                   defaultValue={form.industry}
@@ -207,7 +207,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Website</label>
+                <label className="block text-[11px] font-semibold admin-muted mb-1.5">Website</label>
                 <input
                   key={`web-${editId}`}
                   type="url"
@@ -221,7 +221,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Website Quality <span className="text-zinc-600 font-normal">(0–10)</span></label>
+                <label className="block text-[11px] font-semibold admin-muted mb-1.5">Website Quality <span className="admin-subtle font-normal">(0–10)</span></label>
                 <input
                   key={`wq-${editId}`}
                   type="number"
@@ -238,7 +238,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
               <Section title="Contact Channels" />
 
               <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">WhatsApp Number</label>
+                <label className="block text-[11px] font-semibold admin-muted mb-1.5">WhatsApp Number</label>
                 <input
                   key={`wa-${editId}`}
                   type="tel"
@@ -252,7 +252,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">LinkedIn URL</label>
+                <label className="block text-[11px] font-semibold admin-muted mb-1.5">LinkedIn URL</label>
                 <input
                   key={`li-${editId}`}
                   defaultValue={form.linkedin_url}
@@ -264,7 +264,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Twitter Handle</label>
+                <label className="block text-[11px] font-semibold admin-muted mb-1.5">Twitter Handle</label>
                 <input
                   key={`tw-${editId}`}
                   defaultValue={form.twitter_handle}
@@ -285,7 +285,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
                 { label: 'AI Opportunity',        key: 'ai_opportunity',        opts: ['High', 'Medium', 'Low', 'None'] },
               ] as const).map(({ label, key, opts }) => (
                 <div key={key} className="relative">
-                  <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">{label}</label>
+                  <label className="block text-[11px] font-semibold admin-muted mb-1.5">{label}</label>
                   <select
                     value={(form as Record<string, unknown>)[key] as string || ''}
                     onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
@@ -294,7 +294,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
                     <option value="">Select…</option>
                     {opts.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
-                  <ChevronDown size={13} className="absolute right-3.5 bottom-3.5 text-zinc-500 pointer-events-none" />
+                  <ChevronDown size={13} className="absolute right-3.5 bottom-3.5 admin-muted pointer-events-none" />
                 </div>
               ))}
 
@@ -306,7 +306,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
                 { label: 'Response Status', key: 'response_status', opts: [...RESPONSE_STATUSES] },
               ] as const).map(({ label, key, opts }) => (
                 <div key={key} className="relative">
-                  <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">{label}</label>
+                  <label className="block text-[11px] font-semibold admin-muted mb-1.5">{label}</label>
                   <select
                     value={(form as Record<string, unknown>)[key] as string || ''}
                     onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
@@ -315,12 +315,12 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
                     <option value="">Select…</option>
                     {opts.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
-                  <ChevronDown size={13} className="absolute right-3.5 bottom-3.5 text-zinc-500 pointer-events-none" />
+                  <ChevronDown size={13} className="absolute right-3.5 bottom-3.5 admin-muted pointer-events-none" />
                 </div>
               ))}
 
               <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Last Contacted</label>
+                <label className="block text-[11px] font-semibold admin-muted mb-1.5">Last Contacted</label>
                 <input
                   type="date"
                   value={(form.last_contacted as string) || ''}
@@ -330,7 +330,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Follow-Up Date</label>
+                <label className="block text-[11px] font-semibold admin-muted mb-1.5">Follow-Up Date</label>
                 <input
                   type="date"
                   value={(form.follow_up_date as string) || ''}
@@ -356,7 +356,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
                       className={`flex items-center gap-2.5 cursor-pointer px-3 py-3 rounded-xl border transition-colors ${
                         checked
                           ? 'border-[#00D67D]/30 bg-[#00D67D]/8 text-[#00D67D]'
-                          : 'border-white/8 bg-white/3 text-zinc-400 hover:border-white/15'
+                          : 'border-[var(--admin-border-md)] bg-[var(--admin-hover-bg)] admin-muted hover:border-[var(--admin-border-lg)]'
                       }`}
                     >
                       <input
@@ -366,7 +366,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
                         className="sr-only"
                       />
                       <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border transition-colors ${
-                        checked ? 'bg-[#00D67D] border-[#00D67D]' : 'border-white/20'
+                        checked ? 'bg-[#00D67D] border-[#00D67D]' : 'border-[var(--admin-border-lg)]'
                       }`}>
                         {checked && <span className="text-black text-[9px] font-black leading-none">✓</span>}
                       </div>
@@ -384,7 +384,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
                 { label: 'Possible Improvements', key: 'possible_improvements', placeholder: 'Add dashboard, improve speed…' },
               ] as const).map(({ label, key, placeholder }) => (
                 <div key={key} className="sm:col-span-2">
-                  <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">{label}</label>
+                  <label className="block text-[11px] font-semibold admin-muted mb-1.5">{label}</label>
                   <textarea
                     key={`${key}-${editId}`}
                     rows={3}
@@ -400,7 +400,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
           </div>
 
           {/* ── Footer ── */}
-          <div className="flex-shrink-0 px-6 py-4 border-t border-white/8 space-y-3">
+          <div className="flex-shrink-0 px-6 py-4 border-t admin-border space-y-3">
             {saveError && (
               <p className="text-red-400 text-[12px] text-center px-3 py-2 rounded-xl bg-red-500/8 border border-red-500/20">
                 {saveError}
@@ -409,7 +409,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 py-3 rounded-xl text-[13px] font-medium text-zinc-400 hover:text-zinc-200 border border-white/8 hover:bg-white/5 transition-colors"
+                className="flex-1 py-3 rounded-xl text-[13px] font-medium admin-muted hover:admin-text border admin-border hover:bg-[var(--admin-hover-bg)] transition-colors"
               >
                 Cancel
               </button>
@@ -527,16 +527,16 @@ export default function CRMPanel() {
       <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
         <div className="flex flex-1 gap-3 flex-wrap">
           <div className="relative flex-1 sm:max-w-md group">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-[#00D67D] transition-colors" />
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 admin-muted group-focus-within:text-[#00D67D] transition-colors" />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads by name, email, or industry…" className="admin-input w-full pl-11 pr-4 py-3 text-sm" />
           </div>
           <div className="relative min-w-[160px]">
-            <Filter size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <Filter size={14} className="absolute left-4 top-1/2 -translate-y-1/2 admin-muted" />
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="admin-input w-full pl-10 pr-10 py-3 text-sm cursor-pointer appearance-none">
               <option value="All">All Statuses</option>
               {OUTREACH_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 admin-muted pointer-events-none" />
           </div>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
@@ -556,25 +556,25 @@ export default function CRMPanel() {
         {selected.size > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-6 py-4 rounded-2xl bg-zinc-900/90 backdrop-blur-xl border border-white/10 shadow-2xl">
-            <div className="flex items-center gap-3 border-r border-white/10 pr-4">
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-6 py-4 rounded-2xl bg-[var(--admin-surface)] backdrop-blur-xl border admin-border-md shadow-2xl">
+            <div className="flex items-center gap-3 border-r admin-border-md pr-4">
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#00D67D]/20 text-[#00D67D] text-xs font-bold">{selected.size}</span>
-              <span className="text-sm font-medium text-zinc-200">Selected</span>
+              <span className="text-sm font-medium admin-text">Selected</span>
             </div>
             <div className="relative min-w-[180px]">
               <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-zinc-200 outline-none appearance-none cursor-pointer hover:border-white/20 transition-colors">
+                className="w-full bg-[var(--admin-input-bg)] border admin-border-md rounded-xl px-4 py-2.5 text-sm admin-text outline-none appearance-none cursor-pointer hover:border-[var(--admin-border-lg)] transition-colors">
                 <option value="">Change status to…</option>
                 {OUTREACH_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 admin-muted pointer-events-none" />
             </div>
             <button onClick={applyBulkStatus} disabled={!bulkStatus || bulkUpdating}
               className="px-5 py-2.5 rounded-xl text-black font-semibold text-sm transition-all disabled:opacity-50 hover:opacity-90"
               style={{ background: 'var(--accent)' }}>
               {bulkUpdating ? 'Applying…' : 'Apply Change'}
             </button>
-            <button onClick={() => setSelected(new Set())} className="p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+            <button onClick={() => setSelected(new Set())} className="p-2.5 rounded-xl admin-muted hover:admin-text hover:bg-[var(--admin-hover-bg)] transition-colors">
               <X size={18} />
             </button>
           </motion.div>
@@ -582,13 +582,13 @@ export default function CRMPanel() {
       </AnimatePresence>
 
       {/* Premium Desktop Table */}
-      <div className="hidden md:block border border-white/10 bg-zinc-900/30 rounded-2xl overflow-hidden shadow-xl">
+      <div className="hidden md:block border admin-border-md bg-[var(--admin-surface)] rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-zinc-900/80 border-b border-white/10 text-xs uppercase tracking-wider text-zinc-500 font-medium">
+            <thead className="bg-[var(--admin-surface-2)] border-b admin-border-md text-xs uppercase tracking-wider admin-muted font-medium">
               <tr>
                 <th className="px-6 py-4 w-12">
-                  <button onClick={toggleAll} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+                  <button onClick={toggleAll} className="admin-muted hover:admin-text transition-colors">
                     {allSelected ? <CheckSquare size={16} className="text-[#00D67D]" /> : <Square size={16} />}
                   </button>
                 </th>
@@ -600,11 +600,11 @@ export default function CRMPanel() {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[var(--admin-divider)]">
               {loading ? (
                 <>
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="border-b border-white/5">
+                    <tr key={i} className="border-b border-[var(--admin-divider)]">
                       <td className="px-6 py-4"><div className="skeleton w-4 h-4 rounded" /></td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -630,31 +630,31 @@ export default function CRMPanel() {
                   ))}
                 </>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-14 text-center text-zinc-500 text-sm">No leads found.</td></tr>
+                <tr><td colSpan={7} className="px-6 py-14 text-center admin-muted text-sm">No leads found.</td></tr>
               ) : filtered.map(lead => {
                 const isSelected = selected.has(lead.id!);
                 return (
-                  <tr key={lead.id} className={`group transition-colors ${isSelected ? 'bg-[#00D67D]/5' : 'hover:bg-white/[0.02]'}`}>
+                  <tr key={lead.id} className={`group transition-colors ${isSelected ? 'bg-[#00D67D]/5' : 'hover:bg-[var(--admin-hover-bg)]'}`}>
                     <td className="px-6 py-4">
-                      <button onClick={() => toggleOne(lead.id!)} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+                      <button onClick={() => toggleOne(lead.id!)} className="admin-muted hover:admin-text transition-colors">
                         {isSelected ? <CheckSquare size={16} className="text-[#00D67D]" /> : <Square size={16} />}
                       </button>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 flex items-center justify-center text-xs font-bold text-zinc-300 shadow-inner flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-[var(--admin-surface-3)] border admin-border-md flex items-center justify-center text-xs font-bold admin-text-2 shadow-inner flex-shrink-0">
                           {lead.business_name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold text-zinc-200 truncate max-w-[160px]">{lead.business_name}</div>
-                          <div className="text-xs text-zinc-500">{lead.industry || 'No industry'}</div>
+                          <div className="font-semibold admin-text truncate max-w-[160px]">{lead.business_name}</div>
+                          <div className="text-xs admin-muted">{lead.industry || 'No industry'}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-zinc-300 text-sm truncate max-w-[180px]">{lead.contact_email}</div>
+                      <div className="admin-text-2 text-sm truncate max-w-[180px]">{lead.contact_email}</div>
                       {lead.follow_up_date && (
-                        <div className={`text-xs mt-0.5 font-mono ${new Date(lead.follow_up_date) < new Date() ? 'text-red-400' : 'text-zinc-500'}`}>
+                        <div className={`text-xs mt-0.5 font-mono ${new Date(lead.follow_up_date) < new Date() ? 'text-red-400' : 'admin-muted'}`}>
                           Follow up: {lead.follow_up_date}
                         </div>
                       )}
@@ -671,14 +671,14 @@ export default function CRMPanel() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <span className={`p-1.5 rounded-md ${lead.contact_email   ? 'bg-blue-500/10 text-blue-400'   : 'bg-white/5 text-zinc-600'}`}><Mail          size={14} /></span>
-                        <span className={`p-1.5 rounded-md ${lead.whatsapp_number ? 'bg-[#25D366]/10 text-[#25D366]' : 'bg-white/5 text-zinc-600'}`}><MessageCircle size={14} /></span>
-                        <span className={`p-1.5 rounded-md ${lead.linkedin_url    ? 'bg-blue-500/10 text-blue-500'   : 'bg-white/5 text-zinc-600'}`}><Linkedin      size={14} /></span>
+                        <span className={`p-1.5 rounded-md ${lead.contact_email   ? 'bg-blue-500/10 text-blue-400'   : 'bg-[var(--admin-surface-3)] admin-subtle'}`}><Mail          size={14} /></span>
+                        <span className={`p-1.5 rounded-md ${lead.whatsapp_number ? 'bg-[#25D366]/10 text-[#25D366]' : 'bg-[var(--admin-surface-3)] admin-subtle'}`}><MessageCircle size={14} /></span>
+                        <span className={`p-1.5 rounded-md ${lead.linkedin_url    ? 'bg-blue-500/10 text-blue-500'   : 'bg-[var(--admin-surface-3)] admin-subtle'}`}><Linkedin      size={14} /></span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openEdit(lead)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors">Edit</button>
+                        <button onClick={() => openEdit(lead)} className="px-3 py-1.5 rounded-lg text-xs font-medium admin-muted hover:admin-text bg-[var(--admin-hover-bg)] hover:bg-[var(--admin-surface-3)] transition-colors">Edit</button>
                         <button onClick={() => deleteLead(lead.id!, lead.business_name)} className="p-1.5 rounded-lg text-red-400/70 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors"><Trash2 size={14} /></button>
                       </div>
                     </td>
@@ -695,7 +695,7 @@ export default function CRMPanel() {
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="border border-white/10 bg-zinc-900/40 rounded-2xl p-4 space-y-3">
+              <div key={i} className="border admin-border-md bg-[var(--admin-surface)] rounded-2xl p-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="skeleton w-9 h-9 rounded-full flex-shrink-0" />
                   <div className="flex-1 space-y-1.5">
@@ -713,17 +713,17 @@ export default function CRMPanel() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-12 text-center text-zinc-500 text-sm">No leads found.</div>
+          <div className="py-12 text-center admin-muted text-sm">No leads found.</div>
         ) : filtered.map(lead => (
-          <div key={lead.id} className="border border-white/10 bg-zinc-900/40 rounded-2xl p-4 space-y-3">
+          <div key={lead.id} className="border admin-border-md bg-[var(--admin-surface)] rounded-2xl p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 flex items-center justify-center text-xs font-bold text-zinc-300 flex-shrink-0">
+                <div className="w-9 h-9 rounded-full bg-[var(--admin-surface-3)] border admin-border-md flex items-center justify-center text-xs font-bold admin-text-2 flex-shrink-0">
                   {lead.business_name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-semibold text-sm text-zinc-200 truncate">{lead.business_name}</div>
-                  <div className="text-xs text-zinc-500 truncate mt-0.5">{lead.contact_email}</div>
+                  <div className="font-semibold text-sm admin-text truncate">{lead.business_name}</div>
+                  <div className="text-xs admin-muted truncate mt-0.5">{lead.contact_email}</div>
                 </div>
               </div>
               <span className={`flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ring-1 ring-inset ${statusBadge(lead.outreach_status)}`}>
@@ -732,21 +732,21 @@ export default function CRMPanel() {
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className={`p-1.5 rounded-md ${lead.contact_email   ? 'bg-blue-500/10 text-blue-400'   : 'bg-white/5 text-zinc-600'}`}><Mail          size={13} /></span>
-                <span className={`p-1.5 rounded-md ${lead.whatsapp_number ? 'bg-[#25D366]/10 text-[#25D366]' : 'bg-white/5 text-zinc-600'}`}><MessageCircle size={13} /></span>
-                <span className={`p-1.5 rounded-md ${lead.linkedin_url    ? 'bg-blue-500/10 text-blue-500'   : 'bg-white/5 text-zinc-600'}`}><Linkedin      size={13} /></span>
+                <span className={`p-1.5 rounded-md ${lead.contact_email   ? 'bg-blue-500/10 text-blue-400'   : 'bg-[var(--admin-surface-3)] admin-subtle'}`}><Mail          size={13} /></span>
+                <span className={`p-1.5 rounded-md ${lead.whatsapp_number ? 'bg-[#25D366]/10 text-[#25D366]' : 'bg-[var(--admin-surface-3)] admin-subtle'}`}><MessageCircle size={13} /></span>
+                <span className={`p-1.5 rounded-md ${lead.linkedin_url    ? 'bg-blue-500/10 text-blue-500'   : 'bg-[var(--admin-surface-3)] admin-subtle'}`}><Linkedin      size={13} /></span>
               </div>
               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold font-mono ring-1 ring-inset ${scoreBadge(lead.website_quality_score)}`}>
                 {lead.website_quality_score != null ? `${lead.website_quality_score}/10` : 'N/A'}
               </span>
             </div>
             {lead.follow_up_date && (
-              <div className={`text-[11px] font-mono ${new Date(lead.follow_up_date) < new Date() ? 'text-red-400' : 'text-zinc-500'}`}>
+              <div className={`text-[11px] font-mono ${new Date(lead.follow_up_date) < new Date() ? 'text-red-400' : 'admin-muted'}`}>
                 Follow-up: {lead.follow_up_date}
               </div>
             )}
             <div className="flex gap-2 pt-1">
-              <button onClick={() => openEdit(lead)} className="flex-1 py-2.5 rounded-xl text-xs font-medium border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300 transition-colors">Edit</button>
+              <button onClick={() => openEdit(lead)} className="flex-1 py-2.5 rounded-xl text-xs font-medium border admin-border-md bg-[var(--admin-hover-bg)] hover:bg-[var(--admin-surface-3)] admin-text-2 transition-colors">Edit</button>
               <button onClick={() => deleteLead(lead.id!, lead.business_name)} className="px-4 py-2.5 rounded-xl text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"><Trash2 size={13} /></button>
             </div>
           </div>
