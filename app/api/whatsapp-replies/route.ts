@@ -86,6 +86,7 @@ export async function GET(req: NextRequest) {
   let query = db
     .from('whatsapp_replies')
     .select('*')
+    .eq('direction', 'inbound')
     .order('received_at', { ascending: false });
 
   if (leadIdsParam) {
