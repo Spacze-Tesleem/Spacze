@@ -11,6 +11,15 @@
 import useSWR from 'swr';
 import { Lead, Campaign, ScheduledMessage } from './supabase';
 
+export type WhatsAppReply = {
+  id: string;
+  lead_id: string | null;
+  phone: string;
+  message: string;
+  received_at: string;
+  created_at: string;
+};
+
 const fetcher = (url: string) =>
   fetch(url).then((res) => {
     if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
@@ -63,6 +72,29 @@ export function useScheduledMessages(campaignId?: string) {
 
   return {
     messages: data ?? [],
+    loading: isLoading,
+    error: error instanceof Error ? error.message : null,
+    refresh: mutate,
+  };
+}
+
+// ── useWhatsAppReplies ────────────────────────────────────────────────────────
+// Fetches all inbound WhatsApp replies, optionally filtered to a set of lead IDs.
+// Polls every 30s so the dashboard stays fresh without a manual refresh.
+
+export function useWhatsAppReplies(leadIds?: string[]) {
+  const url = leadIds?.length
+    ? `/api/whatsapp-replies?lead_ids=${leadIds.join(',')}`
+    : '/api/whatsapp-replies';
+
+  const { data, error, isLoading, mutate } = useSWR<WhatsAppReply[]>(url, fetcher, {
+    revalidateOnFocus: true,
+    refreshInterval: 30_000,
+    dedupingInterval: 10_000,
+  });
+
+  return {
+    replies: data ?? [],
     loading: isLoading,
     error: error instanceof Error ? error.message : null,
     refresh: mutate,

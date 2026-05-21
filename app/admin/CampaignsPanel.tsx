@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Campaign, CampaignChannel, Lead, ScheduledMessage } from '@/lib/supabase';
 import { useToast, ToastStack } from '@/app/components/Toast';
-import { useLeads, useCampaigns } from '@/lib/hooks';
+import { useLeads, useCampaigns, useWhatsAppReplies, WhatsAppReply } from '@/lib/hooks';
 import ModalPortal from '@/app/components/ModalPortal';
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
@@ -109,14 +109,6 @@ function ChannelCoverage({ channel, leads }: { channel: CampaignChannel; leads: 
 }
 
 // ─── DETAIL MODAL ─────────────────────────────────────────────────────────────
-
-type WhatsAppReply = {
-  id: string;
-  lead_id: string;
-  phone: string;
-  message: string;
-  received_at: string;
-};
 
 type DetailTab = 'queue' | 'replies';
 
@@ -863,6 +855,18 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
 export default function CampaignsPanel() {
   const { leads }                                       = useLeads();
   const { campaigns, loading, refresh: refreshCampaigns } = useCampaigns();
+  const { replies }                                     = useWhatsAppReplies();
+
+  // Map campaign id → number of unique leads that have replied via WhatsApp
+  const repliedCountByCampaign = React.useMemo(() => {
+    const repliedLeadIds = new Set(replies.map(r => r.lead_id).filter(Boolean));
+    return Object.fromEntries(
+      campaigns.map(c => [
+        c.id,
+        (c.lead_ids ?? []).filter(id => repliedLeadIds.has(id)).length,
+      ])
+    );
+  }, [campaigns, replies]);
   const [showCreate, setShowCreate]     = useState(false);
   const [detailCampaign, setDetailCampaign] = useState<Campaign | null>(null);
   const [deleting, setDeleting]         = useState<string | null>(null);
@@ -941,6 +945,11 @@ export default function CampaignsPanel() {
                   <div className="flex items-center gap-2 flex-wrap">
                     {(c.channels as CampaignChannel[]).map(ch => <ChannelBadge key={ch} channel={ch} />)}
                     <span className="flex items-center gap-1 text-[10px] admin-muted"><Users size={11} /> {c.lead_ids?.length ?? 0} leads</span>
+                    {(repliedCountByCampaign[c.id!] ?? 0) > 0 && (
+                      <span className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-md text-[#25D366] bg-[#25D366]/10">
+                        <Reply size={10} /> {repliedCountByCampaign[c.id!]} replied
+                      </span>
+                    )}
                     <span className="flex items-center gap-1 text-[10px] admin-muted">
                       <Calendar size={11} />
                       {c.start_date ? new Date(c.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}

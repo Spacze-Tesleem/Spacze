@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useLeads, useCampaigns, useScheduledMessages } from '@/lib/hooks';
+import { useLeads, useCampaigns, useScheduledMessages, useWhatsAppReplies } from '@/lib/hooks';
 import { motion } from 'framer-motion';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
@@ -11,7 +11,7 @@ import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import {
   TrendingUp, Mail, MessageCircle, Megaphone, Users, Calendar,
   Sparkles, ArrowRight, Activity, BarChart2, Linkedin, Twitter,
-  CheckCircle2, Clock, XCircle, Zap,
+  CheckCircle2, Clock, XCircle, Zap, Reply,
 } from 'lucide-react';
 import { Lead, Campaign, ScheduledMessage } from '@/lib/supabase';
 
@@ -120,7 +120,8 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
   const { leads,    loading: lLoading }  = useLeads();
   const { campaigns, loading: cLoading } = useCampaigns();
   const { messages,  loading: mLoading } = useScheduledMessages();
-  const loading = lLoading || cLoading || mLoading;
+  const { replies,   loading: rLoading } = useWhatsAppReplies();
+  const loading = lLoading || cLoading || mLoading || rLoading;
 
   const [dateRange, setDateRange]     = useState<DateRange>('30d');
   const [selCampaign, setSelCampaign] = useState('all');
@@ -132,18 +133,24 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
 
   const fLeads = useMemo(() => leads.filter(l => filterByRange(l.created_at || '', dateRange)), [leads, dateRange]);
 
+  // Replies filtered to the same date range as other stats
+  const fReplies = useMemo(() =>
+    replies.filter(r => filterByRange(r.received_at, dateRange)),
+  [replies, dateRange]);
+
   const stats = useMemo(() => ({
     totalLeads:   fLeads.length,
     emailSent:    fMsgs.filter(m => m.channel === 'email'    && m.status === 'sent').length,
     waSent:       fMsgs.filter(m => m.channel === 'whatsapp' && m.status === 'sent').length,
     liSent:       fMsgs.filter(m => m.channel === 'linkedin' && m.status === 'sent').length,
     twSent:       fMsgs.filter(m => m.channel === 'twitter'  && m.status === 'sent').length,
-    replied:      fLeads.filter(l => l.reply_received).length,
+    // Use the real whatsapp_replies table count — more accurate than the boolean flag
+    replied:      fReplies.length,
     meetings:     fLeads.filter(l => l.meeting_booked).length,
     activeCamps:  campaigns.filter(c => c.status === 'active').length,
     pending:      leads.filter(l => l.outreach_status === 'Pending').length,
     failed:       fMsgs.filter(m => m.status === 'failed').length,
-  }), [fLeads, fMsgs, campaigns, leads]);
+  }), [fLeads, fMsgs, fReplies, campaigns, leads]);
 
   const replyRate = stats.totalLeads > 0 ? Math.round((stats.replied / stats.totalLeads) * 100) : 0;
   const meetRate  = stats.totalLeads > 0 ? Math.round((stats.meetings / stats.totalLeads) * 100) : 0;
@@ -187,25 +194,42 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
     };
   }, [messages]);
 
-  // Activity feed — last 8 sent/failed messages
+  // Activity feed — sent/failed messages + inbound WhatsApp replies, newest first
   const activity = useMemo(() => {
     const chIcon: Record<string, React.ElementType> = { email: Mail, whatsapp: MessageCircle, linkedin: Linkedin, twitter: Twitter };
     const chColor: Record<string, string> = { email: BLUE, whatsapp: '#25D366', linkedin: '#6366f1', twitter: SKY };
-    return [...messages]
+
+    type ActivityItem = { icon: React.ElementType; color: string; text: string; time: string; _ts: number };
+
+    const msgItems: ActivityItem[] = [...messages]
       .filter(m => m.status === 'sent' || m.status === 'failed')
-      .sort((a, b) => new Date(b.sent_at || b.scheduled_at).getTime() - new Date(a.sent_at || a.scheduled_at).getTime())
-      .slice(0, 8)
       .map(m => {
-        const lead = leads.find(l => l.id === m.lead_id);
-        const name = lead?.business_name || 'Unknown lead';
-        const Icon = chIcon[m.channel] || Mail;
+        const lead  = leads.find(l => l.id === m.lead_id);
+        const name  = lead?.business_name || 'Unknown lead';
+        const Icon  = chIcon[m.channel] || Mail;
         const color = m.status === 'failed' ? '#ef4444' : chColor[m.channel] || BLUE;
-        const text = m.status === 'failed'
+        const text  = m.status === 'failed'
           ? `Failed to send ${m.channel} to ${name}`
           : `${m.channel.charAt(0).toUpperCase() + m.channel.slice(1)} sent to ${name} (step ${m.sequence_step})`;
-        return { icon: Icon, color, text, time: timeAgo(m.sent_at || m.scheduled_at) };
+        return { icon: Icon, color, text, time: timeAgo(m.sent_at || m.scheduled_at), _ts: new Date(m.sent_at || m.scheduled_at).getTime() };
       });
-  }, [messages, leads]);
+
+    const replyItems: ActivityItem[] = replies.map(r => {
+      const lead = leads.find(l => l.id === r.lead_id);
+      const name = lead?.business_name || r.phone;
+      return {
+        icon: Reply,
+        color: '#25D366',
+        text: `${name} replied on WhatsApp: "${r.message.slice(0, 60)}${r.message.length > 60 ? '…' : ''}"`,
+        time: timeAgo(r.received_at),
+        _ts: new Date(r.received_at).getTime(),
+      };
+    });
+
+    return [...msgItems, ...replyItems]
+      .sort((a, b) => b._ts - a._ts)
+      .slice(0, 10);
+  }, [messages, leads, replies]);
 
   const campaignStats = useMemo(() => campaigns.map(c => {
     const cMsgs  = messages.filter(m => m.campaign_id === c.id);
