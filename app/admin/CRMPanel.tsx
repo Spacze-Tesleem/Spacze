@@ -64,6 +64,12 @@ function exportCSV(leads: Lead[]) {
 }
 
 // ─── LeadModal ────────────────────────────────────────────────────────────────
+//
+// Text inputs are UNCONTROLLED (defaultValue + onBlur) so React does not
+// re-render the modal on every keystroke — this is what caused the mobile
+// typing lag. Selects, checkboxes, and date pickers remain controlled because
+// they are single-action interactions with no typing involved.
+//
 function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }: {
   editId: string | null;
   form: Omit<Lead, 'id' | 'created_at'>;
@@ -74,10 +80,13 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
   saveError: string;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const inp = 'w-full admin-input border rounded-xl px-3 py-2.5 text-[13px] admin-text outline-none transition-colors placeholder:admin-subtle';
-  const sel = `${inp} cursor-pointer appearance-none`;
 
-  // Focus trap + ESC to close
+  // Sync a single text field into form state on blur
+  const blur = useCallback((key: string) => (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm(f => ({ ...f, [key]: e.target.value }));
+  }, [setForm]);
+
+  // ESC to close + focus trap
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
     dialogRef.current?.focus();
@@ -96,125 +105,326 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
     return () => { document.removeEventListener('keydown', onKey); prev?.focus(); };
   }, [onClose]);
 
+  // Shared class strings
+  const inp = [
+    'w-full rounded-xl px-4 py-3 text-[14px] leading-snug',
+    'bg-zinc-800/60 border border-white/8 text-zinc-100',
+    'placeholder:text-zinc-600',
+    'focus:outline-none focus:border-[#00D67D]/50 focus:ring-1 focus:ring-[#00D67D]/20',
+    'transition-colors duration-150',
+  ].join(' ');
+
+  const sel = `${inp} cursor-pointer appearance-none`;
+
+  const Section = ({ title }: { title: string }) => (
+    <div className="sm:col-span-2 pt-2 pb-1">
+      <div className="flex items-center gap-3">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{title}</span>
+        <div className="flex-1 h-px bg-white/6" />
+      </div>
+    </div>
+  );
+
   return (
     <ModalPortal>
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-    >
       <motion.div
-        ref={dialogRef} tabIndex={-1}
-        role="dialog" aria-modal="true"
-        aria-label={editId ? 'Edit Lead' : 'Add New Lead'}
-        initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '100%', opacity: 0 }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="bg-zinc-900/80 backdrop-blur-2xl border border-white/10 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-2xl max-h-[92vh] sm:max-h-[90vh] flex flex-col outline-none shadow-2xl"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-sm"
+        onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b admin-border flex-shrink-0">
-          <div>
-            <h2 className="font-bold text-[15px] admin-text">{editId ? 'Edit Lead' : 'Add New Lead'}</h2>
-            <p className="text-[11px] admin-muted mt-0.5">{editId ? 'Update lead details' : 'Fill in the lead information below'}</p>
-          </div>
-          <button onClick={onClose} aria-label="Close" className="admin-muted hover:admin-text p-1.5 rounded-xl admin-hover transition-colors border admin-border">
-            <X size={15} />
-          </button>
-        </div>
-
-        <div className="overflow-y-auto flex-1 p-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { label: 'Business Name *', key: 'business_name', placeholder: 'Acme Corp' },
-              { label: 'Contact Email *',  key: 'contact_email',   placeholder: 'hello@acme.com' },
-              { label: 'WhatsApp Number',  key: 'whatsapp_number', placeholder: '+2348012345678' },
-              { label: 'LinkedIn URL',     key: 'linkedin_url',    placeholder: 'linkedin.com/in/username' },
-              { label: 'Twitter Handle',   key: 'twitter_handle',  placeholder: '@handle' },
-              { label: 'Website',          key: 'website',         placeholder: 'https://acme.com' },
-              { label: 'Industry',         key: 'industry',        placeholder: 'E-Commerce' },
-            ].map(({ label, key, placeholder }) => (
-              <div key={key}>
-                <label className="block label-xs mb-1.5">{label}</label>
-                <input value={(form as Record<string,unknown>)[key] as string || ''} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} placeholder={placeholder} className={inp} />
-              </div>
-            ))}
-
+        <motion.div
+          ref={dialogRef} tabIndex={-1}
+          role="dialog" aria-modal="true"
+          aria-label={editId ? 'Edit Lead' : 'Add New Lead'}
+          initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          exit={{ y: '100%', opacity: 0 }}
+          transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+          className="w-full sm:max-w-xl bg-zinc-900 border border-white/10 rounded-t-[2rem] sm:rounded-2xl shadow-2xl flex flex-col outline-none max-h-[92vh] sm:max-h-[88vh]"
+        >
+          {/* ── Header ── */}
+          <div className="flex items-center justify-between px-6 py-5 border-b border-white/8 flex-shrink-0">
             <div>
-              <label className="block label-xs mb-1.5">Website Quality (0–10)</label>
-              <input type="number" min={0} max={10} value={form.website_quality_score ?? ''} onChange={e => setForm(f => ({ ...f, website_quality_score: e.target.value ? Number(e.target.value) : null }))} placeholder="7" className={inp} />
+              <h2 className="font-bold text-base text-zinc-100">
+                {editId ? 'Edit Lead' : 'Add New Lead'}
+              </h2>
+              <p className="text-[12px] text-zinc-500 mt-0.5">
+                {editId ? 'Update the details below' : 'Fill in what you know — you can edit later'}
+              </p>
             </div>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-white/8 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
 
-            {[
-              { label: 'Mobile Responsiveness', key: 'mobile_responsiveness', opts: ['Good', 'Average', 'Poor', 'None'] },
-              { label: 'WhatsApp Integration',  key: 'whatsapp_integration',  opts: ['Yes', 'No', 'Partial'] },
-              { label: 'SEO Quality',           key: 'seo_quality',           opts: ['Good', 'Average', 'Poor', 'None'] },
-              { label: 'AI Opportunity',        key: 'ai_opportunity',        opts: ['High', 'Medium', 'Low', 'None'] },
-              { label: 'Outreach Status',       key: 'outreach_status',       opts: [...OUTREACH_STATUSES] },
-              { label: 'Response Status',       key: 'response_status',       opts: [...RESPONSE_STATUSES] },
-            ].map(({ label, key, opts }) => (
-              <div key={key} className="relative">
-                <label className="block label-xs mb-1.5">{label}</label>
-                <select value={(form as Record<string,unknown>)[key] as string || ''} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} className={sel}>
-                  <option value="">Select...</option>
-                  {opts.map(o => <option key={o} value={o}>{o}</option>)}
-                </select>
-                <ChevronDown size={12} className="absolute right-3 bottom-3 admin-subtle pointer-events-none" />
+          {/* ── Scrollable body ── */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+
+              {/* ── Core ── */}
+              <Section title="Core Info" />
+
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Business Name <span className="text-[#00D67D]">*</span></label>
+                <input
+                  key={`bn-${editId}`}
+                  defaultValue={form.business_name}
+                  onBlur={blur('business_name')}
+                  placeholder="Acme Corp"
+                  className={inp}
+                  autoComplete="off"
+                />
               </div>
-            ))}
 
-            {[
-              { label: 'Last Contacted', key: 'last_contacted' },
-              { label: 'Follow-Up Date', key: 'follow_up_date' },
-            ].map(({ label, key }) => (
-              <div key={key}>
-                <label className="block label-xs mb-1.5">{label}</label>
-                <input type="date" value={(form as Record<string,unknown>)[key] as string || ''} onChange={e => setForm(f => ({ ...f, [key]: e.target.value || null }))} className={inp} />
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Contact Email <span className="text-[#00D67D]">*</span></label>
+                <input
+                  key={`ce-${editId}`}
+                  type="email"
+                  defaultValue={form.contact_email}
+                  onBlur={blur('contact_email')}
+                  placeholder="hello@acme.com"
+                  className={inp}
+                  autoComplete="off"
+                  inputMode="email"
+                />
               </div>
-            ))}
 
-            <div className="sm:col-span-2">
-              <label className="block label-xs mb-2.5">Flags</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Industry</label>
+                <input
+                  key={`ind-${editId}`}
+                  defaultValue={form.industry}
+                  onBlur={blur('industry')}
+                  placeholder="E-Commerce"
+                  className={inp}
+                  autoComplete="off"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Website</label>
+                <input
+                  key={`web-${editId}`}
+                  type="url"
+                  defaultValue={form.website}
+                  onBlur={blur('website')}
+                  placeholder="https://acme.com"
+                  className={inp}
+                  autoComplete="off"
+                  inputMode="url"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Website Quality <span className="text-zinc-600 font-normal">(0–10)</span></label>
+                <input
+                  key={`wq-${editId}`}
+                  type="number"
+                  min={0} max={10}
+                  defaultValue={form.website_quality_score ?? ''}
+                  onBlur={e => setForm(f => ({ ...f, website_quality_score: e.target.value ? Number(e.target.value) : null }))}
+                  placeholder="7"
+                  className={inp}
+                  inputMode="numeric"
+                />
+              </div>
+
+              {/* ── Contact Channels ── */}
+              <Section title="Contact Channels" />
+
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">WhatsApp Number</label>
+                <input
+                  key={`wa-${editId}`}
+                  type="tel"
+                  defaultValue={form.whatsapp_number}
+                  onBlur={blur('whatsapp_number')}
+                  placeholder="+2348012345678"
+                  className={inp}
+                  autoComplete="off"
+                  inputMode="tel"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">LinkedIn URL</label>
+                <input
+                  key={`li-${editId}`}
+                  defaultValue={form.linkedin_url}
+                  onBlur={blur('linkedin_url')}
+                  placeholder="linkedin.com/in/username"
+                  className={inp}
+                  autoComplete="off"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Twitter Handle</label>
+                <input
+                  key={`tw-${editId}`}
+                  defaultValue={form.twitter_handle}
+                  onBlur={blur('twitter_handle')}
+                  placeholder="@handle"
+                  className={inp}
+                  autoComplete="off"
+                />
+              </div>
+
+              {/* ── Audit ── */}
+              <Section title="Site Audit" />
+
+              {([
+                { label: 'Mobile Responsiveness', key: 'mobile_responsiveness', opts: ['Good', 'Average', 'Poor', 'None'] },
+                { label: 'WhatsApp Integration',  key: 'whatsapp_integration',  opts: ['Yes', 'No', 'Partial'] },
+                { label: 'SEO Quality',           key: 'seo_quality',           opts: ['Good', 'Average', 'Poor', 'None'] },
+                { label: 'AI Opportunity',        key: 'ai_opportunity',        opts: ['High', 'Medium', 'Low', 'None'] },
+              ] as const).map(({ label, key, opts }) => (
+                <div key={key} className="relative">
+                  <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">{label}</label>
+                  <select
+                    value={(form as Record<string, unknown>)[key] as string || ''}
+                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                    className={sel}
+                  >
+                    <option value="">Select…</option>
+                    {opts.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                  <ChevronDown size={13} className="absolute right-3.5 bottom-3.5 text-zinc-500 pointer-events-none" />
+                </div>
+              ))}
+
+              {/* ── Status ── */}
+              <Section title="Outreach Status" />
+
+              {([
+                { label: 'Outreach Status', key: 'outreach_status', opts: [...OUTREACH_STATUSES] },
+                { label: 'Response Status', key: 'response_status', opts: [...RESPONSE_STATUSES] },
+              ] as const).map(({ label, key, opts }) => (
+                <div key={key} className="relative">
+                  <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">{label}</label>
+                  <select
+                    value={(form as Record<string, unknown>)[key] as string || ''}
+                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                    className={sel}
+                  >
+                    <option value="">Select…</option>
+                    {opts.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                  <ChevronDown size={13} className="absolute right-3.5 bottom-3.5 text-zinc-500 pointer-events-none" />
+                </div>
+              ))}
+
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Last Contacted</label>
+                <input
+                  type="date"
+                  value={(form.last_contacted as string) || ''}
+                  onChange={e => setForm(f => ({ ...f, last_contacted: e.target.value || null }))}
+                  className={inp}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Follow-Up Date</label>
+                <input
+                  type="date"
+                  value={(form.follow_up_date as string) || ''}
+                  onChange={e => setForm(f => ({ ...f, follow_up_date: e.target.value || null }))}
+                  className={inp}
+                />
+              </div>
+
+              {/* ── Flags ── */}
+              <Section title="Flags" />
+
+              <div className="sm:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {([
                   { label: 'Has Dashboard',  key: 'has_dashboard' },
                   { label: 'Email Sent',     key: 'email_sent' },
                   { label: 'Reply Received', key: 'reply_received' },
                   { label: 'Meeting Booked', key: 'meeting_booked' },
-                ].map(({ label, key }) => (
-                  <label key={key} className="flex items-center gap-2.5 cursor-pointer p-3 rounded-xl admin-hover border admin-border hover:admin-border-md transition-colors">
-                    <input type="checkbox" checked={!!(form as Record<string,unknown>)[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} className="w-4 h-4 accent-[#00D67D] flex-shrink-0" />
-                    <span className="text-xs admin-text-2 leading-tight">{label}</span>
-                  </label>
-                ))}
+                ] as const).map(({ label, key }) => {
+                  const checked = !!(form as Record<string, unknown>)[key];
+                  return (
+                    <label
+                      key={key}
+                      className={`flex items-center gap-2.5 cursor-pointer px-3 py-3 rounded-xl border transition-colors ${
+                        checked
+                          ? 'border-[#00D67D]/30 bg-[#00D67D]/8 text-[#00D67D]'
+                          : 'border-white/8 bg-white/3 text-zinc-400 hover:border-white/15'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))}
+                        className="sr-only"
+                      />
+                      <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border transition-colors ${
+                        checked ? 'bg-[#00D67D] border-[#00D67D]' : 'border-white/20'
+                      }`}>
+                        {checked && <span className="text-black text-[9px] font-black leading-none">✓</span>}
+                      </div>
+                      <span className="text-[12px] font-medium leading-tight">{label}</span>
+                    </label>
+                  );
+                })}
               </div>
+
+              {/* ── Notes ── */}
+              <Section title="Notes" />
+
+              {([
+                { label: 'Weak Points',           key: 'weak_points',           placeholder: 'Poor mobile UX, no SEO…' },
+                { label: 'Possible Improvements', key: 'possible_improvements', placeholder: 'Add dashboard, improve speed…' },
+              ] as const).map(({ label, key, placeholder }) => (
+                <div key={key} className="sm:col-span-2">
+                  <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">{label}</label>
+                  <textarea
+                    key={`${key}-${editId}`}
+                    rows={3}
+                    defaultValue={(form as Record<string, unknown>)[key] as string || ''}
+                    onBlur={blur(key)}
+                    placeholder={placeholder}
+                    className={`${inp} resize-none`}
+                  />
+                </div>
+              ))}
+
             </div>
-
-            {[
-              { label: 'Weak Points',           key: 'weak_points',           placeholder: 'Poor mobile UX, no SEO...' },
-              { label: 'Possible Improvements', key: 'possible_improvements', placeholder: 'Add dashboard, improve speed...' },
-            ].map(({ label, key, placeholder }) => (
-              <div key={key} className="sm:col-span-2">
-                <label className="block label-xs mb-1.5">{label}</label>
-                <textarea rows={3} value={(form as Record<string,unknown>)[key] as string || ''} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} placeholder={placeholder} className={`${inp} resize-none`} />
-              </div>
-            ))}
           </div>
-        </div>
 
-        <div className="flex-shrink-0 px-5 py-4 border-t admin-border space-y-3">
-          {saveError && (
-            <p className="text-red-400 text-[12px] text-center px-3 py-2 rounded-xl bg-red-500/8 border border-red-500/20">{saveError}</p>
-          )}
-          <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-[13px] admin-muted hover:admin-text border admin-border admin-hover transition-colors">Cancel</button>
-            <button onClick={onSave} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-black font-bold text-[13px] transition-colors disabled:opacity-60" style={{ background: 'var(--accent)' }}>
-              <Save size={13} />
-              {saving ? 'Saving...' : editId ? 'Update Lead' : 'Add Lead'}
-            </button>
+          {/* ── Footer ── */}
+          <div className="flex-shrink-0 px-6 py-4 border-t border-white/8 space-y-3">
+            {saveError && (
+              <p className="text-red-400 text-[12px] text-center px-3 py-2 rounded-xl bg-red-500/8 border border-red-500/20">
+                {saveError}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 rounded-xl text-[13px] font-medium text-zinc-400 hover:text-zinc-200 border border-white/8 hover:bg-white/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onSave}
+                disabled={saving}
+                className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-60 shadow-[0_0_20px_rgba(0,214,125,0.15)] hover:opacity-90"
+                style={{ background: 'var(--accent)' }}
+              >
+                <Save size={14} />
+                {saving ? 'Saving…' : editId ? 'Update Lead' : 'Add Lead'}
+              </button>
+            </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
     </ModalPortal>
   );
 }
