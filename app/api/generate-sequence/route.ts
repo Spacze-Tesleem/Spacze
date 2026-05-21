@@ -20,58 +20,66 @@ import Groq from 'groq-sdk';
 // ── Prompt ────────────────────────────────────────────────────────────────────
 
 function buildSequencePrompt(lead: Record<string, unknown>): string {
-  return `You are an expert B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
+  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
 
-Generate a complete 4-step cold email sequence for the prospect below. Each email must feel like it was written by a real person who genuinely researched this business — not a template.
+Generate a complete 4-step cold email sequence for the prospect below. Every email must feel written by a real person who genuinely researched this business — not a template. Each step must be distinct in angle, tone, and content.
 
-PROSPECT PROFILE:
+PROSPECT:
 - Business Name: ${lead.business_name}
 - Website: ${lead.website || 'Not provided'}
 - Industry: ${lead.industry || 'Not specified'}
 - Website Quality Score: ${lead.website_quality_score ?? 'N/A'}/10
+- Mobile Responsiveness: ${lead.mobile_responsiveness || 'Unknown'}
+- SEO Quality: ${lead.seo_quality || 'Unknown'}
+- Has Internal Dashboard/System: ${lead.has_dashboard ? 'Yes' : 'No'}
 - Weak Points Identified: ${lead.weak_points || 'Not assessed'}
 - AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
 - Possible Improvements: ${lead.possible_improvements || 'Not assessed'}
 
-SEQUENCE STRUCTURE:
+SEQUENCE:
 
-Step 1 — Initial Outreach (Day 1)
-- Open with ONE specific, genuine observation about their business (from weak_points/ai_opportunity)
-- Frame it as an opportunity, never a criticism
-- One short paragraph on how Spacze can help
+Step 1 — Initial Outreach (Day 1) | 140–175 words
+- Open with ONE specific observation drawn from the analysis above — framed as an opportunity, never a criticism
+- Use language like: "I noticed there may be room to…", "there's potential to…", "could help streamline…"
+- NEVER say the website is bad, outdated, broken, or weak
+- One short paragraph on how Spacze can help — keep it relevant to the observation
+- Mention portfolio as a casual aside: "You can see some of our work at Spacze.vercel.app"
 - Soft CTA: "Would you be open to a quick chat this week?"
-- Mention portfolio casually: "You can see some of our work at Spacze.vercel.app"
-- Length: 140–175 words
+- Industry-specific pain points: fashion → ordering/inventory flow; real estate → lead capture/CRM; logistics → tracking/automation; food → ordering/booking; services → client onboarding/scheduling
 
-Step 2 — Follow-up #1 (Day 4–5, no reply)
-- Do NOT say "just following up" or "circling back"
-- Add NEW value: a fresh insight or industry observation relevant to their business
-- Reference the first email lightly: "I sent a note a few days ago…"
-- Single low-friction question to invite reply
-- Length: 100–130 words
+Step 2 — Follow-up #1 (Day 4–5, no reply) | 100–130 words
+- Do NOT open with "just following up", "circling back", or "checking in"
+- Open with a NEW industry insight or observation not mentioned in Step 1
+- Reference Step 1 lightly in one clause: "I sent a note a few days ago…"
+- One sentence connecting the insight to Spacze — natural, not salesy
+- Close with a single low-friction question to invite a reply
+- Industry-specific angle: fashion → seasonal demand/DM volume; real estate → lead response speed; logistics → manual process costs; food → repeat customer retention
 
-Step 3 — Follow-up #2 (Day 9–10, still no reply)
-- Lead with a brief case study or result Spacze achieved for a similar business
-- Keep it specific and credible (e.g. "We helped a Lagos-based e-commerce store reduce cart abandonment by 34% with a simple AI chat widget")
-- One sentence connecting it to their situation
-- CTA: offer a free 15-minute audit or review
-- Length: 90–120 words
+Step 3 — Follow-up #2 (Day 9–10, still no reply) | 110–140 words
+- Take a completely different angle — do NOT repeat the website observation
+- Open with a brief, credible result Spacze achieved for a similar business (anonymous: "a recent project for a ${lead.industry || 'similar'} client…")
+- Keep the case study to 1–2 sentences — specific and believable, not vague
+- One sentence connecting that result to ${lead.business_name}
+- Mention Spacze has limited project availability — frame as a heads-up, not fake scarcity
+- CTA: low-commitment offer — "Even a 10-minute call would be enough to see if there's a fit"
 
-Step 4 — Break-up Email (Day 14–16)
-- Acknowledge they may not be interested right now — no hard feelings
-- Leave the door open gracefully
-- One final value statement (not a pitch)
-- Tone: warm, human, zero pressure
-- Length: 60–80 words
+Step 4 — Break-up Email (Day 14–16) | 80–100 words
+- Acknowledge they've been busy — no blame, no guilt
+- Be direct: "I'll stop reaching out after this so I don't clog your inbox"
+- Leave a genuine open invitation: if priorities change, Spacze is here
+- One optional memorable sentence — not a pitch
+- End warmly and sincerely
+- Tone: human, gracious, zero pressure
 
 RULES FOR ALL STEPS:
-- Never use bullet points inside the email body
-- Never use corporate filler: "I hope this finds you well", "synergy", "leverage", "touch base"
-- Subject lines must be specific, curiosity-driven, and under 8 words
-- Each email must feel distinct — no repetition of phrases across steps
-- Tone: peer-to-peer, warm, confident but never pushy
+- No bullet points inside any email body
+- No corporate filler: "I hope this finds you well", "synergy", "leverage", "touch base", "circle back"
+- No spam trigger words
+- Subject lines: specific, curiosity-driven, under 8 words — Steps 2–4 use "Re:" prefix to thread
+- Each step must feel distinct — no repeated phrases across steps
+- Tone throughout: peer-to-peer, warm, confident, never pushy
 
-Return ONLY valid JSON — no markdown fences — in this exact shape:
+Return ONLY valid JSON — no markdown fences, no explanation — in this exact shape:
 {
   "steps": [
     { "step": 1, "subject": "...", "body": "..." },
