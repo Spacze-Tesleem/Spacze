@@ -203,7 +203,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       <div className={`flex-1 min-w-0 ${mainML} flex flex-col min-h-screen transition-all duration-300 admin-bg`}>
         
         {/* Floating Topbar */}
-        <div className="p-4 lg:p-6 pb-0 sticky top-0 z-40">
+        <div className="p-4 lg:p-6 pb-0 sticky top-0 z-40 bg-[var(--admin-bg)]">
           <header className="admin-header backdrop-blur-md border rounded-2xl px-6 h-16 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-3 min-w-0">
               <div className="min-w-0">
