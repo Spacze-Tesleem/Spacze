@@ -15,7 +15,7 @@ function buildWhatsAppPrompt(lead: any): string {
 
   return `${SPACZE_VOICE}
 
-WhatsApp messages must feel personal and conversational — like a text from a real person, not a marketing blast.
+Write a WhatsApp cold outreach message for the prospect below. It must read like a text from a real person — not a marketing message, not a run-on sentence, not a template with a name swapped in.
 
 PROSPECT:
 - Business Name: ${lead.business_name}
@@ -25,21 +25,31 @@ ${qualityScore}
 ${weakPoints}
 ${aiOpportunity}
 
+STRUCTURE — write exactly 4 short sentences, each on its own line:
+Line 1: Casual greeting — "Hi [Name]," — then one specific observation about their business drawn from the analysis. Name something concrete (e.g. "I noticed you're taking orders through DMs and WhatsApp" not "I noticed your ordering process"). End the sentence here.
+Line 2: One sentence on the consequence or friction of that observation — what it costs them in time, missed sales, or effort. Do NOT mention Spacze yet.
+Line 3: One sentence introducing what Spacze does — specific to their situation, not generic. No "streamline", no "leverage", no "automation and online stores" as a vague bundle.
+Line 4: Soft question to invite a reply — "Would you be open to a quick chat?" or "Want me to show you what that could look like for [Business Name]?"
+
 WRITING RULES:
-- Start with a casual, warm greeting using their business name: "Hi [Name]," or "Hey [Business],"
-- ONE specific, genuine observation about their business — framed as an opportunity, never a criticism
-- NEVER say the website or business is bad, weak, or broken
-- One sentence on how Spacze can help — keep it relevant and brief
-- End with a single soft question to invite a reply: "Would you be open to a quick chat?" or similar
-- No bullet points, no formal sign-offs, no "I hope this message finds you well"
-- No emojis unless they feel completely natural for the industry (e.g. fashion)
-- Sound like a real person texting, not a bot
-- Industry-specific angle: fashion → DM ordering/store; real estate → lead follow-up; logistics → manual tracking; food → repeat orders; services → client booking
-- Total length: 60–90 words maximum — WhatsApp readers don't read walls of text
+- Each line is ONE sentence — no run-ons, no comma-spliced clauses
+- No formal sign-offs, no "I hope this message finds you well"
+- No emojis unless the industry is fashion or food and the tone is casual
+- NEVER say the business is bad, broken, or weak
+- Total length: 50–80 words — count before outputting
+- Industry-specific detail: fashion → DM/WhatsApp ordering, missed orders, no payment confirmation; real estate → manual lead follow-up, slow response time; logistics → manual tracking, no client portal; food → no online ordering, repeat customer drop-off; services → no booking system, manual scheduling
+
+EXAMPLE of correct tone and structure (do not copy — reference only):
+---
+Hi Dunnies Collections, I came across your page and noticed you're handling orders through DMs and WhatsApp.
+That works when you're starting out, but it gets harder to track as order volume grows — things slip through.
+At Spacze, we build simple online stores for fashion brands that handle orders, payments, and confirmations automatically.
+Would you be open to a quick chat this week?
+---
 
 Output format (exactly):
 MESSAGE:
-[message here]`;
+[message here — 4 lines, one sentence each]`;
 }
 
 // ─────────────────────────────────────────────
@@ -51,8 +61,8 @@ async function generateWithOpenAI(prompt: string): Promise<string> {
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.85,
-    max_tokens: 200,
+    temperature: 0.75,
+    max_tokens: 350,
   });
   return completion.choices[0].message.content || '';
 }
@@ -69,8 +79,8 @@ async function generateWithGroq(prompt: string): Promise<string> {
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.85,
-    max_tokens: 200,
+    temperature: 0.75,
+    max_tokens: 350,
   });
   return completion.choices[0].message.content || '';
 }
