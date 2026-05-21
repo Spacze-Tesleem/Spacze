@@ -32,23 +32,28 @@ ${aiOpportunity}
 ${weakPoints}
 ${improvements}
 
-STRUCTURE — the email must have all four of these parts:
-1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
-2. Opening observation (1–2 sentences): ONE specific thing noticed about their business, framed as an opportunity
-3. Body (2–3 sentences): what Spacze does, why it's relevant to them, casual portfolio mention
-4. Closing (1–2 sentences): soft CTA + sign-off from "Tesleem at Spacze"
+STRUCTURE — write four distinct paragraphs in this exact order:
+
+Paragraph 1 — GREETING + OBSERVATION (30–40 words):
+Start with "Hi [Business Name]," then immediately write one specific, genuine observation about their business drawn from the analysis above. Name the exact pain point — e.g. managing orders through DMs, no online storefront, manual follow-up process. Frame it as something that gets harder as they grow, not as a flaw.
+
+Paragraph 2 — CONSEQUENCE (25–35 words):
+Expand on why that pain point matters. What does it cost them — missed orders, slower response times, lost customers, wasted hours? Make it feel real and specific to their industry. Do not mention Spacze yet.
+
+Paragraph 3 — SPACZE + PROOF (40–50 words):
+Introduce Spacze naturally. Say what we build and why it's relevant to their specific situation. Include one concrete outcome or example (e.g. "We helped a similar brand move from DM ordering to an automated store that handles payments and confirmations without the back-and-forth"). End with: "You can see some of our work at Spacze.vercel.app."
+
+Paragraph 4 — CTA + SIGN-OFF (15–20 words):
+"Would you be open to a quick chat this week? Even 15 minutes would be enough to see if there's something useful here."
+Then on a new line: "Tesleem" and below that: "Spacze"
 
 WRITING RULES:
-- Frame everything as an opportunity: "I noticed there may be room to…", "there's potential to…", "could help streamline…"
 - NEVER say the website is bad, outdated, broken, or weak
-- Mention portfolio casually: "You can see some of our work at Spacze.vercel.app"
-- Close with: "Would you be open to a quick chat this week?"
-- Sign off: "Tesleem / Spacze"
 - No bullet points in the email body
 - No corporate filler: no "I hope this finds you well", "synergy", "leverage", "touch base"
 - No spam trigger words
-- Industry-specific pain points: fashion → DM/WhatsApp ordering, no storefront; real estate → manual lead follow-up, no CRM; logistics → manual tracking, no client portal; food → no online ordering or booking; services → no client onboarding or scheduling system
-- WORD COUNT: the body must be 140–175 words. Count carefully before outputting.
+- Industry-specific pain points: fashion → DM/WhatsApp ordering, no storefront, missed orders; real estate → manual lead follow-up, no CRM, slow response; logistics → manual tracking, no client portal; food → no online ordering or booking; services → no client onboarding or scheduling
+- WORD COUNT: the body must be 140–175 words. Count every word before outputting. If you are under 140, expand paragraph 2 or 3.
 
 EXAMPLE of the correct length, tone, and structure (do not copy this — use it as a reference only):
 ---
@@ -87,23 +92,23 @@ ${lead.industry ? `- Industry: ${lead.industry}` : ''}
 ${aiOpportunity}
 ${improvements}
 
-STRUCTURE — the email must have all four of these parts:
-1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
-2. New insight (1–2 sentences): a fresh, specific observation or industry fact — NOT a repeat of the first email
-3. Light reference + connection (1–2 sentences): briefly mention the first email, one sentence on Spacze's relevance
-4. Closing question + sign-off from "Tesleem at Spacze"
+STRUCTURE — write three distinct paragraphs in this exact order:
+
+Paragraph 1 — GREETING + NEW INSIGHT (30–40 words):
+Start with "Hi [Business Name]," then share a fresh, specific industry insight or observation the prospect would find genuinely useful on its own — something NOT mentioned in the first email. This should feel like a useful piece of information, not a sales opener.
+
+Paragraph 2 — LIGHT REFERENCE + SPACZE CONNECTION (30–40 words):
+In one clause, reference the first email: "I sent a note a few days ago about [topic]…" then connect this new insight to what Spacze does. Keep the Spacze mention to one sentence — natural, not salesy.
+
+Paragraph 3 — CLOSING QUESTION + SIGN-OFF (20–25 words):
+Ask one low-friction question: "Is this something on your radar?" or "Worth a quick conversation?" Then on a new line: "Tesleem" and below that: "Spacze"
 
 WRITING RULES:
 - Do NOT open with "just following up", "circling back", "checking in", or any variation
-- The new insight must be something the prospect would find genuinely useful on its own
-- Reference the first email in one clause only: "I sent a note a few days ago…"
-- Close with a low-friction question: "Is this something on your radar?" or "Worth a quick conversation?"
-- Tone: warm, peer-to-peer, zero pressure
-- No bullet points in the body
-- No corporate filler
 - Industry-specific angle: fashion → seasonal demand/DM order volume; real estate → lead follow-up speed; logistics → manual tracking costs; food → repeat customer retention; services → client churn/onboarding drop-off
+- No bullet points in the body, no corporate filler
 - Sign off: "Tesleem / Spacze"
-- WORD COUNT: the body must be 100–130 words. Count carefully before outputting.
+- WORD COUNT: the body must be 100–130 words. Count every word before outputting. If under 100, expand paragraphs 1 and 2.
 
 Output format (exactly):
 SUBJECT: [use "Re:" prefix to thread, e.g. "Re: One idea for ${lead.business_name}"]
@@ -124,23 +129,23 @@ ${lead.website  ? `- Website: ${lead.website}`   : ''}
 ${lead.industry ? `- Industry: ${lead.industry}` : ''}
 ${aiOpportunity}
 
-STRUCTURE — the email must have all four of these parts:
-1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
-2. Case study (1–2 sentences): a specific, credible result Spacze achieved for a similar business — anonymous reference
-3. Connection + availability note (1–2 sentences): link the result to this prospect, mention limited slots as a heads-up
-4. Low-commitment CTA + sign-off from "Tesleem at Spacze"
+STRUCTURE — write three distinct paragraphs in this exact order:
+
+Paragraph 1 — GREETING + CASE STUDY (40–50 words):
+Start with "Hi [Business Name]," then open with a brief, credible result Spacze achieved for a similar business — referenced anonymously: "a recent project for a ${lead.industry || 'similar'} client…". Include a specific metric or outcome: e.g. "cut order processing time by half", "reduced missed enquiries by 60%", "went from DM chaos to a clean automated store in 3 weeks". Keep it to 2 sentences — specific and believable.
+
+Paragraph 2 — CONNECTION + AVAILABILITY (30–40 words):
+Connect that result to what it could mean for ${lead.business_name} specifically. Then mention Spacze currently has a limited number of project slots available — frame it as a heads-up, not pressure.
+
+Paragraph 3 — CTA + SIGN-OFF (20–25 words):
+"Even a 10-minute call would be enough to see if there's a fit." Then on a new line: "Tesleem" and below that: "Spacze"
 
 WRITING RULES:
 - Take a completely different angle from the previous two emails — do NOT repeat the website observation
-- Case study must be specific and believable: include a metric or outcome (e.g. "cut order processing time by half", "reduced missed enquiries by 60%", "went from DM chaos to a clean automated store in 3 weeks")
-- Reference anonymously: "a recent project for a ${lead.industry || 'similar'} client…"
-- Mention Spacze has limited project slots — frame as a heads-up, not fake scarcity
-- CTA: "Even a 10-minute call would be enough to see if there's a fit"
 - Tone: confident, respectful, zero desperation
-- No bullet points in the body
-- No corporate filler
+- No bullet points in the body, no corporate filler
 - Sign off: "Tesleem / Spacze"
-- WORD COUNT: the body must be 110–140 words. Count carefully before outputting.
+- WORD COUNT: the body must be 110–140 words. Count every word before outputting. If under 110, expand paragraphs 1 and 2.
 
 Output format (exactly):
 SUBJECT: [use "Re:" prefix to keep threading]
@@ -157,21 +162,19 @@ PROSPECT:
 - Business Name: ${lead.business_name}
 ${lead.industry ? `- Industry: ${lead.industry}` : ''}
 
-STRUCTURE — the email must have all three of these parts:
-1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
-2. Body (3–4 sentences): acknowledge they're busy, be honest this is the last email, leave the door open warmly, one optional memorable line
-3. Warm sign-off from "Tesleem at Spacze"
+STRUCTURE — write two paragraphs in this exact order:
+
+Paragraph 1 — GREETING + HONEST CLOSE (40–50 words):
+Start with "Hi [Business Name]," then acknowledge they've likely been busy — no blame, no guilt. Be direct and honest: "I'll stop reaching out after this so I don't clog your inbox." Leave a genuine open invitation: if their priorities change, Spacze is here. Optionally add one memorable sentence — a useful thought, not a pitch.
+
+Paragraph 2 — WARM SIGN-OFF (15–20 words):
+Wish them well sincerely. Then on a new line: "Tesleem" and below that: "Spacze"
 
 WRITING RULES:
-- Acknowledge they've likely been busy — no blame, no guilt, no passive aggression
-- Be direct: "I'll stop reaching out after this so I don't clog your inbox"
-- Leave a genuine open invitation: if priorities change, Spacze is here
-- One optional sentence of curiosity or value — something memorable, not a pitch
-- End warmly and sincerely — wish them well
 - Tone: human, gracious, zero pressure — some prospects reply to break-up emails precisely because the pressure is gone
-- No bullet points, no corporate filler
+- No bullet points, no corporate filler, no passive aggression
 - Sign off: "Tesleem / Spacze"
-- WORD COUNT: the body must be 80–100 words. Shorter is better here — do not pad.
+- WORD COUNT: the body must be 70–90 words. Do not pad — but do not cut below 70.
 
 Output format (exactly):
 SUBJECT: [use "Re:" prefix to keep threading]
@@ -212,8 +215,8 @@ async function generateWithOpenAI(prompt: string): Promise<string> {
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.6, // lower = more grounded, less hallucinated creativity for outbound email
-    max_tokens: 600,
+    temperature: 0.6,
+    max_tokens: 900, // 175 words × ~1.4 tokens/word + prompt overhead
   });
   return completion.choices[0].message.content || '';
 }
@@ -230,8 +233,8 @@ async function generateWithGroq(prompt: string): Promise<string> {
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.6, // lower = more grounded, less hallucinated creativity for outbound email
-    max_tokens: 600,
+    temperature: 0.6,
+    max_tokens: 900,
   });
   return completion.choices[0].message.content || '';
 }
@@ -264,6 +267,24 @@ async function generateWithFallback(prompt: string): Promise<{ raw: string; prov
 }
 
 // ─────────────────────────────────────────────
+// WORD COUNT VALIDATION
+// ─────────────────────────────────────────────
+
+// Minimum word counts per step — if the body is shorter, retry once with an explicit nudge
+const MIN_WORDS: Record<number, number> = { 1: 120, 2: 85, 3: 95, 4: 65 };
+
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function buildRetryPrompt(prompt: string, body: string, step: number): string {
+  const min = MIN_WORDS[step] ?? 100;
+  return `${prompt}
+
+RETRY INSTRUCTION: Your previous output was too short (${countWords(body)} words). The minimum is ${min} words for the body. Expand the observation paragraph and the Spacze paragraph — add specific detail, a concrete example, or a second supporting sentence to each. Do not add filler. Output the full email again.`;
+}
+
+// ─────────────────────────────────────────────
 // ROUTE HANDLER
 // ─────────────────────────────────────────────
 
@@ -276,7 +297,21 @@ export async function POST(req: NextRequest) {
 
     const prompt = buildPrompt(lead, step);
     const { raw, provider } = await generateWithFallback(prompt);
-    const { subject, body: emailBody } = parseOutput(raw);
+    let { subject, body: emailBody } = parseOutput(raw);
+
+    // Retry once if body is under the minimum word count for this step
+    const minWords = MIN_WORDS[step] ?? 100;
+    if (countWords(emailBody) < minWords) {
+      console.warn(`generate-email step ${step}: body too short (${countWords(emailBody)} words), retrying…`);
+      const retryPrompt = buildRetryPrompt(prompt, emailBody, step);
+      const { raw: retryRaw } = await generateWithFallback(retryPrompt);
+      const retried = parseOutput(retryRaw);
+      // Only use retry if it's actually longer
+      if (countWords(retried.body) > countWords(emailBody)) {
+        subject   = retried.subject || subject;
+        emailBody = retried.body;
+      }
+    }
 
     return NextResponse.json({ subject, body: emailBody, provider, step });
   } catch (err: unknown) {
