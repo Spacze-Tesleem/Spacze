@@ -8,26 +8,29 @@ import Groq from 'groq-sdk';
 // ─────────────────────────────────────────────
 
 function buildWhatsAppPrompt(lead: any): string {
-  return `You are writing a WhatsApp cold outreach message for Spacze, a web development and AI automation agency.
+  return `You are writing a WhatsApp cold outreach message for Spacze, a software development and AI automation agency based in Nigeria with global clients.
 
-WhatsApp messages must feel personal and conversational — NOT like a formal email.
+WhatsApp messages must feel personal and conversational — like a text from a real person, not a marketing blast.
 
-Business Information:
+PROSPECT:
 - Business Name: ${lead.business_name}
 - Website: ${lead.website || 'Not provided'}
 - Industry: ${lead.industry || 'Not specified'}
 - Website Quality Score: ${lead.website_quality_score ?? 'N/A'}/10
 - Weak Points: ${lead.weak_points || 'Not specified'}
-- AI Opportunity: ${lead.ai_opportunity || 'Not assessed'}
+- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
 
-Rules:
-- Start with a casual greeting using their business name (e.g. "Hi [Name]," or "Hey [Business],")
-- One specific, genuine observation about their business or website — framed as an opportunity, never a criticism
-- One sentence on how Spacze can help
-- End with a single soft question to invite a reply (e.g. "Would you be open to a quick chat?")
-- NO bullet points, NO formal sign-offs, NO "I hope this message finds you well"
-- Sound like a real person texting, not a marketing bot
-- Total length: 60–90 words maximum
+WRITING RULES:
+- Start with a casual, warm greeting using their business name: "Hi [Name]," or "Hey [Business],"
+- ONE specific, genuine observation about their business — framed as an opportunity, never a criticism
+- NEVER say the website or business is bad, weak, or broken
+- One sentence on how Spacze can help — keep it relevant and brief
+- End with a single soft question to invite a reply: "Would you be open to a quick chat?" or similar
+- No bullet points, no formal sign-offs, no "I hope this message finds you well"
+- No emojis unless they feel completely natural for the industry (e.g. fashion)
+- Sound like a real person texting, not a bot
+- Industry-specific angle: fashion → DM ordering/store; real estate → lead follow-up; logistics → manual tracking; food → repeat orders; services → client booking
+- Total length: 60–90 words maximum — WhatsApp readers don't read walls of text
 
 Output format (exactly):
 MESSAGE:

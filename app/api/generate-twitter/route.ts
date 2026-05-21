@@ -10,27 +10,29 @@ import Groq from 'groq-sdk';
  */
 
 function buildPrompt(lead: any): string {
-  return `You are an expert B2B outreach copywriter for Spacze, a software development and AI automation agency.
+  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
 
-Write a Twitter/X Direct Message to the decision-maker at the following business.
+Write a Twitter/X Direct Message to the decision-maker at the business below.
 
-Business Information:
+PROSPECT:
 - Business Name: ${lead.business_name}
 - Website: ${lead.website || 'Not provided'}
 - Industry: ${lead.industry || 'Not specified'}
-- AI Opportunity: ${lead.ai_opportunity || 'Not assessed'}
+- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
 - Possible Improvements: ${lead.possible_improvements || 'Not specified'}
 
-Rules:
-- Max 280 characters (Twitter DM limit)
-- Open with a genuine, specific observation — not a generic compliment
-- One sentence on what Spacze does
+WRITING RULES:
+- Hard limit: 280 characters including spaces (Twitter DM limit — count carefully)
+- Open with a genuine, specific observation about their business — not a generic compliment
+- NEVER say the website or business is bad, weak, or broken — frame as opportunity
+- One clause on what Spacze does and why it's relevant
 - Soft CTA: "Worth a quick chat?" or "Open to connecting?"
-- No hashtags, no emojis, no "Hey!" opener
-- Sound like a real person reaching out, not a bot
+- No hashtags, no emojis, no "Hey!" opener, no "I hope this finds you well"
+- Sound like a real person reaching out, not a bot or marketing account
+- Industry-specific angle: fashion → ordering/store; real estate → lead capture; logistics → automation; food → retention; services → onboarding
 
 Output format (exactly):
-MESSAGE: [the DM text — must be under 280 characters]`;
+MESSAGE: [the DM text — must be 280 characters or fewer]`;
 }
 
 async function generateWithOpenAI(prompt: string): Promise<string> {

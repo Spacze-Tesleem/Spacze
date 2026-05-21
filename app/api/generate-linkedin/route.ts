@@ -10,26 +10,30 @@ import Groq from 'groq-sdk';
  */
 
 function buildPrompt(lead: any): string {
-  return `You are an expert B2B outreach copywriter for Spacze, a software development and AI automation agency.
+  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
 
-Write a LinkedIn InMail to the decision-maker at the following business. LinkedIn InMails are read on mobile, so keep it tight and human.
+Write a LinkedIn InMail to the decision-maker at the business below. LinkedIn InMails are read on mobile — keep it tight, human, and skimmable.
 
-Business Information:
+PROSPECT:
 - Business Name: ${lead.business_name}
 - Website: ${lead.website || 'Not provided'}
 - Industry: ${lead.industry || 'Not specified'}
-- AI Opportunity: ${lead.ai_opportunity || 'Not assessed'}
+- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
 - Weak Points: ${lead.weak_points || 'Not specified'}
 - Possible Improvements: ${lead.possible_improvements || 'Not specified'}
 
-Rules:
-- Subject line: max 8 words, curiosity-driven, no clickbait
-- Body: 60–90 words max — LinkedIn readers skim
-- Open with ONE specific, genuine observation about their business
-- One sentence on what Spacze does and how it's relevant
-- Soft CTA: "Would you be open to a quick chat?" or similar
-- No bullet points, no corporate jargon, no "I hope this message finds you well"
-- Sound like a real person, not a sales bot
+WRITING RULES:
+- Subject line: under 8 words, curiosity-driven, no clickbait, no question marks
+- Body: 60–90 words maximum — LinkedIn readers skim, shorter wins
+- Open with ONE specific, genuine observation about their business — drawn from the analysis, not generic
+- Frame it as an opportunity: "I noticed there may be room to…", "there's potential to…"
+- NEVER say the website or business is bad, weak, or broken
+- One sentence on what Spacze does and why it's relevant to them
+- Soft CTA: "Would you be open to a quick chat?" or "Worth a 15-minute call?"
+- No bullet points in the body
+- No corporate filler: no "I hope this message finds you well", "synergy", "leverage", "touch base"
+- Sound like a real person reaching out, not a sales bot
+- Industry-specific angle: fashion → ordering/inventory; real estate → lead capture; logistics → process automation; food → customer retention; services → onboarding
 
 Output format (exactly):
 SUBJECT: [subject line]

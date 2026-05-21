@@ -8,138 +8,125 @@ import Groq from 'groq-sdk';
 // ─────────────────────────────────────────────
 
 function buildStep1Prompt(lead: any): string {
-  return `You are an expert B2B outreach copywriter for Spacze, a software development and AI automation agency.
+  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
 
-Your task is to write a highly personalised INITIAL cold outreach email based on a company's website analysis.
+Write a personalised cold outreach email for the prospect below. The reader should feel that a real person looked at their business and has something genuinely worth saying — not that they received a template.
 
-Business Information:
+PROSPECT:
 - Business Name: ${lead.business_name}
 - Website: ${lead.website || 'Not provided'}
 - Industry: ${lead.industry || 'Not specified'}
-
-Website Analysis:
 - Website Quality Score: ${lead.website_quality_score ?? 'N/A'}/10
 - Mobile Responsiveness: ${lead.mobile_responsiveness || 'Unknown'}
 - SEO Quality: ${lead.seo_quality || 'Unknown'}
-- Has Dashboard/System: ${lead.has_dashboard ? 'Yes' : 'No'}
-- AI Opportunity: ${lead.ai_opportunity || 'Not assessed'}
+- Has Internal Dashboard/System: ${lead.has_dashboard ? 'Yes' : 'No'}
+- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
 - Weak Points Observed: ${lead.weak_points || 'Not specified'}
 - Possible Improvements: ${lead.possible_improvements || 'Not specified'}
 
-Tone & Framing Rules:
-- NEVER say the website is bad, weak, outdated, poor, or broken
-- Frame all observations as opportunities, not problems
-- Sound like a real person who genuinely spent time on their website
-- Use language like: "I noticed there may be an opportunity to…", "a more streamlined experience could help…", "there's strong potential to…"
-- One specific, natural observation from their website — no bullet lists
-- Transition smoothly into how Spacze can help (one short paragraph)
-- End with a soft, low-pressure CTA: "Would you be open to a quick chat this week?"
-- Avoid corporate filler, AI-sounding phrases, and spam trigger words
+WRITING RULES:
+- Open with ONE specific observation about their business — drawn from the analysis above, not generic
+- Frame everything as an opportunity: use "I noticed there may be room to…", "there's potential to…", "could help streamline…"
+- NEVER say the website is bad, outdated, broken, or weak
+- One short paragraph connecting the observation to what Spacze does
+- Mention portfolio casually as a side note, not a pitch: "You can see some of our work at Spacze.vercel.app"
+- Close with a single soft CTA: "Would you be open to a quick chat this week?"
+- No bullet points in the email body
+- No corporate filler: no "I hope this finds you well", "synergy", "leverage", "touch base"
+- No spam trigger words
+- Industry-specific pain points: if fashion → inventory/ordering flow; if real estate → lead capture/CRM; if logistics → tracking/automation; if food → ordering/booking; if services → client onboarding/scheduling
 - Total length: 140–175 words
 
-Portfolio mention: "You can take a look at some of our work here: Spacze.vercel.app" — make this feel like a casual aside, not a pitch.
-
-The reader should feel: "This person actually looked at our business and has something worth saying."
-Goal: Start a conversation, not close a sale.
+Goal: start a conversation, not close a sale.
 
 Output format (exactly):
-SUBJECT: [subject line here]
+SUBJECT: [subject line — specific, curiosity-driven, under 8 words, no clickbait]
 BODY:
-[email body here]`;
+[email body]`;
 }
 
 function buildStep2Prompt(lead: any): string {
-  return `You are an expert B2B outreach copywriter for Spacze, a software development and AI automation agency.
+  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
 
-Your task is to write a FOLLOW-UP email (Follow-up #1, sent ~3–4 days after the initial email received no reply).
+Write Follow-up #1 for the prospect below. This email is sent ~3–4 days after the initial outreach received no reply.
 
-Context:
-- The prospect has already received one email from Spacze but has not replied
-- Do NOT re-send or summarise the original email
-- Do NOT say "just following up" or "circling back" — these are weak openers
-- Instead, add NEW value: share a brief insight, observation, or relevant idea specific to their business
-
-Business Information:
+PROSPECT:
 - Business Name: ${lead.business_name}
 - Website: ${lead.website || 'Not provided'}
 - Industry: ${lead.industry || 'Not specified'}
-- AI Opportunity: ${lead.ai_opportunity || 'Not assessed'}
+- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
 - Possible Improvements: ${lead.possible_improvements || 'Not specified'}
 
-Instructions:
-- Open with a new, specific observation or insight relevant to their industry or business — something they'd find genuinely useful
-- Keep the connection to Spacze natural and brief — one sentence max
-- Reference the previous email lightly: "I sent a note earlier this week…" or "I reached out a few days ago…"
-- Ask a single low-friction question to invite a reply (e.g. "Is this something on your radar for [quarter/year]?")
-- Tone: warm, peer-to-peer, never pushy
+WRITING RULES:
+- Do NOT open with "just following up", "circling back", "checking in", or any variation
+- Open with a NEW, specific insight or industry observation the prospect would find genuinely useful — something not in the first email
+- Reference the first email lightly and briefly: "I sent a note a few days ago…" — one clause, not a paragraph
+- One sentence connecting the insight to Spacze — keep it natural, not salesy
+- Close with a single low-friction question: "Is this something on your radar for this quarter?" or similar
+- Tone: warm, peer-to-peer, zero pressure
+- No bullet points in the body
+- No corporate filler phrases
+- Industry-specific angle: if fashion → seasonal demand/DM order volume; if real estate → lead follow-up speed; if logistics → manual tracking costs; if food → repeat customer retention
 - Total length: 100–130 words
 
 Output format (exactly):
-SUBJECT: [subject line here — use "Re:" prefix to thread with first email, e.g. "Re: One idea for [Business Name]"]
+SUBJECT: [use "Re:" prefix to thread, e.g. "Re: One idea for ${lead.business_name}"]
 BODY:
-[email body here]`;
+[email body]`;
 }
 
 function buildStep3Prompt(lead: any): string {
-  return `You are an expert B2B outreach copywriter for Spacze, a software development and AI automation agency.
+  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
 
-Your task is to write a SECOND FOLLOW-UP email (Follow-up #2, sent ~7 days after the initial email received no reply).
+Write Follow-up #2 for the prospect below. This email is sent ~9–10 days after the initial outreach received no reply. Two emails have already been sent with no response.
 
-Context:
-- Two previous emails sent, no reply received
-- This email should take a DIFFERENT angle — not repeating the website observation
-- Shift focus to: results Spacze has delivered for a similar business, a quick win they could implement, or a question about their current priorities
-- Create soft urgency around Spacze's availability, not fake scarcity
-
-Business Information:
+PROSPECT:
 - Business Name: ${lead.business_name}
 - Website: ${lead.website || 'Not provided'}
 - Industry: ${lead.industry || 'Not specified'}
-- AI Opportunity: ${lead.ai_opportunity || 'Not assessed'}
+- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
 
-Instructions:
-- Open with a reference to a result or project relevant to their industry (you can reference "a recent project for a [industry] client" without naming them)
-- Pivot to what that result could mean for ${lead.business_name}
-- Mention Spacze currently has a limited number of project slots — frame it as FYI, not pressure
-- Single CTA: offer a specific, low-commitment option ("Even a 10-minute call would be enough to see if there's a fit")
-- Tone: confident but respectful, zero desperation
+WRITING RULES:
+- Take a completely different angle from the previous two emails — do NOT repeat the website observation
+- Open with a brief, credible result Spacze achieved for a similar business in their industry (reference anonymously: "a recent project for a ${lead.industry || 'similar'} client…")
+- Keep the case study to 1–2 sentences — specific and believable, not vague
+- One sentence connecting that result to what it could mean for ${lead.business_name}
+- Mention Spacze has limited project availability — frame as a heads-up, not fake scarcity
+- CTA: low-commitment offer — "Even a 10-minute call would be enough to see if there's a fit"
+- Tone: confident, respectful, zero desperation
+- No bullet points in the body
+- No corporate filler
 - Total length: 110–140 words
 
 Output format (exactly):
-SUBJECT: [subject line — keep threading, use "Re:" prefix]
+SUBJECT: [use "Re:" prefix to keep threading]
 BODY:
-[email body here]`;
+[email body]`;
 }
 
 function buildStep4Prompt(lead: any): string {
-  return `You are an expert B2B outreach copywriter for Spacze, a software development and AI automation agency.
+  return `You are a B2B outreach copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
 
-Your task is to write a FINAL "BREAKUP" email (Follow-up #3, sent ~14 days after the initial email — the last email in the sequence).
+Write the final "break-up" email for the prospect below. This is sent ~14–16 days after the initial outreach. Three emails have been sent with no reply. This is the last one.
 
-Context:
-- Three previous emails sent, no reply received
-- This is the last email in the sequence — after this, Spacze will not follow up
-- The tone should be gracious, human, and completely pressure-free
-- The goal is to leave the door open forever, not burn the bridge
-- Some prospects reply to breakup emails precisely because the pressure is gone
-
-Business Information:
+PROSPECT:
 - Business Name: ${lead.business_name}
 - Industry: ${lead.industry || 'Not specified'}
 
-Instructions:
-- Open by acknowledging they've been busy — no blame, no guilt
-- Be honest: "I'll stop reaching out after this so I don't clog your inbox"
-- Leave a genuine open invitation: if their priorities change, Spacze is here
-- You can add a single sentence of value or curiosity to make it memorable
-- End warmly — wish them well, mean it
-- Tone: human, gracious, completely low-pressure
-- Total length: 80–110 words (shorter = better for this step)
+WRITING RULES:
+- Acknowledge they've likely been busy — no blame, no guilt, no passive aggression
+- Be direct and honest: "I'll stop reaching out after this so I don't clog your inbox"
+- Leave a genuine, warm open invitation: if priorities change, Spacze is here
+- One optional sentence of value or curiosity — something memorable, not a pitch
+- End warmly and sincerely — wish them well
+- Tone: human, gracious, zero pressure — some prospects reply to break-up emails precisely because the pressure is gone
+- No bullet points, no corporate filler
+- Total length: 80–100 words (shorter is better here)
 
 Output format (exactly):
-SUBJECT: [subject line — keep "Re:" threading]
+SUBJECT: [use "Re:" prefix to keep threading]
 BODY:
-[email body here]`;
+[email body]`;
 }
 
 function buildPrompt(lead: any, step: number): string {

@@ -39,12 +39,28 @@ function buildAnalysisPrompt(
   industry: string,
   websiteContent: string,
 ): string {
-  return `You are a senior web strategist and AI consultant at Spacze, a software development and AI automation agency.
+  return `You are a senior web strategist and AI consultant at Spacze, a software development and AI automation agency based in Nigeria with global clients.
 
-Analyse the following website content for "${businessName}" (${industry || 'unknown industry'}) and return a structured JSON assessment.
+Analyse the website content below for "${businessName}" (${industry || 'unknown industry'}) and return a structured JSON assessment. Your analysis will be used to personalise cold outreach — so observations must be specific, factual, and framed as opportunities, never as criticisms.
 
 WEBSITE CONTENT:
 ${websiteContent}
+
+ANALYSIS GUIDELINES:
+- website_quality_score: Score the site on design, speed, UX, mobile, SEO, and functionality combined
+- mobile_responsiveness: Assess based on layout, viewport meta, touch targets, and readability on small screens
+- seo_quality: Assess based on meta tags, headings structure, content depth, and keyword signals visible in the content
+- has_dashboard: true only if there is clear evidence of a client portal, admin panel, booking system, or order management interface
+- ai_opportunity: Identify the single highest-impact AI or automation opportunity specific to this business and industry — be concrete (e.g. "AI chat widget to handle product enquiries and reduce DM volume" not "AI could help")
+- weak_points: 2–3 specific, factual observations about gaps — framed neutrally as missing features or untapped potential, never as failures (e.g. "No live chat or enquiry form visible" not "the site is bad")
+- possible_improvements: 2–3 concrete deliverables Spacze could build — be specific (e.g. "Custom e-commerce store with automated order confirmation", "AI-powered FAQ chatbot", "SEO content overhaul targeting local search terms")
+
+Industry-specific signals to look for:
+- Fashion/retail: product catalogue, cart, checkout, DM ordering, inventory management
+- Real estate: property listings, lead capture forms, CRM integration, virtual tours
+- Logistics: shipment tracking, client portal, route optimisation, automated notifications
+- Food/restaurant: online ordering, table booking, loyalty programme, menu management
+- Professional services: appointment booking, client onboarding, case management, invoicing
 
 Return ONLY valid JSON — no markdown fences, no explanation — in this exact shape:
 {
@@ -52,17 +68,17 @@ Return ONLY valid JSON — no markdown fences, no explanation — in this exact 
   "mobile_responsiveness": "<Good | Average | Poor>",
   "seo_quality": "<Good | Average | Poor>",
   "has_dashboard": <true | false>,
-  "ai_opportunity": "<1–2 sentence description of the single biggest AI/automation opportunity for this business>",
-  "weak_points": "<2–3 specific, factual observations about what is missing or could be improved — framed neutrally, not negatively>",
-  "possible_improvements": "<2–3 concrete improvements Spacze could deliver: e.g. AI chatbot, booking system, dashboard, SEO overhaul>"
+  "ai_opportunity": "<1–2 sentences — specific opportunity for this business>",
+  "weak_points": "<2–3 specific, neutrally-framed observations>",
+  "possible_improvements": "<2–3 concrete improvements Spacze could deliver>"
 }
 
 Scoring guide for website_quality_score:
-1–3: No website or completely broken
-4–5: Basic static site, no interactivity, poor SEO
+1–3: No website, completely broken, or placeholder page
+4–5: Basic static site — no interactivity, poor SEO, not mobile-optimised
 6–7: Functional but missing modern UX, automation, or mobile optimisation
-8–9: Professional, fast, good UX — minor gaps
-10: Enterprise-grade, fully optimised`;
+8–9: Professional, fast, good UX — minor gaps only
+10: Enterprise-grade, fully optimised across all dimensions`;
 }
 
 async function analyseWithGroq(prompt: string): Promise<string> {
