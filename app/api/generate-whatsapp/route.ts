@@ -26,28 +26,28 @@ ${weakPoints}
 ${aiOpportunity}
 
 STRUCTURE — write exactly 5 short sentences, each on its own line:
-Line 1 — CONTEXT (how you found them): Explain briefly how you came across their business. Be specific and honest — e.g. "I came across your Instagram page while looking at fashion brands in Lagos" or "I found your page through a search for [industry] businesses in [location]." This line earns the right to continue. Do NOT skip this.
-Line 2 — WARM GREETING: Introduce yourself naturally — "My name is Tesleem, I run a small web and automation agency called Spacze." One sentence. No pitch yet.
-Line 3 — SPECIFIC OBSERVATION: One concrete thing you noticed about their business from the analysis — name it exactly (e.g. "I noticed you're taking orders through DMs and WhatsApp" not "your ordering process"). Frame it neutrally, not as a flaw.
-Line 4 — CONSEQUENCE: One sentence on what that costs them — missed orders, no payment confirmation, harder to track as volume grows. Do NOT mention Spacze yet.
-Line 5 — SOFT ASK: A low-pressure question that invites a reply without pitching — "Would it be okay if I shared a quick idea that might help?" or "Would you be open to a short chat about it?"
+Line 1 — CONTEXT + GENUINE OBSERVATION: One sentence on how you found them and one specific thing you noticed — their page activity, product quality, or engagement. Be concrete and honest — e.g. "I came across [Business Name] and I like how active your page is 🔥" or "I came across [Business Name] while looking at [industry] brands and really liked what you're putting out." This line earns the right to continue. Do NOT skip this.
+Line 2 — WARM INTRO: Introduce yourself and Spacze in one sentence — "My name is Tesleem, I run Spacze — we build simple web and automation systems for brands." No pitch yet.
+Line 3 — CUSTOMER-FRAMED OBSERVATION: One concrete idea framed from the customer's perspective, not as a business flaw — e.g. "I had an idea that could help make your customers order more smoothly without needing back-and-forth DMs all the time."
+Line 4 — DUAL BENEFIT: One sentence naming both the customer benefit and the business benefit — lead with the customer benefit first — e.g. "It could help you save time and make the buying process easier for customers."
+Line 5 — CURIOSITY-DRIVEN SOFT ASK: A low-pressure question that invites a reply by offering to *show* something concrete — "Would you like me to show you what I mean?" or "Would it be okay if I showed you a quick example?"
 
 WRITING RULES:
 - Each line is ONE sentence — no run-ons, no comma-spliced clauses
 - No formal sign-offs, no "I hope this message finds you well"
-- No emojis unless the industry is fashion or food and the tone is casual
-- NEVER say the business is bad, broken, or weak
+- Use a single 🔥 emoji on Line 1 for fashion and food industries only — nowhere else
+- NEVER say the business is bad, broken, or weak — every observation is an opportunity
 - The message must feel like it was sent by a real person with a genuine reason to reach out — not a cold blast
 - Total length: 60–90 words — count before outputting
-- Industry-specific detail: fashion → DM/WhatsApp ordering, missed orders, no payment confirmation; real estate → manual lead follow-up, slow response time; logistics → manual tracking, no client portal; food → no online ordering, repeat customer drop-off; services → no booking system, manual scheduling
+- Industry-specific framing: fashion → customers ordering smoothly without back-and-forth DMs; real estate → clients getting faster responses without chasing; logistics → customers tracking without calling in; food → customers reordering easily without messaging each time; services → customers booking without manual back-and-forth
 
 EXAMPLE of correct tone and structure (do not copy — reference only):
 ---
-I came across your Instagram page while looking at fashion brands in Lagos and really liked what you're building.
-My name is Tesleem, I run a small web and automation agency called Spacze.
-I noticed you're currently taking orders through DMs and WhatsApp — which works, but gets harder to manage as things pick up.
-When orders come in that way, it's easy for things to slip through — no payment confirmation, no order history.
-Would it be okay if I shared a quick idea that might help with that?
+I came across Dunnies Collections and I like how active your page is 🔥
+My name is Tesleem, I run Spacze — we build simple web and automation systems for brands.
+I had an idea that could help make your customers order more smoothly without needing back-and-forth DMs all the time.
+It could help you save time and make the buying process easier for customers.
+Would you like me to show you what I mean?
 ---
 
 Output format (exactly):
