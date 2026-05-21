@@ -24,25 +24,44 @@ PROSPECT:
 - Weak Points Observed: ${lead.weak_points || 'Not specified'}
 - Possible Improvements: ${lead.possible_improvements || 'Not specified'}
 
+STRUCTURE — the email must have all four of these parts:
+1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
+2. Opening observation (1–2 sentences): ONE specific thing noticed about their business, framed as an opportunity
+3. Body (2–3 sentences): what Spacze does, why it's relevant to them, casual portfolio mention
+4. Closing (1–2 sentences): soft CTA + sign-off from "Tesleem at Spacze"
+
 WRITING RULES:
-- Open with ONE specific observation about their business — drawn from the analysis above, not generic
-- Frame everything as an opportunity: use "I noticed there may be room to…", "there's potential to…", "could help streamline…"
+- Frame everything as an opportunity: "I noticed there may be room to…", "there's potential to…", "could help streamline…"
 - NEVER say the website is bad, outdated, broken, or weak
-- One short paragraph connecting the observation to what Spacze does
-- Mention portfolio casually as a side note, not a pitch: "You can see some of our work at Spacze.vercel.app"
-- Close with a single soft CTA: "Would you be open to a quick chat this week?"
+- Mention portfolio casually: "You can see some of our work at Spacze.vercel.app"
+- Close with: "Would you be open to a quick chat this week?"
+- Sign off: "Tesleem / Spacze"
 - No bullet points in the email body
 - No corporate filler: no "I hope this finds you well", "synergy", "leverage", "touch base"
 - No spam trigger words
-- Industry-specific pain points: if fashion → inventory/ordering flow; if real estate → lead capture/CRM; if logistics → tracking/automation; if food → ordering/booking; if services → client onboarding/scheduling
-- Total length: 140–175 words
+- Industry-specific pain points: fashion → DM/WhatsApp ordering flow, no storefront; real estate → manual lead follow-up, no CRM; logistics → manual tracking, no client portal; food → no online ordering or booking; services → no client onboarding or scheduling system
+- WORD COUNT: the body must be 140–175 words. Count carefully before outputting.
+
+EXAMPLE of the correct length, tone, and structure (do not copy this — use it as a reference only):
+---
+Hi Dunnies Collections,
+
+I came across your Instagram page and noticed you're doing really well with engagement — your posts get solid interaction. One thing I imagine could help is having a proper storefront to handle orders, rather than managing everything through DMs and WhatsApp. That kind of manual process tends to get harder to keep up with as you grow.
+
+At Spacze, we build e-commerce systems and automation tools for fashion brands that want to sell more without the back-and-forth. We've helped similar businesses move from DM ordering to a clean, automated store that handles payments, confirmations, and follow-ups automatically. You can see some of our work at Spacze.vercel.app.
+
+Would you be open to a quick chat this week? Even 15 minutes would be enough to see if there's something useful here.
+
+Tesleem
+Spacze
+---
 
 Goal: start a conversation, not close a sale.
 
 Output format (exactly):
 SUBJECT: [subject line — specific, curiosity-driven, under 8 words, no clickbait]
 BODY:
-[email body]`;
+[email body — must include greeting, observation, body paragraphs, CTA, and sign-off]`;
 }
 
 function buildStep2Prompt(lead: any): string {
@@ -57,22 +76,28 @@ PROSPECT:
 - AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
 - Possible Improvements: ${lead.possible_improvements || 'Not specified'}
 
+STRUCTURE — the email must have all four of these parts:
+1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
+2. New insight (1–2 sentences): a fresh, specific observation or industry fact — NOT a repeat of the first email
+3. Light reference + connection (1–2 sentences): briefly mention the first email, one sentence on Spacze's relevance
+4. Closing question + sign-off from "Tesleem at Spacze"
+
 WRITING RULES:
 - Do NOT open with "just following up", "circling back", "checking in", or any variation
-- Open with a NEW, specific insight or industry observation the prospect would find genuinely useful — something not in the first email
-- Reference the first email lightly and briefly: "I sent a note a few days ago…" — one clause, not a paragraph
-- One sentence connecting the insight to Spacze — keep it natural, not salesy
-- Close with a single low-friction question: "Is this something on your radar for this quarter?" or similar
+- The new insight must be something the prospect would find genuinely useful on its own
+- Reference the first email in one clause only: "I sent a note a few days ago…"
+- Close with a low-friction question: "Is this something on your radar?" or "Worth a quick conversation?"
 - Tone: warm, peer-to-peer, zero pressure
 - No bullet points in the body
-- No corporate filler phrases
-- Industry-specific angle: if fashion → seasonal demand/DM order volume; if real estate → lead follow-up speed; if logistics → manual tracking costs; if food → repeat customer retention
-- Total length: 100–130 words
+- No corporate filler
+- Industry-specific angle: fashion → seasonal demand/DM order volume; real estate → lead follow-up speed; logistics → manual tracking costs; food → repeat customer retention; services → client churn/onboarding drop-off
+- Sign off: "Tesleem / Spacze"
+- WORD COUNT: the body must be 100–130 words. Count carefully before outputting.
 
 Output format (exactly):
 SUBJECT: [use "Re:" prefix to thread, e.g. "Re: One idea for ${lead.business_name}"]
 BODY:
-[email body]`;
+[email body — must include greeting, new insight, light reference, closing question, and sign-off]`;
 }
 
 function buildStep3Prompt(lead: any): string {
@@ -86,22 +111,28 @@ PROSPECT:
 - Industry: ${lead.industry || 'Not specified'}
 - AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
 
+STRUCTURE — the email must have all four of these parts:
+1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
+2. Case study (1–2 sentences): a specific, credible result Spacze achieved for a similar business — anonymous reference
+3. Connection + availability note (1–2 sentences): link the result to this prospect, mention limited slots as a heads-up
+4. Low-commitment CTA + sign-off from "Tesleem at Spacze"
+
 WRITING RULES:
 - Take a completely different angle from the previous two emails — do NOT repeat the website observation
-- Open with a brief, credible result Spacze achieved for a similar business in their industry (reference anonymously: "a recent project for a ${lead.industry || 'similar'} client…")
-- Keep the case study to 1–2 sentences — specific and believable, not vague
-- One sentence connecting that result to what it could mean for ${lead.business_name}
-- Mention Spacze has limited project availability — frame as a heads-up, not fake scarcity
-- CTA: low-commitment offer — "Even a 10-minute call would be enough to see if there's a fit"
+- Case study must be specific and believable: include a metric or outcome (e.g. "cut order processing time by half", "reduced missed enquiries by 60%", "went from DM chaos to a clean automated store in 3 weeks")
+- Reference anonymously: "a recent project for a ${lead.industry || 'similar'} client…"
+- Mention Spacze has limited project slots — frame as a heads-up, not fake scarcity
+- CTA: "Even a 10-minute call would be enough to see if there's a fit"
 - Tone: confident, respectful, zero desperation
 - No bullet points in the body
 - No corporate filler
-- Total length: 110–140 words
+- Sign off: "Tesleem / Spacze"
+- WORD COUNT: the body must be 110–140 words. Count carefully before outputting.
 
 Output format (exactly):
 SUBJECT: [use "Re:" prefix to keep threading]
 BODY:
-[email body]`;
+[email body — must include greeting, case study, connection, CTA, and sign-off]`;
 }
 
 function buildStep4Prompt(lead: any): string {
@@ -113,20 +144,26 @@ PROSPECT:
 - Business Name: ${lead.business_name}
 - Industry: ${lead.industry || 'Not specified'}
 
+STRUCTURE — the email must have all three of these parts:
+1. Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
+2. Body (3–4 sentences): acknowledge they're busy, be honest this is the last email, leave the door open warmly, one optional memorable line
+3. Warm sign-off from "Tesleem at Spacze"
+
 WRITING RULES:
 - Acknowledge they've likely been busy — no blame, no guilt, no passive aggression
-- Be direct and honest: "I'll stop reaching out after this so I don't clog your inbox"
-- Leave a genuine, warm open invitation: if priorities change, Spacze is here
-- One optional sentence of value or curiosity — something memorable, not a pitch
+- Be direct: "I'll stop reaching out after this so I don't clog your inbox"
+- Leave a genuine open invitation: if priorities change, Spacze is here
+- One optional sentence of curiosity or value — something memorable, not a pitch
 - End warmly and sincerely — wish them well
 - Tone: human, gracious, zero pressure — some prospects reply to break-up emails precisely because the pressure is gone
 - No bullet points, no corporate filler
-- Total length: 80–100 words (shorter is better here)
+- Sign off: "Tesleem / Spacze"
+- WORD COUNT: the body must be 80–100 words. Shorter is better here — do not pad.
 
 Output format (exactly):
 SUBJECT: [use "Re:" prefix to keep threading]
 BODY:
-[email body]`;
+[email body — must include greeting, honest break-up message, open invitation, and warm sign-off]`;
 }
 
 function buildPrompt(lead: any, step: number): string {
