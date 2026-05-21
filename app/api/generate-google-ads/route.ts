@@ -9,29 +9,41 @@ import Groq from 'groq-sdk';
  */
 
 function buildPrompt(lead: any): string {
-  return `You are an expert Google Ads copywriter for Spacze, an AI software agency.
+  return `You are a Google Ads copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
 
-Write Google Ads responsive search ad copy for the following:
+Write Google Ads Responsive Search Ad copy for the business below. Google Ads copy is read by people actively searching — every character must be intentional and benefit-driven.
+
+PROSPECT:
 - Business: ${lead.business_name || 'Not specified'}
 - Industry: ${lead.industry || 'Not specified'}
-- AI Opportunity: ${lead.ai_opportunity || 'Not specified'}
+- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not specified'}
 - Tone: ${lead.tone || 'Professional'}
 - Goal: ${lead.goal || 'Leads'}
 - Key Message: ${lead.keyMessage || lead.possible_improvements || 'Not specified'}
 
-Rules:
-- 3 headlines, each STRICTLY max 30 characters (count carefully)
-- 2 descriptions, each STRICTLY max 90 characters
-- Include keywords naturally
-- Focus on benefit, not feature
-- No exclamation marks in headlines
+STRUCTURE:
+- 3 Headlines: shown at the top of the ad, rotated by Google — each must work standalone AND in combination with the others
+- 2 Descriptions: shown below headlines — expand on the offer, include a CTA
 
-Output format (exactly):
-HEADLINE_1: [max 30 chars]
-HEADLINE_2: [max 30 chars]
-HEADLINE_3: [max 30 chars]
-DESCRIPTION_1: [max 90 chars]
-DESCRIPTION_2: [max 90 chars]`;
+WRITING RULES FOR HEADLINES (each max 30 characters — count spaces too):
+- Headline 1: primary keyword or service (e.g. "AI Automation for SMBs")
+- Headline 2: specific benefit or outcome (e.g. "Save 10hrs/Week on Admin")
+- Headline 3: trust signal or CTA (e.g. "Free 15-Min Consultation")
+- No exclamation marks in headlines
+- No ALL CAPS
+- 30 characters is a hard limit — include spaces in your count
+
+WRITING RULES FOR DESCRIPTIONS (each max 90 characters — count spaces too):
+- Description 1: expand on the core benefit, include a keyword naturally
+- Description 2: address a pain point and end with a soft CTA
+- No ALL CAPS, no excessive punctuation
+
+Output format (exactly — include character counts in brackets for verification):
+HEADLINE_1: [text] ([X] chars)
+HEADLINE_2: [text] ([X] chars)
+HEADLINE_3: [text] ([X] chars)
+DESCRIPTION_1: [text] ([X] chars)
+DESCRIPTION_2: [text] ([X] chars)`;
 }
 
 async function generateWithOpenAI(prompt: string): Promise<string> {
