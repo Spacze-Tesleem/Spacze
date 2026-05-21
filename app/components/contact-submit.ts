@@ -45,8 +45,8 @@ export async function submitContactForm(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-  } catch (err: any) {
-    return { ok: false, message: err.message || 'Network error. Please try again.' };
+  } catch (err: unknown) {
+    return { ok: false, message: err instanceof Error ? err.message : 'Network error. Please try again.' };
   }
 
   if (!res.ok) {

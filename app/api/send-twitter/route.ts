@@ -89,9 +89,9 @@ export async function POST(req: NextRequest) {
 
     const result = await sendRes.json();
     return NextResponse.json({ success: true, dmConversationId: result?.data?.dm_conversation_id });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('send-twitter error:', err);
-    return NextResponse.json({ error: err.message || 'Twitter DM send failed' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Twitter DM send failed' }, { status: 500 });
   }
 }
 

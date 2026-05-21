@@ -63,8 +63,8 @@ export default function ContactPage() {
       }
 
       setFormStatus('success');
-    } catch (err: any) {
-      setFormError(err.message || 'Something went wrong. Please try again.');
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
       setFormStatus('error');
     }
   };

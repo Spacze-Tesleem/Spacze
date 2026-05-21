@@ -502,8 +502,8 @@ export default function TerminalPanel() {
         return next;
       });
       setNotice(`${group.label} settings applied for this session. To persist across restarts, set them as environment variables in your hosting platform (Vercel / Railway / .env.local).`);
-    } catch (e: any) {
-      setSaveError(e.message);
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : 'Failed to apply settings');
     } finally {
       setSaving(false);
     }

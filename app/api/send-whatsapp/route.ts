@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('send-whatsapp error:', err);
-    return NextResponse.json({ error: err.message || 'Failed to send WhatsApp message' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to send WhatsApp message' }, { status: 500 });
   }
 }

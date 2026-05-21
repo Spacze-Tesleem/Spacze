@@ -211,13 +211,13 @@ async function generateWithFallback(prompt: string): Promise<{ raw: string; prov
     throw new Error('No AI provider configured. Set at least one of: OPENAI_API_KEY, GEMINI_API_KEY, GROQ_API_KEY.');
   }
 
-  let lastError: Error | null = null;
+  let lastError: unknown = null;
   for (const provider of configured) {
     try {
       const raw = await provider.fn();
       return { raw, provider: provider.name };
-    } catch (err: any) {
-      console.warn(`${provider.name} failed, trying next provider:`, err.message);
+    } catch (err: unknown) {
+      console.warn(`${provider.name} failed, trying next provider:`, err instanceof Error ? err.message : err);
       lastError = err;
     }
   }
@@ -241,8 +241,8 @@ export async function POST(req: NextRequest) {
     const { subject, body: emailBody } = parseOutput(raw);
 
     return NextResponse.json({ subject, body: emailBody, provider, step });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('generate-email error:', err);
-    return NextResponse.json({ error: err.message || 'Failed to generate email' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to generate email' }, { status: 500 });
   }
 }

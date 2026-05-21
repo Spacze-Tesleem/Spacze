@@ -152,8 +152,8 @@ export async function POST(req: NextRequest) {
       adResourceName:       adData.results?.[0]?.resourceName,
       note:                 'Ad created in PAUSED state. Activate in Google Ads UI.',
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('send-google-ads error:', err);
-    return NextResponse.json({ error: err.message || 'Failed to create Google Ad' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to create Google Ad' }, { status: 500 });
   }
 }

@@ -79,13 +79,13 @@ async function generateWithFallback(prompt: string): Promise<{ raw: string; prov
     throw new Error('No AI provider configured. Set at least one of: OPENAI_API_KEY, GEMINI_API_KEY, GROQ_API_KEY.');
   }
 
-  let lastError: Error | null = null;
+  let lastError: unknown = null;
   for (const provider of configured) {
     try {
       const raw = await provider.fn();
       return { raw, provider: provider.name };
-    } catch (err: any) {
-      console.warn(`${provider.name} failed, trying next:`, err.message);
+    } catch (err: unknown) {
+      console.warn(`${provider.name} failed, trying next:`, err instanceof Error ? err.message : err);
       lastError = err;
     }
   }
@@ -108,8 +108,8 @@ export async function POST(req: NextRequest) {
     const { raw, provider } = await generateWithFallback(prompt);
     const message = parseOutput(raw);
     return NextResponse.json({ message, provider });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('generate-whatsapp error:', err);
-    return NextResponse.json({ error: err.message || 'Failed to generate message' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to generate message' }, { status: 500 });
   }
 }

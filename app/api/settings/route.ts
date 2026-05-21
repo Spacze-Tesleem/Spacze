@@ -70,8 +70,8 @@ export async function POST(req: NextRequest) {
       applied,
       note: 'Values are active for this server process only. Set them as platform environment variables for persistence across restarts.',
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('settings error:', err);
-    return NextResponse.json({ error: err.message || 'Failed to apply settings' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to apply settings' }, { status: 500 });
   }
 }

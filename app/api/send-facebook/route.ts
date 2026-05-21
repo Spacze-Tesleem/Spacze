@@ -136,8 +136,8 @@ export async function POST(req: NextRequest) {
       adId:       ad.id,
       note:       'Ad created in PAUSED state. Activate in Facebook Ads Manager.',
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('send-facebook error:', err);
-    return NextResponse.json({ error: err.message || 'Failed to create Facebook ad' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to create Facebook ad' }, { status: 500 });
   }
 }

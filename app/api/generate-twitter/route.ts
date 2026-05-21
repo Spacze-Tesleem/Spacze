@@ -70,10 +70,10 @@ async function generateWithFallback(prompt: string): Promise<{ raw: string; prov
   ];
   const configured = providers.filter(p => p.key);
   if (configured.length === 0) throw new Error('No AI provider configured.');
-  let lastError: Error | null = null;
+  let lastError: unknown = null;
   for (const p of configured) {
     try { return { raw: await p.fn(), provider: p.name }; }
-    catch (e: any) { lastError = e; }
+    catch (e: unknown) { lastError = e; }
   }
   throw lastError ?? new Error('All AI providers failed.');
 }
@@ -86,8 +86,8 @@ export async function POST(req: NextRequest) {
     const msgMatch = raw.match(/MESSAGE:\s*([\s\S]+)/i);
     const message = msgMatch ? msgMatch[1].trim().slice(0, 280) : raw.trim().slice(0, 280);
     return NextResponse.json({ message, provider });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('generate-twitter error:', err);
-    return NextResponse.json({ error: err.message || 'Failed to generate Twitter DM' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to generate Twitter DM' }, { status: 500 });
   }
 }

@@ -176,9 +176,9 @@ export async function POST() {
 
       await db.from('scheduled_messages').update({ status: 'sent', sent_at: now, updated_at: now }).eq('id', msg.id);
       results.push({ id: msg.id, channel: msg.channel, status: 'sent' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       await db.from('scheduled_messages').update({ status: 'failed', updated_at: now }).eq('id', msg.id);
-      results.push({ id: msg.id, channel: msg.channel, status: 'failed', error: err.message });
+      results.push({ id: msg.id, channel: msg.channel, status: 'failed', error: err instanceof Error ? err.message : String(err) });
     }
   }
 

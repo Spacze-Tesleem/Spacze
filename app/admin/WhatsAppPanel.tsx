@@ -52,9 +52,9 @@ export default function WhatsAppPanel() {
         setStatus(data.status || 'unknown');
         setQr(data.qr || null);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       setStatus('disconnected');
-      setStatusError(e.message || 'Could not reach worker');
+      setStatusError(e instanceof Error ? e.message : 'Could not reach worker');
       setQr(null);
     }
   }, []);

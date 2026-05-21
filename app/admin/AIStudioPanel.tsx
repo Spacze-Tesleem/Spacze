@@ -398,7 +398,7 @@ function EmailTab({ leads }: { leads: Lead[] }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
       setSubject(data.subject); setBody(data.body);
-    } catch (e: any) { setError(e.message); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Generation failed'); }
     finally { setGenerating(false); }
   }
 
@@ -413,7 +413,7 @@ function EmailTab({ leads }: { leads: Lead[] }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Send failed');
       setSendStatus('success');
-    } catch (e: any) { setError(e.message); setSendStatus('error'); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Send failed'); setSendStatus('error'); }
     finally { setSending(false); }
   }
 

@@ -29,8 +29,8 @@ export async function GET(_req: NextRequest) {
     const res = await fetch(`${url}/status`, { headers: workerHeaders(secret ?? '') });
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
-  } catch (err: any) {
-    return NextResponse.json({ error: 'Worker unreachable: ' + err.message }, { status: 503 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: 'Worker unreachable: ' + (err instanceof Error ? err.message : String(err)) }, { status: 503 });
   }
 }
 
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     });
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
-  } catch (err: any) {
-    return NextResponse.json({ error: 'Worker unreachable: ' + err.message }, { status: 503 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: 'Worker unreachable: ' + (err instanceof Error ? err.message : String(err)) }, { status: 503 });
   }
 }
