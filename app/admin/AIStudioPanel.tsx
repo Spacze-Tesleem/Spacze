@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Copy, CheckCircle2, RefreshCw, AlertCircle,
   Instagram, Twitter, Search, Mail, MessageCircle, Linkedin,
   ChevronDown, Zap, Send, LayoutTemplate, PenTool
 } from 'lucide-react';
-import { Lead } from '@/lib/supabase'; // Adjust import as needed
+import { Lead } from '@/lib/supabase';
+import { useLeads } from '@/lib/hooks';
 
 const fadeUp = { 
   initial: { opacity: 0, y: 16 }, 
@@ -583,11 +584,7 @@ function EmailTab({ leads }: { leads: Lead[] }) {
 
 export default function AIStudioPanel() {
   const [tab, setTab]     = useState<Tab>('copy');
-  const [leads, setLeads] = useState<Lead[]>([]);
-
-  useEffect(() => {
-    fetch('/api/leads').then(r => r.json()).then(d => setLeads(Array.isArray(d) ? d : []));
-  }, []);
+  const { leads }         = useLeads();
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'copy',  label: 'Copy Generator', icon: <Sparkles size={16} /> },

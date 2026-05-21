@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, Save, Trash2, Search, ChevronDown, Mail,
@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { Lead } from '@/lib/supabase';
 import { OUTREACH_STATUSES, RESPONSE_STATUSES } from '@/lib/constants';
-import { ToastStack, useToast } from '@/app/components/Toast';
+import { useToast } from '@/app/components/Toast';
+import { useLeads } from '@/lib/hooks';
 import ModalPortal from '@/app/components/ModalPortal';
 
 const EMPTY_LEAD: Omit<Lead, 'id' | 'created_at'> = {
@@ -431,8 +432,7 @@ function LeadModal({ editId, form, setForm, onClose, onSave, saving, saveError }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function CRMPanel() {
-  const [leads, setLeads]           = useState<Lead[]>([]);
-  const [loading, setLoading]       = useState(true);
+  const { leads, loading, refresh: fetchLeads } = useLeads();
   const [search, setSearch]         = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -444,17 +444,7 @@ export default function CRMPanel() {
   const [selected, setSelected]     = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<string>('');
   const [bulkUpdating, setBulkUpdating] = useState(false);
-  const { toasts, toast, dismiss }  = useToast();
-
-  const fetchLeads = useCallback(async () => {
-    setLoading(true);
-    const res  = await fetch('/api/leads');
-    const data = await res.json();
-    setLeads(Array.isArray(data) ? data : []);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { fetchLeads(); }, [fetchLeads]);
+  const { toast }                   = useToast();
 
   // ── Filter ──
   const filtered = useMemo(() => leads.filter(l => {
@@ -532,7 +522,6 @@ export default function CRMPanel() {
 
   return (
     <div className="space-y-6 max-w-full min-w-0 pb-12">
-      <ToastStack toasts={toasts} onDismiss={dismiss} />
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
@@ -613,7 +602,33 @@ export default function CRMPanel() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {loading ? (
-                <tr><td colSpan={7} className="px-6 py-14 text-center text-zinc-500 text-sm">Loading…</td></tr>
+                <>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="border-b border-white/5">
+                      <td className="px-6 py-4"><div className="skeleton w-4 h-4 rounded" /></td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="skeleton w-8 h-8 rounded-full flex-shrink-0" />
+                          <div className="space-y-1.5">
+                            <div className="skeleton h-3 w-32 rounded" />
+                            <div className="skeleton h-2.5 w-20 rounded" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4"><div className="skeleton h-3 w-36 rounded" /></td>
+                      <td className="px-6 py-4"><div className="skeleton h-5 w-20 rounded-full" /></td>
+                      <td className="px-6 py-4"><div className="skeleton h-5 w-12 rounded-full" /></td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <div className="skeleton w-7 h-7 rounded-md" />
+                          <div className="skeleton w-7 h-7 rounded-md" />
+                          <div className="skeleton w-7 h-7 rounded-md" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4"><div className="skeleton h-7 w-16 rounded-lg ml-auto" /></td>
+                    </tr>
+                  ))}
+                </>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={7} className="px-6 py-14 text-center text-zinc-500 text-sm">No leads found.</td></tr>
               ) : filtered.map(lead => {
@@ -678,7 +693,25 @@ export default function CRMPanel() {
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {loading ? (
-          <div className="py-12 text-center text-zinc-500 text-sm">Loading…</div>
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="border border-white/10 bg-zinc-900/40 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="skeleton w-9 h-9 rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="skeleton h-3 w-40 rounded" />
+                    <div className="skeleton h-2.5 w-28 rounded" />
+                  </div>
+                  <div className="skeleton h-5 w-16 rounded-full" />
+                </div>
+                <div className="flex gap-2">
+                  <div className="skeleton w-7 h-7 rounded-md" />
+                  <div className="skeleton w-7 h-7 rounded-md" />
+                  <div className="skeleton w-7 h-7 rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="py-12 text-center text-zinc-500 text-sm">No leads found.</div>
         ) : filtered.map(lead => (

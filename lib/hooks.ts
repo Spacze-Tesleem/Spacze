@@ -1,94 +1,70 @@
 'use client';
 
 /**
- * Shared data-fetching hooks for admin panels.
+ * Shared data-fetching hooks backed by SWR.
  *
- * Each hook fetches once on mount and exposes a `refresh` callback.
- * Panels that previously fetched independently can share these hooks
- * to avoid redundant network requests when multiple panels are mounted.
+ * SWR deduplicates requests across panels — switching tabs reuses the cache
+ * instead of firing a new network request. Mutations call `mutate()` to
+ * revalidate all consumers of the same key simultaneously.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
 import { Lead, Campaign, ScheduledMessage } from './supabase';
+
+const fetcher = (url: string) =>
+  fetch(url).then((res) => {
+    if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+    return res.json();
+  });
 
 // ── useLeads ──────────────────────────────────────────────────────────────────
 
 export function useLeads() {
-  const [leads, setLeads]     = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
+  const { data, error, isLoading, mutate } = useSWR<Lead[]>('/api/leads', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 5000,
+  });
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res  = await fetch('/api/leads');
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch leads');
-      setLeads(Array.isArray(data) ? data : []);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { refresh(); }, [refresh]);
-
-  return { leads, loading, error, refresh };
+  return {
+    leads: data ?? [],
+    loading: isLoading,
+    error: error instanceof Error ? error.message : null,
+    refresh: mutate,
+  };
 }
 
 // ── useCampaigns ──────────────────────────────────────────────────────────────
 
 export function useCampaigns() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
+  const { data, error, isLoading, mutate } = useSWR<Campaign[]>('/api/campaigns', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 5000,
+  });
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res  = await fetch('/api/campaigns');
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch campaigns');
-      setCampaigns(Array.isArray(data) ? data : []);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { refresh(); }, [refresh]);
-
-  return { campaigns, loading, error, refresh };
+  return {
+    campaigns: data ?? [],
+    loading: isLoading,
+    error: error instanceof Error ? error.message : null,
+    refresh: mutate,
+  };
 }
 
 // ── useScheduledMessages ──────────────────────────────────────────────────────
 
 export function useScheduledMessages(campaignId?: string) {
-  const [messages, setMessages] = useState<ScheduledMessage[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
+  const url = campaignId
+    ? `/api/scheduled-messages?campaign_id=${campaignId}`
+    : '/api/scheduled-messages';
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const url  = campaignId ? `/api/scheduled-messages?campaign_id=${campaignId}` : '/api/scheduled-messages';
-      const res  = await fetch(url);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch messages');
-      setMessages(Array.isArray(data) ? data : []);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }, [campaignId]);
+  const { data, error, isLoading, mutate } = useSWR<ScheduledMessage[]>(url, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 5000,
+  });
 
-  useEffect(() => { refresh(); }, [refresh]);
-
-  return { messages, loading, error, refresh };
+  return {
+    messages: data ?? [],
+    loading: isLoading,
+    error: error instanceof Error ? error.message : null,
+    refresh: mutate,
+  };
 }

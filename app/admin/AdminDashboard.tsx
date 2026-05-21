@@ -13,6 +13,7 @@ import CampaignsPanel from './CampaignsPanel';
 import AIStudioPanel from './AIStudioPanel';
 import WhatsAppPanel from './WhatsAppPanel';
 import TerminalPanel from './TerminalPanel';
+import { ToastStack, useToast } from '@/app/components/Toast';
 
 const navItems = [
   { id: 'overview',   label: 'Overview',   icon: LayoutDashboard, group: 'main' },
@@ -71,6 +72,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [active, setActive]       = useState('overview');
   const [collapsed, setCollapsed] = useState(false);
   const [theme, setTheme]         = useState<'dark' | 'light'>('dark');
+  const { toasts, dismiss }       = useToast();
 
   useEffect(() => {
     const saved = localStorage.getItem('spacze-admin-theme') as 'dark' | 'light' | null;
@@ -93,8 +95,11 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const systemItems = navItems.filter(n => n.group === 'system');
 
   return (
-    <div className="min-h-screen flex admin-bg admin-text selection:bg-[#00D67D]/30" data-theme={theme}>
-      
+    <div className="min-h-screen flex admin-bg admin-text selection:bg-[#00D67D]/30 pb-20 lg:pb-0" data-theme={theme}>
+
+      {/* Global toast notifications — float over all panels */}
+      <ToastStack toasts={toasts} onDismiss={dismiss} />
+
       {/* Sidebar */}
       <aside className={`hidden lg:flex fixed inset-y-0 left-0 z-50 ${sidebarW} admin-sidebar border-r admin-border flex-col transition-all duration-300 overflow-hidden`}>
         {/* Logo area */}
@@ -139,6 +144,30 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
            </button>
         </div>
       </aside>
+
+      {/* Mobile bottom navigation */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-zinc-950/90 backdrop-blur-2xl border-t border-white/10 flex items-center justify-around px-2 pt-2 pb-[env(safe-area-inset-bottom,8px)] h-16">
+        {navItems.slice(0, 5).map(({ id, label, icon: Icon }) => {
+          const isActive = active === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setActive(id)}
+              className={`flex flex-col items-center gap-1 px-3 py-1 min-w-[52px] transition-colors ${
+                isActive ? 'text-[#00D67D]' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              <Icon
+                size={20}
+                className={isActive ? 'drop-shadow-[0_0_8px_rgba(0,214,125,0.5)]' : ''}
+              />
+              <span className="text-[9px] font-medium tracking-wide leading-none">
+                {label.split(' ')[0]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* Main Content Area */}
       <div className={`flex-1 min-w-0 ${mainML} flex flex-col min-h-screen transition-all duration-300 admin-bg`}>

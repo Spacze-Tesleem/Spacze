@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RefreshCw, Plus, X, Play, Pause, Trash2,
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Campaign, CampaignChannel, Lead, ScheduledMessage } from '@/lib/supabase';
 import { useToast, ToastStack } from '@/app/components/Toast';
+import { useLeads, useCampaigns } from '@/lib/hooks';
 import ModalPortal from '@/app/components/ModalPortal';
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
@@ -253,7 +254,7 @@ function parseMetaCopy(raw: string): { primaryText: string; headline: string } {
 
 // ─── CREATE MODAL (multi-step wizard) ────────────────────────────────────────
 
-function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: () => void; onCreated: (c: Campaign) => void }) {
+function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: () => void; onCreated: (c?: Campaign) => void }) {
   const { toast, toasts, dismiss } = useToast();
 
   // Step management
@@ -642,33 +643,26 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
 // ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
 
 export default function CampaignsPanel() {
-  const [leads, setLeads]               = useState<Lead[]>([]);
-  const [campaigns, setCampaigns]       = useState<Campaign[]>([]);
-  const [loading, setLoading]           = useState(true);
+  const { leads }                                       = useLeads();
+  const { campaigns, loading, refresh: refreshCampaigns } = useCampaigns();
   const [showCreate, setShowCreate]     = useState(false);
   const [detailCampaign, setDetailCampaign] = useState<Campaign | null>(null);
   const [deleting, setDeleting]         = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch('/api/leads').then(r => r.json()).then(d => setLeads(Array.isArray(d) ? d : []));
-    fetch('/api/campaigns').then(r => r.json()).then(d => { setCampaigns(Array.isArray(d) ? d : []); setLoading(false); });
-  }, []);
-
   async function toggleStatus(campaign: Campaign) {
     const next = campaign.status === 'active' ? 'paused' : 'active';
-    const res = await fetch(`/api/campaigns?id=${campaign.id}`, {
+    await fetch(`/api/campaigns?id=${campaign.id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: next }),
     });
-    const updated = await res.json();
-    setCampaigns(prev => prev.map(c => c.id === campaign.id ? updated : c));
+    refreshCampaigns();
   }
 
   async function deleteCampaign(id: string) {
     setDeleting(id);
     await fetch(`/api/campaigns?id=${id}`, { method: 'DELETE' });
-    setCampaigns(prev => prev.filter(c => c.id !== id));
     setDeleting(null);
+    refreshCampaigns();
   }
 
   return (
@@ -683,7 +677,30 @@ export default function CampaignsPanel() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16 admin-muted text-sm">Loading…</div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="admin-card p-4 lg:p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="skeleton h-4 w-40 rounded" />
+                    <div className="skeleton h-4 w-16 rounded-full" />
+                  </div>
+                  <div className="skeleton h-3 w-64 rounded" />
+                  <div className="flex gap-2 mt-1">
+                    <div className="skeleton h-5 w-12 rounded-full" />
+                    <div className="skeleton h-5 w-12 rounded-full" />
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <div className="skeleton h-8 w-8 rounded-lg" />
+                  <div className="skeleton h-8 w-8 rounded-lg" />
+                  <div className="skeleton h-8 w-8 rounded-lg" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : campaigns.length === 0 ? (
         <motion.div {...fadeUp} className="flex flex-col items-center justify-center py-16 gap-3 border border-dashed admin-border rounded-2xl">
           <Megaphone size={32} className="admin-subtle" />
@@ -741,7 +758,7 @@ export default function CampaignsPanel() {
       <AnimatePresence>
         {showCreate && (
           <CreateModal leads={leads} onClose={() => setShowCreate(false)}
-            onCreated={c => setCampaigns(prev => [c, ...prev])} />
+            onCreated={() => { setShowCreate(false); refreshCampaigns(); }} />
         )}
         {detailCampaign && (
           <DetailModal campaign={detailCampaign} leads={leads} onClose={() => setDetailCampaign(null)} />

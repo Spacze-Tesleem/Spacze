@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Wifi, WifiOff, RefreshCw, Send, CheckCircle2,
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Lead } from '@/lib/supabase';
 import ModalPortal from '@/app/components/ModalPortal';
+import { useLeads } from '@/lib/hooks';
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'qr_ready' | 'connected' | 'unknown';
 
@@ -16,7 +17,10 @@ interface PreviewMessage { leadId: string; to: string; businessName: string; mes
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
 export default function WhatsAppPanel() {
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const { leads: allLeads } = useLeads();
+  // Only show leads that have a WhatsApp number
+  const leads = allLeads.filter((l: Lead) => l.whatsapp_number);
+
   const [status, setStatus] = useState<ConnectionStatus>('unknown');
   const [qr, setQr] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
@@ -33,13 +37,6 @@ export default function WhatsAppPanel() {
   // Preview state — messages generated but not yet sent
   const [previews, setPreviews] = useState<PreviewMessage[]>([]);
   const [showPreview, setShowPreview] = useState(false);
-
-  // ── Fetch leads ──
-  useEffect(() => {
-    fetch('/api/leads')
-      .then(r => r.json())
-      .then(data => setLeads(Array.isArray(data) ? data.filter((l: Lead) => l.whatsapp_number) : []));
-  }, []);
 
   // ── Poll connection status ──
   const fetchStatus = useCallback(async () => {
