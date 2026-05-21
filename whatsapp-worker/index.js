@@ -6,6 +6,11 @@ import pino from 'pino';
 import { readFileSync, existsSync } from 'fs';
 import 'dotenv/config';
 
+// Callback URL on the Next.js app that receives inbound WhatsApp replies.
+// Set SPACZE_APP_URL=https://your-app.vercel.app in the worker's environment.
+const SPACZE_APP_URL    = process.env.SPACZE_APP_URL    || '';
+const SPACZE_APP_SECRET = process.env.SPACZE_APP_SECRET || '';
+
 const app = express();
 app.use(express.json());
 
@@ -51,6 +56,47 @@ async function connectToWhatsApp() {
   });
 
   sock.ev.on('creds.update', saveCreds);
+
+  // ── Inbound message listener ──────────────────────────────────────────────
+  // Fires for every message received (including ones we sent).
+  // We only forward messages that came FROM a contact (not from ourselves).
+  sock.ev.on('messages.upsert', async ({ messages: incoming, type }) => {
+    if (type !== 'notify') return;
+
+    for (const msg of incoming) {
+      // Skip messages sent by us
+      if (msg.key.fromMe) continue;
+
+      const jid  = msg.key.remoteJid ?? '';
+      // Only handle individual chats (not groups)
+      if (!jid.endsWith('@s.whatsapp.net')) continue;
+
+      const phone = '+' + jid.replace('@s.whatsapp.net', '');
+      const text  =
+        msg.message?.conversation ||
+        msg.message?.extendedTextMessage?.text ||
+        msg.message?.imageMessage?.caption ||
+        '[non-text message]';
+
+      console.log(`[Spacze Worker] Inbound reply from ${phone}: ${text.slice(0, 60)}`);
+
+      // Forward to the Next.js app if configured
+      if (SPACZE_APP_URL) {
+        try {
+          await fetch(`${SPACZE_APP_URL}/api/whatsapp-replies`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-spacze-secret': SPACZE_APP_SECRET,
+            },
+            body: JSON.stringify({ phone, message: text, received_at: new Date().toISOString() }),
+          });
+        } catch (err) {
+          console.error('[Spacze Worker] Failed to forward reply:', err.message);
+        }
+      }
+    }
+  });
 
   sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;

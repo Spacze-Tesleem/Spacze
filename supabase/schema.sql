@@ -119,6 +119,25 @@ create trigger scheduled_messages_updated_at
   before update on public.scheduled_messages
   for each row execute procedure public.set_updated_at();
 
+-- ── whatsapp_replies ─────────────────────────────────────────────────────────
+-- Stores inbound WhatsApp messages forwarded by the Baileys worker.
+-- The worker calls POST /api/whatsapp-replies; that route inserts here and
+-- cancels remaining pending WhatsApp messages for the lead.
+create table if not exists public.whatsapp_replies (
+  id          uuid primary key default gen_random_uuid(),
+  lead_id     uuid references public.leads(id) on delete set null,
+  phone       text not null,
+  message     text not null,
+  received_at timestamptz not null default now(),
+  created_at  timestamptz default now()
+);
+
+create index if not exists idx_whatsapp_replies_lead
+  on public.whatsapp_replies(lead_id, received_at desc);
+
+create index if not exists idx_whatsapp_replies_phone
+  on public.whatsapp_replies(phone, received_at desc);
+
 -- ── outreach_events ───────────────────────────────────────────────────────────
 -- Event-sourced outreach history. Analytics should be built from this table
 -- rather than from mutable flags on the leads row (email_sent, reply_received,

@@ -6,6 +6,7 @@ import {
   RefreshCw, Plus, X, Play, Pause, Trash2,
   Calendar, Users, Eye, Megaphone, Mail, MessageCircle, Linkedin, Twitter,
   Facebook, Search, Wand2, ArrowLeft, Sparkles,
+  ChevronDown, ChevronUp, Reply, CheckCheck, AlertCircle, Clock,
 } from 'lucide-react';
 import { Campaign, CampaignChannel, Lead, ScheduledMessage } from '@/lib/supabase';
 import { useToast, ToastStack } from '@/app/components/Toast';
@@ -109,11 +110,115 @@ function ChannelCoverage({ channel, leads }: { channel: CampaignChannel; leads: 
 
 // ─── DETAIL MODAL ─────────────────────────────────────────────────────────────
 
+type WhatsAppReply = {
+  id: string;
+  lead_id: string;
+  phone: string;
+  message: string;
+  received_at: string;
+};
+
+type DetailTab = 'queue' | 'replies';
+
+function MessageRow({
+  m, leadMap, repliedLeadIds, onCancel,
+}: {
+  m: ScheduledMessage;
+  leadMap: Record<string, string>;
+  repliedLeadIds: Set<string>;
+  onCancel: (id: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const hasBody = !!m.message_body;
+  const hasReplied = repliedLeadIds.has(m.lead_id) && m.channel === 'whatsapp';
+
+  return (
+    <div className="rounded-xl border admin-border admin-card text-xs overflow-hidden">
+      <div className="flex items-center gap-3 p-3">
+        {/* Status pill */}
+        <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono flex-shrink-0 ${MSG_STATUS_STYLES[m.status]}`}>
+          {m.status}
+        </span>
+
+        {/* Channel */}
+        <span className={`${CHANNEL_COLORS[m.channel as CampaignChannel]} flex items-center gap-1 flex-shrink-0`}>
+          {CHANNEL_ICONS[m.channel as CampaignChannel]} {m.channel}
+        </span>
+
+        {/* Lead name */}
+        <span className="admin-text font-medium truncate flex-1 min-w-0">
+          {leadMap[m.lead_id] ?? m.lead_id}
+        </span>
+
+        {/* Replied badge — only for whatsapp sent messages */}
+        {hasReplied && (
+          <span className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-md text-[#25D366] bg-[#25D366]/10 flex-shrink-0">
+            <Reply size={10} /> replied
+          </span>
+        )}
+
+        {/* Step */}
+        <span className="admin-muted flex-shrink-0">Step {m.sequence_step}</span>
+
+        {/* Date */}
+        <span className="admin-muted flex-shrink-0">
+          {new Date(m.scheduled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+        </span>
+
+        {/* Expand preview button */}
+        {hasBody && (
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className="p-1 rounded-lg admin-muted hover:text-white transition-colors flex-shrink-0"
+            title={expanded ? 'Hide message' : 'Preview message'}
+          >
+            {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </button>
+        )}
+
+        {/* Cancel */}
+        {m.status === 'pending' && (
+          <button onClick={() => onCancel(m.id!)}
+            className="p-1 rounded-lg text-red-400 hover:bg-red-400/10 transition-colors flex-shrink-0" title="Cancel">
+            <X size={12} />
+          </button>
+        )}
+      </div>
+
+      {/* Expandable message body */}
+      <AnimatePresence>
+        {expanded && hasBody && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 pt-0 border-t admin-border">
+              {m.subject && (
+                <p className="text-[10px] admin-muted mb-1">
+                  <span className="font-mono uppercase tracking-wider">Subject:</span> {m.subject}
+                </p>
+              )}
+              <p className="text-[11px] admin-text leading-relaxed whitespace-pre-wrap">{m.message_body}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function DetailModal({ campaign, leads, onClose }: { campaign: Campaign; leads: Lead[]; onClose: () => void }) {
-  const [messages, setMessages]       = useState<ScheduledMessage[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [processing, setProcessing]   = useState(false);
+  const [messages, setMessages]           = useState<ScheduledMessage[]>([]);
+  const [replies, setReplies]             = useState<WhatsAppReply[]>([]);
+  const [loading, setLoading]             = useState(true);
+  const [repliesLoading, setRepliesLoading] = useState(true);
+  const [processing, setProcessing]       = useState(false);
   const [processResult, setProcessResult] = useState('');
+  const [tab, setTab]                     = useState<DetailTab>('queue');
+  const [filter, setFilter]               = useState<'all' | 'pending' | 'sent' | 'failed'>('all');
 
   useEffect(() => {
     fetch(`/api/scheduled-messages?campaign_id=${campaign.id}`)
@@ -121,7 +226,19 @@ function DetailModal({ campaign, leads, onClose }: { campaign: Campaign; leads: 
       .then(d => { setMessages(Array.isArray(d) ? d : []); setLoading(false); });
   }, [campaign.id]);
 
+  // Fetch WhatsApp replies for leads in this campaign
+  useEffect(() => {
+    if (!campaign.lead_ids?.length) { setRepliesLoading(false); return; }
+    fetch(`/api/whatsapp-replies?lead_ids=${campaign.lead_ids.join(',')}`)
+      .then(r => r.json())
+      .then(d => { setReplies(Array.isArray(d) ? d : []); setRepliesLoading(false); })
+      .catch(() => setRepliesLoading(false));
+  }, [campaign.id, campaign.lead_ids]);
+
   const leadMap = Object.fromEntries(leads.map(l => [l.id, l.business_name]));
+
+  // Set of lead IDs that have replied via WhatsApp
+  const repliedLeadIds = new Set(replies.map(r => r.lead_id));
 
   async function cancelMessage(id: string) {
     await fetch(`/api/scheduled-messages?id=${id}`, {
@@ -141,9 +258,25 @@ function DetailModal({ campaign, leads, onClose }: { campaign: Campaign; leads: 
     setProcessing(false);
   }
 
-  const pending = messages.filter(m => m.status === 'pending');
-  const sent    = messages.filter(m => m.status === 'sent');
-  const failed  = messages.filter(m => m.status === 'failed');
+  const pending   = messages.filter(m => m.status === 'pending');
+  const sent      = messages.filter(m => m.status === 'sent');
+  const failed    = messages.filter(m => m.status === 'failed');
+  const cancelled = messages.filter(m => m.status === 'cancelled');
+
+  const filteredMessages = filter === 'all' ? messages
+    : messages.filter(m => m.status === filter);
+
+  const TABS: { id: DetailTab; label: string; count?: number }[] = [
+    { id: 'queue',   label: 'Queue',   count: messages.length },
+    { id: 'replies', label: 'Replies', count: replies.length },
+  ];
+
+  const FILTERS: { id: typeof filter; label: string; count: number; color: string }[] = [
+    { id: 'all',     label: 'All',     count: messages.length, color: 'admin-muted' },
+    { id: 'pending', label: 'Pending', count: pending.length,  color: 'text-yellow-400' },
+    { id: 'sent',    label: 'Sent',    count: sent.length,     color: 'text-[#00D67D]' },
+    { id: 'failed',  label: 'Failed',  count: failed.length,   color: 'text-red-400' },
+  ];
 
   return (
     <ModalPortal>
@@ -152,67 +285,152 @@ function DetailModal({ campaign, leads, onClose }: { campaign: Campaign; leads: 
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ opacity: 0, scale: 0.96, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
         className="w-full max-w-2xl admin-surface border admin-border-md rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b admin-border">
+
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-5 py-4 border-b admin-border flex-shrink-0">
           <div>
             <h2 className="font-bold text-[15px] admin-text">{campaign.name}</h2>
-            <div className="flex items-center gap-2 mt-0.5">
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${STATUS_STYLES[campaign.status]}`}>{campaign.status}</span>
               {(campaign.channels as CampaignChannel[]).map(ch => <ChannelBadge key={ch} channel={ch} />)}
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-xl admin-muted admin-hover border admin-border transition-colors"><X size={14} /></button>
+          <button onClick={onClose} className="p-1.5 rounded-xl admin-muted admin-hover border admin-border transition-colors flex-shrink-0"><X size={14} /></button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Pending', value: pending.length, style: 'text-yellow-400' },
-              { label: 'Sent',    value: sent.length,    style: 'text-[#00D67D]' },
-              { label: 'Failed',  value: failed.length,  style: 'text-red-400' },
-            ].map(s => (
-              <div key={s.label} className="admin-card p-3 text-center">
-                <div className={`text-xl font-bold ${s.style}`}>{s.value}</div>
-                <div className="text-[10px] admin-muted font-mono uppercase tracking-wider mt-0.5">{s.label}</div>
+
+        {/* ── Stats row ── */}
+        <div className="grid grid-cols-4 gap-2 px-5 pt-4 flex-shrink-0">
+          {[
+            { label: 'Pending',   value: pending.length,   style: 'text-yellow-400', icon: <Clock size={12} /> },
+            { label: 'Sent',      value: sent.length,      style: 'text-[#00D67D]',  icon: <CheckCheck size={12} /> },
+            { label: 'Failed',    value: failed.length,    style: 'text-red-400',    icon: <AlertCircle size={12} /> },
+            { label: 'Replied',   value: replies.length,   style: 'text-[#25D366]',  icon: <Reply size={12} /> },
+          ].map(s => (
+            <div key={s.label} className="admin-card p-3 text-center rounded-xl">
+              <div className={`text-xl font-bold ${s.style}`}>{s.value}</div>
+              <div className={`text-[10px] font-mono uppercase tracking-wider mt-0.5 flex items-center justify-center gap-1 ${s.style} opacity-70`}>
+                {s.icon}{s.label}
               </div>
-            ))}
+            </div>
+          ))}
+        </div>
+
+        {/* ── Process button ── */}
+        {pending.length > 0 && (
+          <div className="flex items-center gap-3 px-5 pt-3 flex-shrink-0">
+            <button onClick={processQueue} disabled={processing}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-black font-bold text-[13px] transition-colors disabled:opacity-40"
+              style={{ background: 'var(--accent)' }}>
+              {processing ? <RefreshCw size={13} className="animate-spin" /> : <Play size={13} />}
+              {processing ? 'Processing…' : `Process ${pending.length} pending`}
+            </button>
+            {processResult && <span className="text-xs text-[#00D67D]">{processResult}</span>}
           </div>
-          {pending.length > 0 && (
-            <div className="flex items-center gap-3">
-              <button onClick={processQueue} disabled={processing}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-black font-bold text-[13px] transition-colors disabled:opacity-40"
-                style={{ background: 'var(--accent)' }}>
-                {processing ? <RefreshCw size={13} className="animate-spin" /> : <Play size={13} />}
-                {processing ? 'Processing…' : `Process ${pending.length} pending`}
-              </button>
-              {processResult && <span className="text-xs text-[#00D67D]">{processResult}</span>}
-            </div>
-          )}
-          {loading ? (
-            <div className="flex items-center justify-center py-8 admin-muted text-sm">Loading…</div>
-          ) : messages.length === 0 ? (
-            <div className="text-center py-8 admin-muted text-sm">No scheduled messages.</div>
-          ) : (
-            <div className="space-y-2">
-              {messages.map(m => (
-                <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl border admin-border admin-card text-xs">
-                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono ${MSG_STATUS_STYLES[m.status]}`}>{m.status}</span>
-                  <span className={`${CHANNEL_COLORS[m.channel as CampaignChannel]} flex items-center gap-1`}>
-                    {CHANNEL_ICONS[m.channel as CampaignChannel]} {m.channel}
-                  </span>
-                  <span className="admin-text font-medium truncate flex-1">{leadMap[m.lead_id] ?? m.lead_id}</span>
-                  <span className="admin-muted flex-shrink-0">Step {m.sequence_step}</span>
-                  <span className="admin-muted flex-shrink-0">
-                    {new Date(m.scheduled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                  </span>
-                  {m.status === 'pending' && (
-                    <button onClick={() => cancelMessage(m.id!)}
-                      className="p-1 rounded-lg text-red-400 hover:bg-red-400/10 transition-colors flex-shrink-0" title="Cancel">
-                      <X size={12} />
-                    </button>
-                  )}
+        )}
+
+        {/* ── Tabs ── */}
+        <div className="flex items-center gap-1 px-5 pt-4 border-b admin-border pb-0 flex-shrink-0">
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-[12px] font-medium border-b-2 transition-colors -mb-px ${
+                tab === t.id
+                  ? 'border-[var(--accent)] text-[var(--accent)]'
+                  : 'border-transparent admin-muted hover:text-white'
+              }`}>
+              {t.label}
+              {t.count !== undefined && t.count > 0 && (
+                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
+                  tab === t.id ? 'bg-[var(--accent)]/20 text-[var(--accent)]' : 'bg-white/5 admin-muted'
+                }`}>{t.count}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Tab content ── */}
+        <div className="flex-1 overflow-y-auto p-5">
+
+          {/* Queue tab */}
+          {tab === 'queue' && (
+            <div className="space-y-3">
+              {/* Filter pills */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {FILTERS.map(f => (
+                  <button key={f.id} onClick={() => setFilter(f.id)}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-mono border transition-colors ${
+                      filter === f.id
+                        ? `${f.color} border-current bg-current/10`
+                        : 'admin-muted border-white/10 hover:border-white/20'
+                    }`}>
+                    {f.label}
+                    <span className="opacity-70">{f.count}</span>
+                  </button>
+                ))}
+              </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center py-10 admin-muted text-sm gap-2">
+                  <RefreshCw size={14} className="animate-spin" /> Loading…
                 </div>
-              ))}
+              ) : filteredMessages.length === 0 ? (
+                <div className="text-center py-10 admin-muted text-sm">No messages match this filter.</div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredMessages.map(m => (
+                    <MessageRow
+                      key={m.id}
+                      m={m}
+                      leadMap={leadMap}
+                      repliedLeadIds={repliedLeadIds}
+                      onCancel={cancelMessage}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
+
+          {/* Replies tab */}
+          {tab === 'replies' && (
+            <div className="space-y-3">
+              {repliesLoading ? (
+                <div className="flex items-center justify-center py-10 admin-muted text-sm gap-2">
+                  <RefreshCw size={14} className="animate-spin" /> Loading replies…
+                </div>
+              ) : replies.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <MessageCircle size={28} className="admin-muted opacity-40" />
+                  <p className="text-sm admin-muted">No WhatsApp replies yet.</p>
+                  <p className="text-[11px] admin-muted opacity-60 text-center max-w-xs">
+                    When a lead replies to your WhatsApp message, it will appear here automatically.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {replies.map(r => (
+                    <div key={r.id} className="p-3 rounded-xl border admin-border admin-card space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Reply size={12} className="text-[#25D366]" />
+                          <span className="text-[12px] font-medium admin-text">
+                            {leadMap[r.lead_id] ?? r.phone}
+                          </span>
+                          <span className="text-[10px] font-mono text-zinc-500">{r.phone}</span>
+                        </div>
+                        <span className="text-[10px] admin-muted">
+                          {new Date(r.received_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-[12px] admin-text leading-relaxed pl-5 border-l-2 border-[#25D366]/30">
+                        {r.message}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </motion.div>
     </motion.div>
