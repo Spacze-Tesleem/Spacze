@@ -291,6 +291,38 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
         <KpiCard label="Active Camps"  value={stats.activeCamps} icon={Megaphone}     accent={GREEN}    loading={loading} />
       </div>
 
+      {/* Raw message status strip — shows unfiltered DB truth to catch mismatches */}
+      {!loading && messages.length > 0 && (
+        <motion.div {...fu} className="flex flex-wrap items-center gap-2 px-4 py-2.5 rounded-xl border admin-border text-[11px] font-mono"
+          style={{ background: 'var(--admin-surface-2)' }}>
+          <span className="admin-muted mr-1">All messages in DB:</span>
+          {(['pending','processing','sent','failed','cancelled'] as const).map(s => {
+            const count = messages.filter(m => m.status === s).length;
+            if (count === 0) return null;
+            const color: Record<string, string> = {
+              pending: 'text-yellow-400', processing: 'text-blue-400',
+              sent: 'text-[#00D67D]', failed: 'text-red-400', cancelled: 'text-zinc-500',
+            };
+            return (
+              <span key={s} className={`${color[s]} px-2 py-0.5 rounded-md bg-white/5`}>
+                {count} {s}
+              </span>
+            );
+          })}
+          <span className="admin-muted ml-auto">
+            {(['email','whatsapp','linkedin','twitter'] as const).map(ch => {
+              const count = messages.filter(m => m.channel === ch).length;
+              return count > 0 ? `${count} ${ch}` : null;
+            }).filter(Boolean).join(' · ')}
+          </span>
+        </motion.div>
+      )}
+      {!loading && messages.length === 0 && (
+        <motion.div {...fu} className="px-4 py-2.5 rounded-xl border border-yellow-400/20 bg-yellow-400/5 text-[11px] font-mono text-yellow-400">
+          No scheduled_messages rows found in DB — sends via AI Studio or WhatsApp panel are not tracked here.
+        </motion.div>
+      )}
+
       {/* Charts row */}
       <div className="grid lg:grid-cols-3 gap-4">
         <motion.div {...fu} transition={{ delay: 0.06 }} className="lg:col-span-2">

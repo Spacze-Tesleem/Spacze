@@ -175,10 +175,44 @@ export async function POST() {
       }
 
       await db.from('scheduled_messages').update({ status: 'sent', sent_at: now, updated_at: now }).eq('id', msg.id);
+
+      // Update lead outreach fields
+      const leadUpdate: Record<string, unknown> = {
+        last_contacted:  now,
+        outreach_status: 'Sent',
+      };
+      if (msg.channel === 'email')    leadUpdate.email_sent = true;
+      if (msg.channel === 'whatsapp') leadUpdate.email_sent = true; // reuse flag — no dedicated wa_sent column yet
+      await db.from('leads').update(leadUpdate).eq('id', msg.lead_id);
+
+      // Record in outreach_events for analytics
+      await db.from('outreach_events').insert({
+        lead_id:              msg.lead_id,
+        campaign_id:          msg.campaign_id,
+        scheduled_message_id: msg.id,
+        event_type:           'message_sent',
+        channel:              msg.channel,
+        sequence_step:        msg.sequence_step,
+        metadata:             { subject: msg.subject ?? null },
+      });
+
       results.push({ id: msg.id, channel: msg.channel, status: 'sent' });
     } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
       await db.from('scheduled_messages').update({ status: 'failed', updated_at: now }).eq('id', msg.id);
-      results.push({ id: msg.id, channel: msg.channel, status: 'failed', error: err instanceof Error ? err.message : String(err) });
+
+      // Record failure in outreach_events
+      await db.from('outreach_events').insert({
+        lead_id:              msg.lead_id,
+        campaign_id:          msg.campaign_id,
+        scheduled_message_id: msg.id,
+        event_type:           'message_failed',
+        channel:              msg.channel,
+        sequence_step:        msg.sequence_step,
+        metadata:             { error: errMsg },
+      }).catch(() => {}); // non-critical — don't mask the original error
+
+      results.push({ id: msg.id, channel: msg.channel, status: 'failed', error: errMsg });
     }
   }
 
