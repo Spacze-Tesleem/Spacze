@@ -25,31 +25,34 @@ ${qualityScore}
 ${weakPoints}
 ${aiOpportunity}
 
-STRUCTURE — write exactly 4 short sentences, each on its own line:
-Line 1: Casual greeting — "Hi [Name]," — then one specific observation about their business drawn from the analysis. Name something concrete (e.g. "I noticed you're taking orders through DMs and WhatsApp" not "I noticed your ordering process"). End the sentence here.
-Line 2: One sentence on the consequence or friction of that observation — what it costs them in time, missed sales, or effort. Do NOT mention Spacze yet.
-Line 3: One sentence introducing what Spacze does — specific to their situation, not generic. No "streamline", no "leverage", no "automation and online stores" as a vague bundle.
-Line 4: Soft question to invite a reply — "Would you be open to a quick chat?" or "Want me to show you what that could look like for [Business Name]?"
+STRUCTURE — write exactly 5 short sentences, each on its own line:
+Line 1 — CONTEXT (how you found them): Explain briefly how you came across their business. Be specific and honest — e.g. "I came across your Instagram page while looking at fashion brands in Lagos" or "I found your page through a search for [industry] businesses in [location]." This line earns the right to continue. Do NOT skip this.
+Line 2 — WARM GREETING: Introduce yourself naturally — "My name is Tesleem, I run a small web and automation agency called Spacze." One sentence. No pitch yet.
+Line 3 — SPECIFIC OBSERVATION: One concrete thing you noticed about their business from the analysis — name it exactly (e.g. "I noticed you're taking orders through DMs and WhatsApp" not "your ordering process"). Frame it neutrally, not as a flaw.
+Line 4 — CONSEQUENCE: One sentence on what that costs them — missed orders, no payment confirmation, harder to track as volume grows. Do NOT mention Spacze yet.
+Line 5 — SOFT ASK: A low-pressure question that invites a reply without pitching — "Would it be okay if I shared a quick idea that might help?" or "Would you be open to a short chat about it?"
 
 WRITING RULES:
 - Each line is ONE sentence — no run-ons, no comma-spliced clauses
 - No formal sign-offs, no "I hope this message finds you well"
 - No emojis unless the industry is fashion or food and the tone is casual
 - NEVER say the business is bad, broken, or weak
-- Total length: 50–80 words — count before outputting
+- The message must feel like it was sent by a real person with a genuine reason to reach out — not a cold blast
+- Total length: 60–90 words — count before outputting
 - Industry-specific detail: fashion → DM/WhatsApp ordering, missed orders, no payment confirmation; real estate → manual lead follow-up, slow response time; logistics → manual tracking, no client portal; food → no online ordering, repeat customer drop-off; services → no booking system, manual scheduling
 
 EXAMPLE of correct tone and structure (do not copy — reference only):
 ---
-Hi Dunnies Collections, I came across your page and noticed you're handling orders through DMs and WhatsApp.
-That works when you're starting out, but it gets harder to track as order volume grows — things slip through.
-At Spacze, we build simple online stores for fashion brands that handle orders, payments, and confirmations automatically.
-Would you be open to a quick chat this week?
+I came across your Instagram page while looking at fashion brands in Lagos and really liked what you're building.
+My name is Tesleem, I run a small web and automation agency called Spacze.
+I noticed you're currently taking orders through DMs and WhatsApp — which works, but gets harder to manage as things pick up.
+When orders come in that way, it's easy for things to slip through — no payment confirmation, no order history.
+Would it be okay if I shared a quick idea that might help with that?
 ---
 
 Output format (exactly):
 MESSAGE:
-[message here — 4 lines, one sentence each]`;
+[message here — 5 lines, one sentence each]`;
 }
 
 // ─────────────────────────────────────────────
