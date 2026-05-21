@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, Save, Trash2, Search, ChevronDown, Mail,
   MessageCircle, Linkedin, Twitter, Filter, Download,
-  CheckSquare, Square,
+  CheckSquare, Square, Zap, RefreshCw, Sparkles,
 } from 'lucide-react';
 import { Lead } from '@/lib/supabase';
 import { OUTREACH_STATUSES, RESPONSE_STATUSES } from '@/lib/constants';
@@ -446,6 +446,39 @@ export default function CRMPanel() {
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const { toast }                   = useToast();
 
+  // Per-lead AI analysis state: leadId → 'idle' | 'scraping' | 'analysing' | 'done' | 'error'
+  const [analysisState, setAnalysisState] = useState<Record<string, string>>({});
+
+  const analyzeLead = useCallback(async (lead: Lead) => {
+    if (!lead.id || !lead.website) {
+      toast('error', 'Lead needs a website URL to analyse');
+      return;
+    }
+    setAnalysisState(prev => ({ ...prev, [lead.id!]: 'scraping' }));
+    try {
+      const res = await fetch('/api/analyze-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId:        lead.id,
+          website:       lead.website,
+          business_name: lead.business_name,
+          industry:      lead.industry,
+        }),
+      });
+      if (!res.ok) {
+        const e = await res.json();
+        throw new Error(e.error || 'Analysis failed');
+      }
+      setAnalysisState(prev => ({ ...prev, [lead.id!]: 'done' }));
+      toast('success', `"${lead.business_name}" analysed — score updated`);
+      fetchLeads();
+    } catch (err: unknown) {
+      setAnalysisState(prev => ({ ...prev, [lead.id!]: 'error' }));
+      toast('error', err instanceof Error ? err.message : 'Analysis failed');
+    }
+  }, [toast, fetchLeads]);
+
   // ── Filter ──
   const filtered = useMemo(() => leads.filter(l => {
     const q = search.toLowerCase();
@@ -506,8 +539,13 @@ export default function CRMPanel() {
         ? await fetch(`/api/leads?id=${editId}`, { method: 'PUT',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
         : await fetch('/api/leads',               { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
       if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Failed to save lead'); }
+      const saved = await res.json();
       closeForm(); await fetchLeads();
-      toast('success', editId ? 'Lead updated' : 'Lead added');
+      toast('success', editId ? 'Lead updated' : 'Lead added — analysing website…');
+      // Auto-analyse on new lead creation if a website was provided
+      if (!editId && form.website?.trim()) {
+        analyzeLead({ ...saved, website: form.website, business_name: form.business_name, industry: form.industry });
+      }
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : 'Failed to save lead.');
     } finally { setSaving(false); }
@@ -678,6 +716,26 @@ export default function CRMPanel() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {lead.website && (() => {
+                          const st = analysisState[lead.id!] || 'idle';
+                          return (
+                            <button
+                              onClick={() => analyzeLead(lead)}
+                              disabled={st === 'scraping' || st === 'analysing'}
+                              title="AI-analyse website"
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                st === 'done'  ? 'text-[#00D67D] bg-[#00D67D]/10' :
+                                st === 'error' ? 'text-red-400 bg-red-500/10' :
+                                'text-purple-400 bg-purple-500/10 hover:bg-purple-500/20'
+                              } disabled:opacity-50`}
+                            >
+                              {(st === 'scraping' || st === 'analysing')
+                                ? <RefreshCw size={14} className="animate-spin" />
+                                : st === 'done' ? <Sparkles size={14} />
+                                : <Zap size={14} />}
+                            </button>
+                          );
+                        })()}
                         <button onClick={() => openEdit(lead)} className="px-3 py-1.5 rounded-lg text-xs font-medium admin-muted hover:admin-text bg-[var(--admin-hover-bg)] hover:bg-[var(--admin-surface-3)] transition-colors">Edit</button>
                         <button onClick={() => deleteLead(lead.id!, lead.business_name)} className="p-1.5 rounded-lg text-red-400/70 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors"><Trash2 size={14} /></button>
                       </div>
@@ -747,6 +805,26 @@ export default function CRMPanel() {
             )}
             <div className="flex gap-2 pt-1">
               <button onClick={() => openEdit(lead)} className="flex-1 py-2.5 rounded-xl text-xs font-medium border admin-border-md bg-[var(--admin-hover-bg)] hover:bg-[var(--admin-surface-3)] admin-text-2 transition-colors">Edit</button>
+              {lead.website && (() => {
+                const st = analysisState[lead.id!] || 'idle';
+                return (
+                  <button
+                    onClick={() => analyzeLead(lead)}
+                    disabled={st === 'scraping' || st === 'analysing'}
+                    title="AI-analyse website"
+                    className={`px-3 py-2.5 rounded-xl text-xs transition-colors disabled:opacity-50 ${
+                      st === 'done'  ? 'text-[#00D67D] bg-[#00D67D]/10' :
+                      st === 'error' ? 'text-red-400 bg-red-500/10' :
+                      'text-purple-400 bg-purple-500/10 hover:bg-purple-500/20'
+                    }`}
+                  >
+                    {(st === 'scraping' || st === 'analysing')
+                      ? <RefreshCw size={13} className="animate-spin" />
+                      : st === 'done' ? <Sparkles size={13} />
+                      : <Zap size={13} />}
+                  </button>
+                );
+              })()}
               <button onClick={() => deleteLead(lead.id!, lead.business_name)} className="px-4 py-2.5 rounded-xl text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"><Trash2 size={13} /></button>
             </div>
           </div>

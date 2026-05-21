@@ -104,15 +104,45 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       <aside className={`hidden lg:flex fixed inset-y-0 left-0 z-50 ${sidebarW} admin-sidebar border-r admin-border flex-col transition-all duration-300 overflow-hidden`}>
         {/* Logo area */}
         <div className={`flex items-center h-20 px-4 flex-shrink-0 ${collapsed ? 'justify-center' : 'justify-between'}`}>
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#00D67D] to-emerald-900 flex items-center justify-center font-bold text-black text-sm shadow-[0_0_15px_rgba(0,214,125,0.2)]">
-              S
+          <div className="flex items-center gap-2.5 min-w-0">
+            {/* Spacze flame icon — matches brand mark */}
+            <div className="flex-shrink-0 w-8 h-8 drop-shadow-[0_0_8px_rgba(0,214,125,0.25)]">
+              <svg viewBox="0 0 100 160" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                <defs>
+                  <linearGradient id="flame-grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#00D67D" />
+                    <stop offset="50%" stopColor="#38bdf8" />
+                    <stop offset="100%" stopColor="#a78bfa" />
+                  </linearGradient>
+                </defs>
+                {/* Upper flame lobe */}
+                <path
+                  d="M72 8 C90 28 88 58 62 68 C80 48 74 28 56 22 C64 36 58 54 42 60 C52 40 46 18 28 10 C44 30 38 56 18 72 C10 90 18 118 42 132 C28 112 34 88 54 78 C36 98 42 124 62 136 C78 148 96 138 96 118 C96 98 80 88 72 72 C88 60 92 36 72 8Z"
+                  fill="url(#flame-grad)"
+                  opacity="0.95"
+                />
+                {/* Inner shadow lobe for depth */}
+                <path
+                  d="M54 78 C36 98 42 124 62 136 C46 122 44 100 58 88 C50 104 54 122 66 130 C80 118 78 96 66 84 C74 96 72 114 62 122 C52 108 54 90 62 78 C58 82 54 78 54 78Z"
+                  fill="rgba(0,0,0,0.25)"
+                />
+              </svg>
             </div>
+
             <AnimatePresence initial={false}>
               {!collapsed && (
-                <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} className="overflow-hidden whitespace-nowrap">
-                  <div className="font-semibold text-sm tracking-tight admin-text">Spacze</div>
-                  <div className="text-[10px] admin-muted font-mono tracking-widest uppercase">Admin</div>
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  className="overflow-hidden whitespace-nowrap"
+                >
+                  {/* Wordmark: SPA in cyan→green, CZE in silver */}
+                  <div className="font-black text-[15px] tracking-tight leading-none">
+                    <span className="bg-gradient-to-r from-[#38bdf8] via-[#00D67D] to-[#00D67D] bg-clip-text text-transparent">SPA</span>
+                    <span className="bg-gradient-to-r from-[#c0c0c0] via-white to-[#a0a0a0] bg-clip-text text-transparent">CZE</span>
+                  </div>
+                  <div className="text-[9px] admin-muted font-mono tracking-[0.2em] uppercase mt-0.5">Command</div>
                 </motion.div>
               )}
             </AnimatePresence>
