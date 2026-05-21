@@ -36,6 +36,11 @@ PROSPECT:
 - AI/Automation Opportunity: ${lead.ai_opportunity || 'Not assessed'}
 - Possible Improvements: ${lead.possible_improvements || 'Not assessed'}
 
+EMAIL STRUCTURE — every step must follow this structure:
+- Greeting: "Hi [Business Name] team," or "Hi [Business Name],"
+- Body paragraphs (no bullet points)
+- Sign-off: "Tesleem / Spacze"
+
 SEQUENCE:
 
 Step 1 — Initial Outreach (Day 1) | 140–175 words
@@ -45,7 +50,7 @@ Step 1 — Initial Outreach (Day 1) | 140–175 words
 - One short paragraph on how Spacze can help — keep it relevant to the observation
 - Mention portfolio as a casual aside: "You can see some of our work at Spacze.vercel.app"
 - Soft CTA: "Would you be open to a quick chat this week?"
-- Industry-specific pain points: fashion → ordering/inventory flow; real estate → lead capture/CRM; logistics → tracking/automation; food → ordering/booking; services → client onboarding/scheduling
+- Industry-specific pain points: fashion → DM/WhatsApp ordering, no storefront; real estate → manual lead follow-up, no CRM; logistics → manual tracking, no client portal; food → no online ordering/booking; services → no client onboarding/scheduling
 
 Step 2 — Follow-up #1 (Day 4–5, no reply) | 100–130 words
 - Do NOT open with "just following up", "circling back", or "checking in"
@@ -58,6 +63,7 @@ Step 2 — Follow-up #1 (Day 4–5, no reply) | 100–130 words
 Step 3 — Follow-up #2 (Day 9–10, still no reply) | 110–140 words
 - Take a completely different angle — do NOT repeat the website observation
 - Open with a brief, credible result Spacze achieved for a similar business (anonymous: "a recent project for a ${lead.industry || 'similar'} client…")
+- Include a specific metric or outcome in the case study (e.g. "cut order processing time by half", "reduced missed enquiries by 60%")
 - Keep the case study to 1–2 sentences — specific and believable, not vague
 - One sentence connecting that result to ${lead.business_name}
 - Mention Spacze has limited project availability — frame as a heads-up, not fake scarcity
@@ -69,15 +75,18 @@ Step 4 — Break-up Email (Day 14–16) | 80–100 words
 - Leave a genuine open invitation: if priorities change, Spacze is here
 - One optional memorable sentence — not a pitch
 - End warmly and sincerely
-- Tone: human, gracious, zero pressure
+- Tone: human, gracious, zero pressure — do not pad to hit word count, shorter is better here
 
 RULES FOR ALL STEPS:
+- Every email body must start with a greeting: "Hi [Business Name] team," or "Hi [Business Name],"
+- Every email body must end with a sign-off: "Tesleem / Spacze"
 - No bullet points inside any email body
 - No corporate filler: "I hope this finds you well", "synergy", "leverage", "touch base", "circle back"
 - No spam trigger words
 - Subject lines: specific, curiosity-driven, under 8 words — Steps 2–4 use "Re:" prefix to thread
 - Each step must feel distinct — no repeated phrases across steps
 - Tone throughout: peer-to-peer, warm, confident, never pushy
+- WORD COUNTS ARE STRICT — count words before outputting each step
 
 Return ONLY valid JSON — no markdown fences, no explanation — in this exact shape:
 {

@@ -10,30 +10,49 @@ import Groq from 'groq-sdk';
  */
 
 function buildPrompt(lead: any): string {
-  return `You are an expert Facebook Ads copywriter for Spacze, an AI software agency.
+  return `You are a Facebook Ads copywriter for Spacze, a software development and AI automation agency based in Nigeria with global clients.
 
-Write a Facebook ad for the following business:
+Write a Facebook ad for the business below. Facebook ads interrupt a social feed — the first line of primary text must stop the scroll.
+
+PROSPECT:
 - Business: ${lead.business_name || 'Not specified'}
 - Industry: ${lead.industry || 'Not specified'}
-- AI Opportunity: ${lead.ai_opportunity || 'Not specified'}
+- AI/Automation Opportunity: ${lead.ai_opportunity || 'Not specified'}
 - Weak Points: ${lead.weak_points || 'Not specified'}
-- Tone: ${lead.tone || 'Professional'}
+- Tone: ${lead.tone || 'Conversational'}
 - Goal: ${lead.goal || 'Leads'}
 - Key Message: ${lead.keyMessage || lead.possible_improvements || 'Not specified'}
 
-Rules:
-- Primary text: 80–125 words, hook in first line, pain-point aware, ends with CTA
-- Headline: max 40 characters, benefit-driven
-- Description: max 30 characters, reinforces headline
-- CTA button: one of [Learn More, Sign Up, Get Quote, Contact Us, Book Now]
-- No excessive punctuation or emojis (max 1)
+STRUCTURE:
+- Primary Text: the main ad copy shown in the feed
+- Headline: shown below the image/video
+- Description: shown below the headline (reinforces headline)
+- CTA Button: the button label
 
-Output format (exactly):
+WRITING RULES FOR PRIMARY TEXT (80–125 words):
+1. Hook (first line): bold statement or relatable pain point — this is what shows before "See more"
+   Examples: "Most small businesses lose leads because they reply too slowly." / "Your Instagram is working. Your sales system isn't."
+2. Body (3–4 sentences): expand on the pain point, introduce the solution, build credibility with one specific outcome or example
+3. CTA (1 sentence): clear action — "Send us a message", "Click below to get started", "Book a free call today"
+- No "Are you…" openers
+- No excessive punctuation or emojis (max 1 emoji if it adds meaning)
+- Frame everything as an opportunity, not a criticism
+
+WRITING RULES FOR HEADLINE (max 40 characters — count spaces):
+- Benefit-driven, not feature-driven
+- No ALL CAPS, no exclamation marks
+
+WRITING RULES FOR DESCRIPTION (max 30 characters — count spaces):
+- Reinforces the headline with a secondary benefit or urgency signal
+
+CTA BUTTON: choose one of [Learn More, Sign Up, Get Quote, Contact Us, Book Now, Send Message]
+
+Output format (exactly — include character counts for headline and description):
 PRIMARY_TEXT:
 [primary text here]
-HEADLINE: [headline here]
-DESCRIPTION: [description here]
-CTA: [CTA button label]`;
+HEADLINE: [text] ([X] chars)
+DESCRIPTION: [text] ([X] chars)
+CTA: [button label]`;
 }
 
 async function generateWithOpenAI(prompt: string): Promise<string> {
