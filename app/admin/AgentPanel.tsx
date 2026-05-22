@@ -327,50 +327,40 @@ function ChatTab() {
   }, [submit]);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: BG, fontFamily: MONO }}>
+    <div className="flex flex-col h-full" style={{ background: BG }}>
 
-      {/* ── Top bar ── */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 h-9 border-b"
+      {/* ── Slim session bar ── */}
+      <div className="flex-shrink-0 flex items-center justify-between px-4 h-8 border-b"
         style={{ background: BG2, borderColor: BORDER }}>
-        <div className="flex items-center gap-3">
-          {/* Traffic-light dots */}
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#ff5f57' }} />
-            <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#febc2e' }} />
-            <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#28c840' }} />
-          </div>
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-1" style={{ fontSize: 11, color: TEXT3 }}>
-            <Terminal size={10} style={{ color: TEXT3 }} />
-            <span>spacze</span>
-            <ChevronRight size={9} style={{ color: TEXT3 }} />
-            <span style={{ color: TEXT2 }}>agent</span>
-            <ChevronRight size={9} style={{ color: TEXT3 }} />
-            <span style={{ color: ACCENT }}>chat</span>
-          </div>
+        <div className="flex items-center gap-2" style={{ fontFamily: MONO, fontSize: 10, color: TEXT3 }}>
+          <Terminal size={9} style={{ color: TEXT3 }} />
+          <span>session</span>
+          <ChevronRight size={8} style={{ color: TEXT3 }} />
+          <span style={{ color: TEXT2 }}>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
         </div>
-
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {isLoading && (
-            <div className="flex items-center gap-1.5" style={{ fontSize: 10, color: AMBER }}>
-              <Loader2 size={9} className="animate-spin" />
-              <span>running</span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+              style={{ background: AMBER + '12', border: `1px solid ${AMBER}28`, fontSize: 10, color: AMBER, fontFamily: MONO }}>
+              <Loader2 size={8} className="animate-spin" />
+              <span>thinking</span>
             </div>
           )}
           {!isLoading && !isEmpty && (
-            <div className="flex items-center gap-1" style={{ fontSize: 10, color: ACCENT }}>
-              <CheckCircle2 size={9} />
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+              style={{ background: ACCENT + '12', border: `1px solid ${ACCENT}28`, fontSize: 10, color: ACCENT, fontFamily: MONO }}>
+              <CheckCircle2 size={8} />
               <span>ready</span>
             </div>
           )}
           {!isEmpty && (
             <button onClick={() => setMessages([])}
               className="flex items-center gap-1 px-2 py-0.5 rounded border transition-colors"
-              style={{ fontSize: 10, color: TEXT3, borderColor: BORDER }}
-              onMouseEnter={e => (e.currentTarget.style.color = TEXT2)}
-              onMouseLeave={e => (e.currentTarget.style.color = TEXT3)}
+              style={{ fontSize: 10, color: TEXT3, borderColor: BORDER, fontFamily: MONO }}
+              onMouseEnter={e => { e.currentTarget.style.color = TEXT2; e.currentTarget.style.borderColor = BORDER2; }}
+              onMouseLeave={e => { e.currentTarget.style.color = TEXT3; e.currentTarget.style.borderColor = BORDER; }}
               title="Clear session">
-              <RotateCcw size={9} /> clear
+              <RotateCcw size={8} /> clear
             </button>
           )}
         </div>
@@ -381,32 +371,36 @@ function ChatTab() {
 
         {/* Empty state */}
         {isEmpty && (
-          <div className="flex flex-col items-center justify-center h-full gap-6 px-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-3"
-                style={{ fontFamily: MONO, fontSize: 12, color: TEXT3 }}>
-                <Cpu size={14} style={{ color: ACCENT }} />
-                <span style={{ color: ACCENT }}>spacze-agent</span>
-                <span>v1.0</span>
-                <span style={{ color: ACCENT }}>●</span>
-                <span>ready</span>
+          <div className="flex flex-col items-center justify-center h-full gap-8 px-6 py-10">
+            {/* Hero icon */}
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl"
+                style={{ background: ACCENT + '10', border: `1px solid ${ACCENT}22` }}>
+                <Zap size={28} style={{ color: ACCENT }} />
+                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 animate-pulse"
+                  style={{ background: ACCENT, borderColor: BG }} />
               </div>
-              <p style={{ fontSize: 11, color: TEXT3, fontFamily: MONO }}>
-                autonomous operator · crm · outreach · campaigns
-              </p>
+              <div className="text-center">
+                <p style={{ fontFamily: MONO, fontSize: 14, color: TEXT, fontWeight: 600, marginBottom: 4 }}>
+                  What can I help with?
+                </p>
+                <p style={{ fontFamily: MONO, fontSize: 11, color: TEXT3 }}>
+                  CRM · outreach · campaigns · analytics
+                </p>
+              </div>
             </div>
 
-            {/* Suggestion grid */}
-            <div className="w-full max-w-xl grid grid-cols-1 gap-1">
+            {/* Suggestion grid — 2 columns */}
+            <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-2">
               {CHAT_SUGGESTIONS.map(s => (
                 <button key={s}
                   onClick={() => { setInput(s); inputRef.current?.focus(); }}
-                  className="flex items-center gap-2 px-3 py-2 rounded border text-left transition-colors"
-                  style={{ background: BG2, borderColor: BORDER, fontSize: 11, color: TEXT3, fontFamily: MONO }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT + '50'; e.currentTarget.style.color = TEXT2; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = TEXT3; }}>
-                  <ChevronRight size={10} style={{ color: ACCENT, flexShrink: 0 }} />
-                  {s}
+                  className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl border text-left transition-all"
+                  style={{ background: BG2, borderColor: BORDER, fontFamily: MONO }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT + '45'; e.currentTarget.style.background = ACCENT + '08'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.background = BG2; }}>
+                  <ChevronRight size={10} style={{ color: ACCENT, flexShrink: 0, marginTop: 2 }} />
+                  <span style={{ fontSize: 11, color: TEXT2, lineHeight: 1.5 }}>{s}</span>
                 </button>
               ))}
             </div>
@@ -416,13 +410,6 @@ function ChatTab() {
         {/* Messages */}
         {!isEmpty && (
           <div className="py-2">
-            {/* Session header */}
-            <div className="px-4 py-1.5 border-b mb-2" style={{ borderColor: BORDER }}>
-              <span style={{ fontFamily: MONO, fontSize: 10, color: TEXT3 }}>
-                session started · {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </span>
-            </div>
-
             {uiMessages.map(msg => (
               <ChatRow key={msg.id} msg={msg} ts={times.get(msg.id) ?? fmtTime()} />
             ))}
@@ -436,7 +423,7 @@ function ChatTab() {
             )}
 
             {error && (
-              <div className="mx-4 my-2 flex items-start gap-2 px-3 py-2 rounded border"
+              <div className="mx-4 my-2 flex items-start gap-2 px-3 py-2 rounded-lg border"
                 style={{ background: RED + '10', borderColor: RED + '40', fontSize: 11, color: RED, fontFamily: MONO }}>
                 <AlertCircle size={11} className="flex-shrink-0 mt-0.5" />
                 <span>{error.message}</span>
@@ -449,27 +436,26 @@ function ChatTab() {
       </div>
 
       {/* ── Input bar ── */}
-      <div className="flex-shrink-0 border-t" style={{ borderColor: BORDER, background: BG2 }}>
-        <div className="flex items-end gap-0">
-          {/* Prompt prefix */}
-          <div className="flex-shrink-0 flex items-center px-4 pb-3 pt-3 self-end"
-            style={{ fontFamily: MONO, fontSize: 13, color: ACCENT, userSelect: 'none' }}>
-            &gt;
-          </div>
+      <div className="flex-shrink-0 p-3 border-t" style={{ borderColor: BORDER, background: BG2 }}>
+        <div className="flex items-end gap-2 rounded-xl border px-3 py-2.5 transition-colors"
+          style={{ background: BG, borderColor: BORDER }}
+          onFocusCapture={e => (e.currentTarget.style.borderColor = ACCENT + '50')}
+          onBlurCapture={e => (e.currentTarget.style.borderColor = BORDER)}>
+
+          <span style={{ fontFamily: MONO, fontSize: 13, color: ACCENT, flexShrink: 0, paddingBottom: 1, userSelect: 'none' }}>›</span>
 
           <textarea
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="type a command…"
+            placeholder="Ask the agent anything…"
             rows={1}
             disabled={isLoading}
-            className="flex-1 bg-transparent resize-none outline-none py-3 pr-3 disabled:opacity-40"
+            className="flex-1 bg-transparent resize-none outline-none disabled:opacity-40"
             style={{
               fontFamily: MONO, fontSize: 12, color: TEXT,
-              minHeight: 20, caretColor: ACCENT,
-              lineHeight: 1.6,
+              minHeight: 20, caretColor: ACCENT, lineHeight: 1.6,
             }}
             onInput={e => {
               const el = e.currentTarget;
@@ -478,37 +464,35 @@ function ChatTab() {
             }}
           />
 
-          <div className="flex-shrink-0 flex items-center gap-2 px-3 pb-3 pt-3 self-end">
+          <div className="flex-shrink-0 flex items-center gap-1.5 self-end pb-0.5">
             {isLoading ? (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded border"
-                style={{ borderColor: AMBER + '40', background: AMBER + '10', fontSize: 10, color: AMBER, fontFamily: MONO }}>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
+                style={{ background: AMBER + '12', border: `1px solid ${AMBER}30`, fontSize: 10, color: AMBER, fontFamily: MONO }}>
                 <Square size={9} />
-                <span>running</span>
+                <span>stop</span>
               </div>
             ) : (
               <button onClick={submit} disabled={!input.trim()}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded border transition-all disabled:opacity-30"
-                style={{ borderColor: ACCENT + '50', background: ACCENT + '15', fontSize: 10, color: ACCENT, fontFamily: MONO }}
-                onMouseEnter={e => { if (input.trim()) e.currentTarget.style.background = ACCENT + '25'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = ACCENT + '15'; }}>
-                <Play size={9} />
-                <span>run</span>
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-30"
+                style={{ background: ACCENT + '18', border: `1px solid ${ACCENT}35`, fontSize: 10, color: ACCENT, fontFamily: MONO }}
+                onMouseEnter={e => { if (input.trim()) { e.currentTarget.style.background = ACCENT + '28'; e.currentTarget.style.borderColor = ACCENT + '55'; } }}
+                onMouseLeave={e => { e.currentTarget.style.background = ACCENT + '18'; e.currentTarget.style.borderColor = ACCENT + '35'; }}>
+                <Send size={10} />
+                <span>send</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Status bar */}
-        <div className="flex items-center justify-between px-4 py-1 border-t"
-          style={{ borderColor: BORDER, background: BG3 }}>
-          <div className="flex items-center gap-3" style={{ fontSize: 10, color: TEXT3, fontFamily: MONO }}>
-            <span style={{ color: ACCENT }}>● spacze-agent</span>
-            <span>openai → groq → gemini</span>
+        {/* Hint row */}
+        <div className="flex items-center justify-between px-1 pt-1.5">
+          <div className="flex items-center gap-3" style={{ fontFamily: MONO, fontSize: 9, color: TEXT3 }}>
+            <span style={{ color: ACCENT + 'aa' }}>● spacze-agent</span>
+            <span>openai · groq · gemini</span>
           </div>
-          <div className="flex items-center gap-3" style={{ fontSize: 10, color: TEXT3, fontFamily: MONO }}>
-            <span>{uiMessages.length} messages</span>
-            <span>Enter ↵ send · Shift+Enter newline</span>
-          </div>
+          <span style={{ fontFamily: MONO, fontSize: 9, color: TEXT3 }}>
+            ↵ send · ⇧↵ newline · {uiMessages.length} msg{uiMessages.length !== 1 ? 's' : ''}
+          </span>
         </div>
       </div>
     </div>
@@ -648,25 +632,31 @@ function BuilderTab() {
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
             className="flex-shrink-0 flex flex-col border-r overflow-hidden" style={{ borderColor: BORDER }}>
 
-            <div className="flex-shrink-0 flex items-center justify-between px-3 h-9 border-b"
+            <div className="flex-shrink-0 flex items-center justify-between px-3 h-10 border-b"
               style={{ background: BG2, borderColor: BORDER }}>
-              <div className="flex items-center gap-2" style={{ fontFamily: MONO, fontSize: 11, color: TEXT2 }}>
-                <Sparkles size={10} style={{ color: ACCENT }} />
-                <span>ai-builder</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-5 h-5 rounded-md"
+                  style={{ background: ACCENT + '18', border: `1px solid ${ACCENT}30` }}>
+                  <Sparkles size={9} style={{ color: ACCENT }} />
+                </div>
+                <span style={{ fontFamily: MONO, fontSize: 11, color: TEXT2, fontWeight: 600 }}>ai-builder</span>
               </div>
               <div className="flex items-center gap-1">
                 {!isEmpty && (
                   <button onClick={() => { setMessages([]); setFiles(prev => prev.map((f, i) => i === 0 ? { ...f, content: STARTER } : f)); setRefreshKey(k => k + 1); }}
-                    className="p-1 rounded transition-colors" style={{ color: TEXT3 }}
-                    onMouseEnter={e => (e.currentTarget.style.color = TEXT2)}
-                    onMouseLeave={e => (e.currentTarget.style.color = TEXT3)} title="Reset">
+                    className="p-1 rounded-md border transition-colors"
+                    style={{ color: TEXT3, borderColor: 'transparent' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = TEXT2; e.currentTarget.style.borderColor = BORDER; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = TEXT3; e.currentTarget.style.borderColor = 'transparent'; }}
+                    title="Reset">
                     <RotateCcw size={10} />
                   </button>
                 )}
                 <button onClick={() => setChatOpen(false)}
-                  className="p-1 rounded transition-colors" style={{ color: TEXT3 }}
-                  onMouseEnter={e => (e.currentTarget.style.color = TEXT2)}
-                  onMouseLeave={e => (e.currentTarget.style.color = TEXT3)}>
+                  className="p-1 rounded-md border transition-colors"
+                  style={{ color: TEXT3, borderColor: 'transparent' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = TEXT2; e.currentTarget.style.borderColor = BORDER; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = TEXT3; e.currentTarget.style.borderColor = 'transparent'; }}>
                   <X size={10} />
                 </button>
               </div>
@@ -674,16 +664,17 @@ function BuilderTab() {
 
             <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ background: BG }}>
               {isEmpty && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2 pt-2">
-                  <p style={{ fontFamily: MONO, fontSize: 10, color: TEXT3, textAlign: 'center' }}>
-                    describe what to build
-                  </p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2 pt-1">
+                  <div className="flex items-center gap-1.5 pb-1" style={{ fontFamily: MONO, fontSize: 10, color: TEXT3 }}>
+                    <Zap size={9} style={{ color: ACCENT }} />
+                    <span>describe what to build</span>
+                  </div>
                   {BUILDER_SUGGESTIONS.map(s => (
                     <button key={s} onClick={() => { setInput(s); inputRef.current?.focus(); }}
-                      className="w-full text-left px-2.5 py-1.5 rounded border transition-colors"
-                      style={{ fontFamily: MONO, fontSize: 10, color: TEXT3, borderColor: BORDER, background: BG2 }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT + '50'; e.currentTarget.style.color = TEXT2; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = TEXT3; }}>
+                      className="w-full text-left px-2.5 py-2 rounded-lg border transition-all"
+                      style={{ fontFamily: MONO, fontSize: 10, color: TEXT3, borderColor: BORDER, background: BG2, lineHeight: 1.4 }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT + '45'; e.currentTarget.style.color = TEXT2; e.currentTarget.style.background = ACCENT + '08'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = TEXT3; e.currentTarget.style.background = BG2; }}>
                       <ChevronRight size={9} style={{ color: ACCENT, display: 'inline', marginRight: 4 }} />{s}
                     </button>
                   ))}
@@ -728,22 +719,24 @@ function BuilderTab() {
               <div ref={bottomRef} />
             </div>
 
-            <div className="flex-shrink-0 p-2 border-t" style={{ borderColor: BORDER, background: BG2 }}>
-              <div className="flex items-end gap-1 rounded border px-2 py-1.5"
-                style={{ background: BG, borderColor: BORDER }}>
-                <span style={{ fontFamily: MONO, fontSize: 12, color: ACCENT, flexShrink: 0, paddingBottom: 1 }}>&gt;</span>
+            <div className="flex-shrink-0 p-2.5 border-t" style={{ borderColor: BORDER, background: BG2 }}>
+              <div className="flex items-end gap-1.5 rounded-xl border px-2.5 py-2 transition-colors"
+                style={{ background: BG, borderColor: BORDER }}
+                onFocusCapture={e => (e.currentTarget.style.borderColor = ACCENT + '50')}
+                onBlurCapture={e => (e.currentTarget.style.borderColor = BORDER)}>
+                <span style={{ fontFamily: MONO, fontSize: 13, color: ACCENT, flexShrink: 0, paddingBottom: 1, userSelect: 'none' }}>›</span>
                 <textarea ref={inputRef} value={input}
                   onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
-                  placeholder="describe…" rows={1} disabled={isLoading}
+                  placeholder="describe what to build…" rows={1} disabled={isLoading}
                   className="flex-1 bg-transparent resize-none outline-none disabled:opacity-40"
-                  style={{ fontFamily: MONO, fontSize: 11, color: TEXT, minHeight: 18, caretColor: ACCENT }}
+                  style={{ fontFamily: MONO, fontSize: 11, color: TEXT, minHeight: 18, caretColor: ACCENT, lineHeight: 1.5 }}
                   onInput={e => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 80) + 'px'; }} />
                 <button onClick={submit} disabled={!input.trim() || isLoading}
-                  className="flex-shrink-0 p-1 rounded transition-colors disabled:opacity-30"
-                  style={{ color: ACCENT }}
-                  onMouseEnter={e => (e.currentTarget.style.background = ACCENT + '20')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                  {isLoading ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />}
+                  className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-lg transition-all disabled:opacity-30"
+                  style={{ background: ACCENT + '18', border: `1px solid ${ACCENT}30`, color: ACCENT }}
+                  onMouseEnter={e => { if (!e.currentTarget.disabled) { e.currentTarget.style.background = ACCENT + '30'; e.currentTarget.style.borderColor = ACCENT + '55'; } }}
+                  onMouseLeave={e => { e.currentTarget.style.background = ACCENT + '18'; e.currentTarget.style.borderColor = ACCENT + '30'; }}>
+                  {isLoading ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} />}
                 </button>
               </div>
             </div>
@@ -754,62 +747,81 @@ function BuilderTab() {
       {/* IDE workspace */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Toolbar */}
-        <div className="flex-shrink-0 flex items-center justify-between px-3 h-9 border-b"
+        <div className="flex-shrink-0 flex items-center justify-between px-3 h-10 border-b"
           style={{ background: BG2, borderColor: BORDER }}>
           <div className="flex items-center gap-2">
             <button onClick={() => setChatOpen(v => !v)}
-              className="p-1 rounded border transition-colors"
-              style={{ color: chatOpen ? ACCENT : TEXT3, borderColor: chatOpen ? ACCENT + '40' : BORDER, background: chatOpen ? ACCENT + '10' : 'transparent' }}
+              className="flex items-center justify-center w-6 h-6 rounded-md border transition-all"
+              style={{
+                color: chatOpen ? ACCENT : TEXT3,
+                borderColor: chatOpen ? ACCENT + '40' : BORDER,
+                background: chatOpen ? ACCENT + '10' : 'transparent',
+              }}
               title={chatOpen ? 'Hide panel' : 'Show panel'}>
-              {chatOpen ? <PanelLeftClose size={12} /> : <PanelLeftOpen size={12} />}
+              {chatOpen ? <PanelLeftClose size={11} /> : <PanelLeftOpen size={11} />}
             </button>
+            <div className="w-px h-4" style={{ background: BORDER }} />
             <div className="flex items-center gap-1" style={{ fontFamily: MONO, fontSize: 10, color: TEXT3 }}>
-              <Globe size={9} /><span>spacze/builder</span>
+              <Globe size={9} />
+              <span>spacze/builder</span>
               <ChevronRight size={8} />
               <span style={{ color: TEXT2 }}>{files[activeFile]?.name}</span>
             </div>
             {isLoading && (
-              <div className="flex items-center gap-1" style={{ fontFamily: MONO, fontSize: 10, color: AMBER }}>
-                <Loader2 size={9} className="animate-spin" /><span>generating…</span>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+                style={{ background: AMBER + '12', border: `1px solid ${AMBER}28`, fontFamily: MONO, fontSize: 10, color: AMBER }}>
+                <Loader2 size={8} className="animate-spin" />
+                <span>generating</span>
               </div>
             )}
           </div>
 
           <div className="flex items-center gap-1.5">
-            <div className="flex items-center rounded border overflow-hidden" style={{ borderColor: BORDER }}>
+            {/* Code / Preview toggle */}
+            <div className="flex items-center rounded-lg border overflow-hidden" style={{ borderColor: BORDER }}>
               {(['code', 'preview'] as RightPane[]).map(p => (
                 <button key={p} onClick={() => setPane(p)}
-                  className="flex items-center gap-1.5 px-3 py-1 transition-colors"
-                  style={{ fontFamily: MONO, fontSize: 10, background: pane === p ? BG3 : 'transparent', color: pane === p ? TEXT : TEXT3 }}>
-                  {p === 'code' ? <Code2 size={10} /> : <Eye size={10} />}{p}
+                  className="flex items-center gap-1.5 px-3 py-1.5 transition-colors"
+                  style={{
+                    fontFamily: MONO, fontSize: 10,
+                    background: pane === p ? BG3 : 'transparent',
+                    color: pane === p ? TEXT : TEXT3,
+                  }}>
+                  {p === 'code' ? <Code2 size={10} /> : <Eye size={10} />}
+                  {p}
                 </button>
               ))}
             </div>
+
             {pane === 'preview' && (
-              <div className="flex items-center rounded border overflow-hidden" style={{ borderColor: BORDER }}>
+              <div className="flex items-center rounded-lg border overflow-hidden" style={{ borderColor: BORDER }}>
                 {(Object.entries(PREVIEW_SIZES) as [PreviewSize, typeof PREVIEW_SIZES[PreviewSize]][]).map(([key, val]) => (
                   <button key={key} onClick={() => setPreviewSize(key)}
-                    className="flex items-center px-2 py-1 transition-colors"
+                    className="flex items-center px-2 py-1.5 transition-colors"
                     style={{ background: previewSize === key ? BG3 : 'transparent', color: previewSize === key ? TEXT : TEXT3 }}
                     title={val.label}>{val.icon}
                   </button>
                 ))}
               </div>
             )}
+
             {pane === 'preview' && (
               <button onClick={() => setRefreshKey(k => k + 1)}
-                className="p-1 rounded border transition-colors"
+                className="flex items-center justify-center w-6 h-6 rounded-md border transition-colors"
                 style={{ color: TEXT3, borderColor: BORDER }}
-                onMouseEnter={e => (e.currentTarget.style.color = TEXT2)}
-                onMouseLeave={e => (e.currentTarget.style.color = TEXT3)} title="Refresh">
+                onMouseEnter={e => { e.currentTarget.style.color = TEXT2; e.currentTarget.style.borderColor = BORDER2; }}
+                onMouseLeave={e => { e.currentTarget.style.color = TEXT3; e.currentTarget.style.borderColor = BORDER; }}
+                title="Refresh">
                 <RefreshCw size={11} />
               </button>
             )}
+
             <button onClick={handleDownload}
-              className="p-1 rounded border transition-colors"
+              className="flex items-center justify-center w-6 h-6 rounded-md border transition-colors"
               style={{ color: TEXT3, borderColor: BORDER }}
-              onMouseEnter={e => (e.currentTarget.style.color = TEXT2)}
-              onMouseLeave={e => (e.currentTarget.style.color = TEXT3)} title="Download">
+              onMouseEnter={e => { e.currentTarget.style.color = TEXT2; e.currentTarget.style.borderColor = BORDER2; }}
+              onMouseLeave={e => { e.currentTarget.style.color = TEXT3; e.currentTarget.style.borderColor = BORDER; }}
+              title="Download">
               <Download size={11} />
             </button>
           </div>
@@ -828,47 +840,136 @@ function BuilderTab() {
   );
 }
 
+// ── Tab metadata ──────────────────────────────────────────────────────────────
+const TABS: { id: TopTab; label: string; sublabel: string; icon: React.ReactNode; badge?: string }[] = [
+  {
+    id: 'chat',
+    label: 'Agent Chat',
+    sublabel: 'CRM · Outreach · Campaigns',
+    icon: <MessageSquare size={15} />,
+    badge: 'Live',
+  },
+  {
+    id: 'builder',
+    label: 'UI Builder',
+    sublabel: 'Next.js · React · Tailwind',
+    icon: <Code2 size={15} />,
+  },
+];
+
 // ── ROOT PANEL ────────────────────────────────────────────────────────────────
 export default function AgentPanel() {
   const [tab, setTab] = useState<TopTab>('chat');
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] overflow-hidden rounded-xl border"
+    <div className="flex flex-col h-[calc(100vh-140px)] overflow-hidden rounded-2xl border"
       style={{ background: BG, borderColor: BORDER }}>
 
-      {/* Tab bar */}
-      <div className="flex-shrink-0 flex items-center border-b px-2 gap-0"
-        style={{ background: BG2, borderColor: BORDER, height: 36 }}>
+      {/* ── Tab header ── */}
+      <div className="flex-shrink-0 border-b" style={{ background: BG2, borderColor: BORDER }}>
 
-        {([
-          { id: 'chat'    as TopTab, label: 'chat',    icon: <Terminal size={11} /> },
-          { id: 'builder' as TopTab, label: 'builder', icon: <Code2 size={11} />    },
-        ]).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className="flex items-center gap-1.5 px-3 h-full border-b-2 transition-colors"
-            style={{
-              fontFamily: MONO, fontSize: 11,
-              color:       tab === t.id ? TEXT  : TEXT3,
-              borderColor: tab === t.id ? ACCENT : 'transparent',
-              background:  'transparent',
-            }}>
-            {t.icon}{t.label}
-          </button>
-        ))}
+        {/* Top identity bar */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg"
+              style={{ background: ACCENT + '18', border: `1px solid ${ACCENT}30` }}>
+              <Cpu size={13} style={{ color: ACCENT }} />
+            </div>
+            <div>
+              <div style={{ fontFamily: MONO, fontSize: 12, color: TEXT, fontWeight: 600, letterSpacing: '0.01em' }}>
+                spacze-agent
+              </div>
+              <div style={{ fontFamily: MONO, fontSize: 10, color: TEXT3 }}>
+                autonomous operator · v1.0
+              </div>
+            </div>
+          </div>
 
-        <div className="flex-1" />
-        <div className="flex items-center gap-2 pr-3" style={{ fontFamily: MONO, fontSize: 10, color: TEXT3 }}>
-          <Cpu size={9} style={{ color: ACCENT }} />
-          <span>spacze-agent</span>
-          <span style={{ color: BORDER2 }}>|</span>
-          <span>{tab === 'chat' ? 'crm · outreach · campaigns' : 'next.js · react · tailwind'}</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+            style={{ background: ACCENT + '12', border: `1px solid ${ACCENT}28` }}>
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: ACCENT }} />
+            <span style={{ fontFamily: MONO, fontSize: 10, color: ACCENT, fontWeight: 600, letterSpacing: '0.08em' }}>
+              ONLINE
+            </span>
+          </div>
+        </div>
+
+        {/* Tab pills */}
+        <div className="flex items-end gap-1 px-4 pb-0">
+          {TABS.map(t => {
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className="relative flex items-center gap-2.5 px-4 py-2.5 rounded-t-xl transition-all duration-200 group"
+                style={{
+                  background: active ? BG : 'transparent',
+                  border: `1px solid ${active ? BORDER : 'transparent'}`,
+                  borderBottom: active ? `1px solid ${BG}` : '1px solid transparent',
+                  marginBottom: active ? -1 : 0,
+                }}>
+
+                {/* Active accent line */}
+                {active && (
+                  <motion.div
+                    layoutId="tab-accent"
+                    className="absolute top-0 left-4 right-4 h-[2px] rounded-b-full"
+                    style={{ background: ACCENT }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                  />
+                )}
+
+                {/* Icon */}
+                <span style={{ color: active ? ACCENT : TEXT3, transition: 'color 0.15s' }}>
+                  {t.icon}
+                </span>
+
+                {/* Labels */}
+                <div className="text-left">
+                  <div style={{
+                    fontFamily: MONO, fontSize: 12, fontWeight: active ? 600 : 400,
+                    color: active ? TEXT : TEXT3, transition: 'color 0.15s',
+                    letterSpacing: '0.01em',
+                  }}>
+                    {t.label}
+                  </div>
+                  <div style={{ fontFamily: MONO, fontSize: 9, color: active ? TEXT3 : TEXT3 + '80', transition: 'color 0.15s' }}>
+                    {t.sublabel}
+                  </div>
+                </div>
+
+                {/* Badge */}
+                {t.badge && (
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                    style={{ background: ACCENT + '18', border: `1px solid ${ACCENT}30` }}>
+                    <span className="w-1 h-1 rounded-full" style={{ background: ACCENT }} />
+                    <span style={{ fontFamily: MONO, fontSize: 8, color: ACCENT, fontWeight: 700, letterSpacing: '0.1em' }}>
+                      {t.badge}
+                    </span>
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
-        {tab === 'chat'    && <ChatTab />}
-        {tab === 'builder' && <BuilderTab />}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            className="h-full"
+          >
+            {tab === 'chat'    && <ChatTab />}
+            {tab === 'builder' && <BuilderTab />}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
