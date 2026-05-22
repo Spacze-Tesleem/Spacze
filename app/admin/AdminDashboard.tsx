@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   LayoutDashboard, Users, LogOut,
   ChevronLeft, ChevronRight, MessageCircle, Sun, Moon, Terminal,
-  Bell, Command, Megaphone, Sparkles, BrainCircuit, BarChart2,
+  Bell, Command, Megaphone, Sparkles, BrainCircuit, BarChart2, Bot,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StatsPanel from './StatsPanel';
@@ -14,6 +14,7 @@ import AIStudioPanel from './AIStudioPanel';
 import WhatsAppPanel from './WhatsAppPanel';
 import TerminalPanel from './TerminalPanel';
 import SAIPanel from './SAIPanel';
+import AgentPanel from './AgentPanel';
 import { ToastStack, useToast } from '@/app/components/Toast';
 
 const navItems = [
@@ -24,6 +25,7 @@ const navItems = [
   { id: 'analytics',  label: 'Analytics',  icon: BarChart2,       group: 'main' },
   { id: 'whatsapp',   label: 'WhatsApp',   icon: MessageCircle,   group: 'main' },
   { id: 'sai',        label: 'SAI',        icon: BrainCircuit,    group: 'main' },
+  { id: 'agent',      label: 'Agent',      icon: Bot,             group: 'main' },
   { id: 'settings',   label: 'Settings',   icon: Terminal,        group: 'system' },
 ];
 
@@ -35,6 +37,7 @@ const pageInfo: Record<string, { title: string; subtitle: string }> = {
   analytics:   { title: 'Analytics',   subtitle: 'Charts, funnels & campaign performance' },
   whatsapp:    { title: 'WhatsApp',    subtitle: 'Bulk messaging via Baileys' },
   sai:         { title: 'Spacze AI',   subtitle: 'Client website intelligence & content hub' },
+  agent:       { title: 'Agent',       subtitle: 'Autonomous AI operator — reason, plan, execute' },
   settings:    { title: 'Settings',    subtitle: 'API keys & configuration' },
 };
 
@@ -42,7 +45,7 @@ function useKeyboardNav(setActive: (id: string) => void) {
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if (e.altKey) {
-        const map: Record<string, string> = { '1': 'overview', '2': 'audience', '3': 'campaigns', '4': 'ai-studio', '5': 'analytics', '6': 'whatsapp', '7': 'sai', '8': 'settings' };
+        const map: Record<string, string> = { '1': 'overview', '2': 'audience', '3': 'campaigns', '4': 'ai-studio', '5': 'analytics', '6': 'whatsapp', '7': 'sai', '8': 'agent', '9': 'settings' };
         if (map[e.key]) { e.preventDefault(); setActive(map[e.key]); }
       }
     }
@@ -247,6 +250,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {active === 'analytics'  && <StatsPanel onNavigate={setActive} hideQuickActions />}
               {active === 'whatsapp'   && <WhatsAppPanel />}
               {active === 'sai'        && <SAIPanel />}
+              {active === 'agent'      && <AgentPanel />}
               {active === 'settings'   && <TerminalPanel />}
             </motion.div>
           </AnimatePresence>
