@@ -199,16 +199,16 @@ function OperationsView({ messages, status, inputRef, input, setInput }: {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isLoading]);
 
   return (
-    <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full pt-8 min-h-0">
-      <div className="flex items-center justify-between mb-10 flex-shrink-0">
-        <div className="space-y-1">
-          <h2 className="text-4xl font-serif italic text-white tracking-tight">Operations</h2>
-          <p className="text-zinc-500 font-mono text-[10px] tracking-[0.2em] uppercase">CRM · Outreach · Campaigns · Analytics</p>
+    <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full pt-4 min-h-0">
+      <div className="flex items-center justify-between mb-5 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-serif italic text-white tracking-tight">Operations</h2>
+          <span className="text-zinc-600 font-mono text-[10px] tracking-[0.15em] uppercase">CRM · Outreach · Campaigns · Analytics</span>
         </div>
-        <SolarisCard className="px-4 py-2 flex items-center gap-3">
-          <Activity size={13} className="text-emerald-400" />
-          <span className="text-[11px] font-mono font-bold text-zinc-300">AGENT_ONLINE</span>
-        </SolarisCard>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/5 bg-zinc-900/30">
+          <Activity size={11} className="text-emerald-400" />
+          <span className="text-[10px] font-mono font-bold text-zinc-400">AGENT_ONLINE</span>
+        </div>
       </div>
 
       {isEmpty && (
@@ -469,21 +469,21 @@ export default function AgentPanel() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b,transparent)] opacity-40 pointer-events-none rounded-2xl" />
 
       {/* Top navigation rail */}
-      <header className="relative z-50 flex items-center justify-between px-8 py-5 flex-shrink-0 border-b border-white/5">
+      <header className="relative z-50 flex items-center justify-between px-6 py-3 flex-shrink-0 border-b border-white/5">
         <div className="flex items-center gap-10">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.25)]">
-              <Zap size={18} className="text-black fill-black" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-[0_0_16px_rgba(255,255,255,0.2)]">
+              <Zap size={14} className="text-black fill-black" />
             </div>
-            <span className="text-white font-serif italic text-xl tracking-tight">Solaris</span>
+            <span className="text-white font-serif italic text-base tracking-tight">Solaris</span>
           </div>
-          <nav className="flex items-center gap-1 bg-zinc-900/60 p-1 rounded-full border border-white/5 backdrop-blur-md">
+          <nav className="flex items-center gap-0.5 bg-zinc-900/60 p-0.5 rounded-full border border-white/5 backdrop-blur-md">
             {([
-              { id: 'ops'  as ViewMode, label: 'Operations', icon: <MessageSquare size={13} /> },
-              { id: 'arch' as ViewMode, label: 'Architect',  icon: <Layers size={13} /> },
+              { id: 'ops'  as ViewMode, label: 'Operations', icon: <MessageSquare size={11} /> },
+              { id: 'arch' as ViewMode, label: 'Architect',  icon: <Layers size={11} /> },
             ]).map(t => (
               <button key={t.id} onClick={() => setMode(t.id)}
-                className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold transition-all ${
                   mode === t.id ? 'bg-white text-black shadow-sm' : 'text-zinc-500 hover:text-white'
                 }`}>
                 {t.icon}{t.label}
@@ -491,21 +491,18 @@ export default function AgentPanel() {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-5">
-          <div className="text-right">
-            <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Global Status</div>
-            <div className={`text-xs font-bold tracking-tight font-mono ${isLoading ? 'text-amber-400' : 'text-emerald-500'}`}>
-              {isLoading ? 'PROCESSING…' : 'SYSTEM_SYNCHRONIZED'}
-            </div>
+        <div className="flex items-center gap-3">
+          <div className={`text-[10px] font-mono font-bold tracking-widest ${isLoading ? 'text-amber-400' : 'text-emerald-500'}`}>
+            {isLoading ? 'PROCESSING…' : 'SYSTEM_SYNCHRONIZED'}
           </div>
           {!isLoading && uiMessages.length > 0 && (
             <button onClick={() => setMessages([])}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 text-zinc-500 hover:text-white hover:border-white/20 transition-all text-[11px] font-mono">
-              <RotateCcw size={11} /> clear
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-white/10 text-zinc-500 hover:text-white hover:border-white/20 transition-all text-[10px] font-mono">
+              <RotateCcw size={9} /> clear
             </button>
           )}
-          <button className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all text-zinc-500 hover:text-white">
-            <Settings size={16} />
+          <button className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all text-zinc-500 hover:text-white">
+            <Settings size={13} />
           </button>
         </div>
       </header>
@@ -530,7 +527,7 @@ export default function AgentPanel() {
       </main>
 
       {/* Command bar — real flex footer, never overlaps content */}
-      <div className="relative z-50 flex-shrink-0 px-8 py-5 border-t border-white/5">
+      <div className="relative z-50 flex-shrink-0 px-8 py-3 border-t border-white/5">
         <div className="relative group max-w-3xl mx-auto">
           <div className="absolute -inset-3 bg-indigo-500/8 blur-3xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-700 pointer-events-none" />
           <SolarisCard className="p-2 bg-zinc-950/85 backdrop-blur-3xl border-white/10 shadow-[0_-8px_40px_rgba(0,0,0,0.4)]">
