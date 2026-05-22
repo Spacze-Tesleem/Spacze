@@ -50,22 +50,23 @@ BEHAVIOUR RULES:
 7. Keep responses concise. Use bullet points for lists of actions taken.
 8. You are operating inside the Spacze admin — the user is the Spacze team, not a client.`;
 
-// ── Provider factory ──────────────────────────────────────────────────────────
+// ── Provider list (ordered: OpenAI → Groq → Gemini) ──────────────────────────
 
-function getModel() {
+function getModels() {
+  const models = [];
   if (process.env.OPENAI_API_KEY) {
     const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    return openai('gpt-4o-mini');
+    models.push({ name: 'openai', model: openai('gpt-4o-mini') });
   }
   if (process.env.GROQ_API_KEY) {
     const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
-    return groq('llama-3.3-70b-versatile');
+    models.push({ name: 'groq', model: groq('llama-3.3-70b-versatile') });
   }
   if (process.env.GEMINI_API_KEY) {
     const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
-    return google('gemini-2.0-flash');
+    models.push({ name: 'gemini', model: google('gemini-2.0-flash') });
   }
-  throw new Error('No AI provider configured. Set OPENAI_API_KEY, GROQ_API_KEY, or GEMINI_API_KEY.');
+  return models;
 }
 
 // ── Route handler ─────────────────────────────────────────────────────────────
@@ -80,28 +81,40 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  let model;
-  try {
-    model = getModel();
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'No AI provider configured';
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const providers = getModels();
+  if (providers.length === 0) {
+    return new Response(
+      JSON.stringify({ error: 'No AI provider configured. Set OPENAI_API_KEY, GROQ_API_KEY, or GEMINI_API_KEY.' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    );
   }
 
-  const result = streamText({
-    model,
-    system: SYSTEM_PROMPT,
-    messages: await convertToModelMessages(messages),
-    tools: agentTools,
-    stopWhen: stepCountIs(10), // max tool-call iterations before forcing a final answer
-    temperature: 0.4,          // lower = more deterministic planning
-    onError: ({ error }) => {
-      console.error('[agent] streamText error:', error);
-    },
-  });
+  const modelMessages = await convertToModelMessages(messages);
+  let lastError: unknown;
 
-  return result.toUIMessageStreamResponse();
+  for (const { name, model } of providers) {
+    try {
+      const result = streamText({
+        model,
+        system: SYSTEM_PROMPT,
+        messages: modelMessages,
+        tools: agentTools,
+        stopWhen: stepCountIs(10),
+        temperature: 0.4,
+        onError: ({ error }) => {
+          console.error(`[agent:${name}] streamText error:`, error);
+        },
+      });
+      return result.toUIMessageStreamResponse();
+    } catch (err) {
+      console.warn(`[agent] ${name} failed, trying next provider:`, err instanceof Error ? err.message : err);
+      lastError = err;
+    }
+  }
+
+  const msg = lastError instanceof Error ? lastError.message : 'All AI providers failed';
+  return new Response(JSON.stringify({ error: msg }), {
+    status: 500,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
