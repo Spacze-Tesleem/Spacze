@@ -5,14 +5,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Bot, User, Loader2, Sparkles, RotateCcw, Copy, Check,
   Code2, Eye, Monitor, Smartphone, Tablet, FileCode2,
-  ChevronRight, Zap, Globe, RefreshCw, Download,
+  ChevronRight, ChevronDown, Globe, RefreshCw, Download,
   MessageSquare, Wrench, PanelLeftClose, PanelLeftOpen, X,
+  Circle, CheckCircle2, AlertCircle, Terminal, Cpu, Zap,
+  Play, Square,
 } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-interface MsgPart { type: string; text?: string; }
+interface MsgPart {
+  type: string;
+  text?: string;
+  toolName?: string;
+  toolCallId?: string;
+  state?: string;
+  args?: Record<string, unknown>;
+  result?: unknown;
+}
 interface UIMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -24,18 +34,45 @@ type PreviewSize = 'desktop' | 'tablet' | 'mobile';
 type RightPane  = 'code' | 'preview';
 type TopTab     = 'chat' | 'builder';
 
-const ACCENT = '#00D67D';
+// ── Design tokens (Gitpod-inspired) ──────────────────────────────────────────
+const BG       = '#0f0f0f';
+const BG2      = '#161616';
+const BG3      = '#1c1c1c';
+const BORDER   = '#262626';
+const BORDER2  = '#2e2e2e';
+const TEXT      = '#e8e8e8';
+const TEXT2     = '#a0a0a0';
+const TEXT3     = '#606060';
+const ACCENT    = '#00D67D';
+const AMBER     = '#f59e0b';
+const RED       = '#ef4444';
+const BLUE      = '#3b82f6';
+const MONO      = "'JetBrains Mono','Fira Code','Cascadia Code',ui-monospace,monospace";
 
-
+// ── Constants ─────────────────────────────────────────────────────────────────
 const PREVIEW_SIZES: Record<PreviewSize, { w: string; icon: React.ReactNode; label: string }> = {
   desktop: { w: '100%',  icon: <Monitor size={12} />,    label: 'Desktop' },
   tablet:  { w: '768px', icon: <Tablet size={12} />,     label: 'Tablet'  },
   mobile:  { w: '390px', icon: <Smartphone size={12} />, label: 'Mobile'  },
 };
+const LANG_COLORS: Record<string, string> = { tsx: '#38bdf8', css: '#a78bfa', js: '#f59e0b', ts: '#38bdf8' };
 
-const LANG_COLORS: Record<string, string> = {
-  tsx: '#38bdf8', css: '#a78bfa', js: '#f59e0b', ts: '#38bdf8',
-};
+const STARTER = `'use client';
+import { motion } from 'framer-motion';
+export default function Page() {
+  return (
+    <main className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-8">
+      <div className="text-center max-w-2xl">
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          <span className="inline-block text-xs font-mono uppercase tracking-widest text-[#00D67D] mb-4 px-3 py-1 rounded-full border border-[#00D67D]/30 bg-[#00D67D]/10">Spacze Builder</span>
+          <h1 className="text-5xl font-black mb-4 bg-gradient-to-r from-[#00D67D] via-sky-400 to-purple-400 bg-clip-text text-transparent">Build Something Great</h1>
+          <p className="text-zinc-400 text-lg leading-relaxed mb-8">Describe what you want to build. The AI writes Next.js + Tailwind code and renders it live.</p>
+          <button className="px-8 py-3 rounded-full bg-[#00D67D] text-black font-bold hover:opacity-90 transition-opacity">Get Started</button>
+        </motion.div>
+      </div>
+    </main>
+  );
+}`;
 
 const BUILDER_SUGGESTIONS = [
   'Build a SaaS landing page with hero, features, and pricing',
@@ -55,33 +92,6 @@ const CHAT_SUGGESTIONS = [
   'Write outreach copy for a real estate lead on LinkedIn',
 ];
 
-const STARTER = `'use client';
-
-import { motion } from 'framer-motion';
-
-export default function Page() {
-  return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-8">
-      <div className="text-center max-w-2xl">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-          <span className="inline-block text-xs font-mono uppercase tracking-widest text-[#00D67D] mb-4 px-3 py-1 rounded-full border border-[#00D67D]/30 bg-[#00D67D]/10">
-            Spacze Builder
-          </span>
-          <h1 className="text-5xl font-black mb-4 bg-gradient-to-r from-[#00D67D] via-sky-400 to-purple-400 bg-clip-text text-transparent">
-            Build Something Great
-          </h1>
-          <p className="text-zinc-400 text-lg leading-relaxed mb-8">
-            Describe what you want to build. The AI writes Next.js + Tailwind code and renders it live.
-          </p>
-          <button className="px-8 py-3 rounded-full bg-[#00D67D] text-black font-bold hover:opacity-90 transition-opacity">
-            Get Started
-          </button>
-        </motion.div>
-      </div>
-    </main>
-  );
-}`;
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function extractTsx(text: string): string | null {
   const m = text.match(/```(?:tsx|jsx|typescript|javascript|js|ts)\n([\s\S]*?)```/i);
@@ -97,6 +107,10 @@ function msgText(msg: UIMessage): string {
   let t = msg.content ?? '';
   if (!t && msg.parts) t = msg.parts.filter(p => p.type === 'text').map(p => p.text ?? '').join('');
   return t;
+}
+
+function fmtTime(d = new Date()) {
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 function buildPreviewDoc(tsx: string): string {
@@ -125,8 +139,7 @@ function buildPreviewDoc(tsx: string): string {
 <style>*{box-sizing:border-box}body{margin:0;background:#09090b}</style>
 </head><body><div id="root"></div>
 <script type="text/babel">${noMotion}
-const root=ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(Page));
+const root=ReactDOM.createRoot(document.getElementById('root'));root.render(React.createElement(Page));
 </script></body></html>`;
 }
 
@@ -135,57 +148,158 @@ function CopyBtn({ text, size = 11 }: { text: string; size?: number }) {
   const [copied, setCopied] = useState(false);
   return (
     <button onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      className="p-1.5 rounded-lg transition-all flex-shrink-0"
-      style={{ color: copied ? ACCENT : '#4a4a6a', background: copied ? `${ACCENT}15` : 'transparent' }} title="Copy">
+      className="p-1 rounded transition-colors flex-shrink-0"
+      style={{ color: copied ? ACCENT : TEXT3 }} title="Copy">
       {copied ? <Check size={size} /> : <Copy size={size} />}
     </button>
   );
 }
 
-// ── ChatMessage (shared) ──────────────────────────────────────────────────────
-function ChatMessage({ msg, isStreaming }: { msg: UIMessage; isStreaming?: boolean }) {
-  const isUser = msg.role === 'user';
-  const raw = msgText(msg);
-  const display = raw.replace(/```[\s\S]*?```/g, '').replace(/Current component[\s\S]*$/i, '').trim();
-  const hasCode = extractTsx(raw) !== null;
+// ── ToolCallRow — collapsible log entry for tool invocations ──────────────────
+function ToolCallRow({ part }: { part: MsgPart }) {
+  const [open, setOpen] = useState(false);
+  const isDone    = part.state === 'result' || part.state === 'call';
+  const isRunning = part.state === 'partial-call' || (!isDone && !part.result);
+  const hasResult = part.result !== undefined;
+
+  const statusColor = isRunning ? AMBER : hasResult ? ACCENT : TEXT3;
+  const statusIcon  = isRunning
+    ? <Loader2 size={10} className="animate-spin" style={{ color: AMBER }} />
+    : hasResult
+      ? <CheckCircle2 size={10} style={{ color: ACCENT }} />
+      : <Circle size={10} style={{ color: TEXT3 }} />;
+
+  const resultStr = hasResult
+    ? JSON.stringify(part.result, null, 2)
+    : '';
+  const argsStr = part.args ? JSON.stringify(part.args, null, 2) : '';
+
   return (
-    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}
-      className={`flex gap-2.5 ${isUser ? 'flex-row-reverse' : ''}`}>
-      <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 border"
-        style={isUser ? { background: '#1e3a5f', borderColor: '#2a4a7f' } : { background: `${ACCENT}18`, borderColor: `${ACCENT}30` }}>
-        {isUser ? <User size={11} style={{ color: '#60a5fa' }} /> : <Bot size={11} style={{ color: ACCENT }} />}
-      </div>
-      <div className={`flex flex-col gap-1.5 max-w-[88%] ${isUser ? 'items-end' : 'items-start'}`}>
-        {(display || isStreaming) && (
-          <div className="relative group rounded-xl px-3 py-2.5 text-[12px] leading-relaxed"
-            style={isUser
-              ? { background: '#1a2a4a', border: '1px solid #2a3a6a', color: '#c8d8f0' }
-              : { background: '#111120', border: '1px solid #1e1e30', color: '#a8a8c8' }}>
-            <span style={{ whiteSpace: 'pre-wrap' }}>{display || null}</span>
-            {isStreaming && <span className="inline-block w-1.5 h-3 ml-0.5 rounded-sm animate-pulse align-middle" style={{ background: ACCENT }} />}
-            {!isUser && display && (
-              <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <CopyBtn text={display} />
+    <div className="border-l-2 ml-6 pl-3 my-1" style={{ borderColor: statusColor + '40' }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-2 w-full text-left py-0.5 group"
+      >
+        {statusIcon}
+        <span style={{ fontFamily: MONO, fontSize: 11, color: AMBER }}>
+          {part.toolName ?? 'tool'}
+        </span>
+        {part.args && (
+          <span style={{ fontFamily: MONO, fontSize: 10, color: TEXT3 }}>
+            ({Object.keys(part.args).join(', ')})
+          </span>
+        )}
+        <span className="flex-1" />
+        {(argsStr || resultStr) && (
+          <span style={{ color: TEXT3, fontSize: 10 }}>
+            {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+          </span>
+        )}
+      </button>
+
+      <AnimatePresence>
+        {open && (argsStr || resultStr) && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
+          >
+            {argsStr && (
+              <div className="mt-1 mb-1">
+                <div style={{ fontFamily: MONO, fontSize: 9, color: TEXT3, marginBottom: 2 }}>ARGS</div>
+                <pre className="rounded p-2 overflow-x-auto text-[10px] leading-relaxed"
+                  style={{ background: BG3, color: TEXT2, fontFamily: MONO, maxHeight: 160 }}>
+                  {argsStr}
+                </pre>
               </div>
             )}
-          </div>
+            {resultStr && (
+              <div className="mt-1">
+                <div style={{ fontFamily: MONO, fontSize: 9, color: TEXT3, marginBottom: 2 }}>RESULT</div>
+                <pre className="rounded p-2 overflow-x-auto text-[10px] leading-relaxed"
+                  style={{ background: BG3, color: ACCENT + 'cc', fontFamily: MONO, maxHeight: 200 }}>
+                  {resultStr.slice(0, 2000)}{resultStr.length > 2000 ? '\n… truncated' : ''}
+                </pre>
+              </div>
+            )}
+          </motion.div>
         )}
-        {hasCode && !isUser && (
-          <div className="flex items-center gap-1.5 text-[10px] font-mono px-2 py-1 rounded-lg border"
-            style={{ color: ACCENT, background: `${ACCENT}10`, borderColor: `${ACCENT}25` }}>
-            <Code2 size={9} /> Applied to editor
-          </div>
-        )}
-      </div>
-    </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }
 
-// ── CHAT TAB ──────────────────────────────────────────────────────────────────
+// ── ChatRow — a single message rendered as a terminal log line ────────────────
+function ChatRow({ msg, isStreaming, ts }: { msg: UIMessage; isStreaming?: boolean; ts: string }) {
+  const isUser = msg.role === 'user';
+  const raw    = msgText(msg);
+  const display = raw.replace(/```[\s\S]*?```/g, '').replace(/Current component[\s\S]*$/i, '').trim();
+
+  const toolParts = (msg.parts ?? []).filter(p =>
+    p.type === 'tool-invocation' || p.type === 'tool-call' || p.type === 'tool-result'
+  );
+
+  return (
+    <div className="group py-1.5 px-4 hover:bg-white/[0.02] transition-colors">
+      {/* Gutter line */}
+      <div className="flex items-start gap-3">
+        {/* Timestamp + role gutter */}
+        <div className="flex-shrink-0 flex items-center gap-2 pt-0.5" style={{ width: 120 }}>
+          <span style={{ fontFamily: MONO, fontSize: 10, color: TEXT3 }}>{ts}</span>
+          <span style={{
+            fontFamily: MONO, fontSize: 10, fontWeight: 600,
+            color: isUser ? BLUE : ACCENT,
+          }}>
+            {isUser ? 'user' : 'agent'}
+          </span>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {display && (
+            <div className="relative">
+              <p style={{
+                fontFamily: isUser ? 'inherit' : MONO,
+                fontSize: isUser ? 13 : 12,
+                color: isUser ? TEXT : TEXT2,
+                lineHeight: 1.65,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}>
+                {display}
+                {isStreaming && (
+                  <span className="inline-block w-[7px] h-[13px] ml-0.5 align-middle animate-pulse rounded-sm"
+                    style={{ background: ACCENT }} />
+                )}
+              </p>
+              {!isUser && display && (
+                <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <CopyBtn text={display} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tool call entries */}
+          {toolParts.length > 0 && (
+            <div className="mt-1 space-y-0.5">
+              {toolParts.map((p, i) => <ToolCallRow key={i} part={p} />)}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── CHAT TAB — Gitpod-style terminal interface ────────────────────────────────
 function ChatTab() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLTextAreaElement>(null);
-  const [input, setInput] = useState('');
+  const [input, setInput]   = useState('');
+  const [times]             = useState<Map<string, string>>(() => new Map());
 
   const { messages, sendMessage, status, error, setMessages } = useChat({
     transport: new DefaultChatTransport({ api: '/api/agent', credentials: 'include' }),
@@ -194,6 +308,9 @@ function ChatTab() {
   const isLoading  = status === 'streaming' || status === 'submitted';
   const uiMessages = messages as unknown as UIMessage[];
   const isEmpty    = uiMessages.length === 0;
+
+  // Stamp each message with the time it first appeared
+  uiMessages.forEach(m => { if (!times.has(m.id)) times.set(m.id, fmtTime()); });
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isLoading]);
 
@@ -210,97 +327,188 @@ function ChatTab() {
   }, [submit]);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 h-10 border-b"
-        style={{ background: '#0a0a18', borderColor: '#16162a' }}>
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-md flex items-center justify-center border"
-            style={{ background: `${ACCENT}15`, borderColor: `${ACCENT}30` }}>
-            <Sparkles size={10} style={{ color: ACCENT }} />
+    <div className="flex flex-col h-full" style={{ background: BG, fontFamily: MONO }}>
+
+      {/* ── Top bar ── */}
+      <div className="flex-shrink-0 flex items-center justify-between px-4 h-9 border-b"
+        style={{ background: BG2, borderColor: BORDER }}>
+        <div className="flex items-center gap-3">
+          {/* Traffic-light dots */}
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#ff5f57' }} />
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#febc2e' }} />
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#28c840' }} />
           </div>
-          <span className="text-[11px] font-bold" style={{ color: '#c0c0d8' }}>Spacze Agent</span>
-          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border"
-            style={{ color: '#3a3a5a', borderColor: '#1e1e2e', background: '#0a0a14' }}>
-            CRM · Outreach · Campaigns
-          </span>
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1" style={{ fontSize: 11, color: TEXT3 }}>
+            <Terminal size={10} style={{ color: TEXT3 }} />
+            <span>spacze</span>
+            <ChevronRight size={9} style={{ color: TEXT3 }} />
+            <span style={{ color: TEXT2 }}>agent</span>
+            <ChevronRight size={9} style={{ color: TEXT3 }} />
+            <span style={{ color: ACCENT }}>chat</span>
+          </div>
         </div>
-        {!isEmpty && (
-          <button onClick={() => setMessages([])}
-            className="p-1.5 rounded-lg transition-colors" style={{ color: '#2a2a4a' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#6b6b8a')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#2a2a4a')}
-            title="Clear conversation">
-            <RotateCcw size={11} />
-          </button>
-        )}
+
+        <div className="flex items-center gap-3">
+          {isLoading && (
+            <div className="flex items-center gap-1.5" style={{ fontSize: 10, color: AMBER }}>
+              <Loader2 size={9} className="animate-spin" />
+              <span>running</span>
+            </div>
+          )}
+          {!isLoading && !isEmpty && (
+            <div className="flex items-center gap-1" style={{ fontSize: 10, color: ACCENT }}>
+              <CheckCircle2 size={9} />
+              <span>ready</span>
+            </div>
+          )}
+          {!isEmpty && (
+            <button onClick={() => setMessages([])}
+              className="flex items-center gap-1 px-2 py-0.5 rounded border transition-colors"
+              style={{ fontSize: 10, color: TEXT3, borderColor: BORDER }}
+              onMouseEnter={e => (e.currentTarget.style.color = TEXT2)}
+              onMouseLeave={e => (e.currentTarget.style.color = TEXT3)}
+              title="Clear session">
+              <RotateCcw size={9} /> clear
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4" style={{ background: '#07070f' }}>
+      {/* ── Log area ── */}
+      <div className="flex-1 overflow-y-auto" style={{ background: BG }}>
+
+        {/* Empty state */}
         {isEmpty && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-lg mx-auto pt-6 space-y-5">
+          <div className="flex flex-col items-center justify-center h-full gap-6 px-6">
             <div className="text-center">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 border"
-                style={{ background: `${ACCENT}10`, borderColor: `${ACCENT}20` }}>
-                <Bot size={24} style={{ color: ACCENT }} />
+              <div className="flex items-center justify-center gap-2 mb-3"
+                style={{ fontFamily: MONO, fontSize: 12, color: TEXT3 }}>
+                <Cpu size={14} style={{ color: ACCENT }} />
+                <span style={{ color: ACCENT }}>spacze-agent</span>
+                <span>v1.0</span>
+                <span style={{ color: ACCENT }}>●</span>
+                <span>ready</span>
               </div>
-              <p className="text-[14px] font-bold mb-1.5" style={{ color: '#c0c0d8' }}>Spacze Agent</p>
-              <p className="text-[11px] leading-relaxed" style={{ color: '#3a3a5a' }}>
-                Your autonomous outreach operator. Fetch leads, analyse sites, generate copy, send messages, and run campaigns — all from here.
+              <p style={{ fontSize: 11, color: TEXT3, fontFamily: MONO }}>
+                autonomous operator · crm · outreach · campaigns
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-1.5">
+
+            {/* Suggestion grid */}
+            <div className="w-full max-w-xl grid grid-cols-1 gap-1">
               {CHAT_SUGGESTIONS.map(s => (
-                <button key={s} onClick={() => { setInput(s); inputRef.current?.focus(); }}
-                  className="w-full text-left px-3 py-2 rounded-xl border text-[11px] transition-all leading-snug"
-                  style={{ color: '#3a3a5a', borderColor: '#16162a', background: '#0a0a18' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = `${ACCENT}30`; e.currentTarget.style.color = '#7a7a9a'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#16162a'; e.currentTarget.style.color = '#3a3a5a'; }}>
+                <button key={s}
+                  onClick={() => { setInput(s); inputRef.current?.focus(); }}
+                  className="flex items-center gap-2 px-3 py-2 rounded border text-left transition-colors"
+                  style={{ background: BG2, borderColor: BORDER, fontSize: 11, color: TEXT3, fontFamily: MONO }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT + '50'; e.currentTarget.style.color = TEXT2; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = TEXT3; }}>
+                  <ChevronRight size={10} style={{ color: ACCENT, flexShrink: 0 }} />
                   {s}
                 </button>
               ))}
             </div>
-          </motion.div>
-        )}
-
-        {uiMessages.map(msg => <ChatMessage key={msg.id} msg={msg} />)}
-
-        {isLoading && (uiMessages.length === 0 || uiMessages[uiMessages.length - 1]?.role === 'user') && (
-          <ChatMessage msg={{ id: '__stream__', role: 'assistant', content: '' }} isStreaming />
-        )}
-
-        {error && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl border text-[11px] text-red-400 max-w-lg mx-auto"
-            style={{ background: '#1a0808', borderColor: '#3a1010' }}>
-            <Zap size={11} className="flex-shrink-0 mt-0.5" />{error.message}
           </div>
         )}
+
+        {/* Messages */}
+        {!isEmpty && (
+          <div className="py-2">
+            {/* Session header */}
+            <div className="px-4 py-1.5 border-b mb-2" style={{ borderColor: BORDER }}>
+              <span style={{ fontFamily: MONO, fontSize: 10, color: TEXT3 }}>
+                session started · {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+            </div>
+
+            {uiMessages.map(msg => (
+              <ChatRow key={msg.id} msg={msg} ts={times.get(msg.id) ?? fmtTime()} />
+            ))}
+
+            {isLoading && (uiMessages.length === 0 || uiMessages[uiMessages.length - 1]?.role === 'user') && (
+              <ChatRow
+                msg={{ id: '__stream__', role: 'assistant', content: '' }}
+                isStreaming
+                ts={fmtTime()}
+              />
+            )}
+
+            {error && (
+              <div className="mx-4 my-2 flex items-start gap-2 px-3 py-2 rounded border"
+                style={{ background: RED + '10', borderColor: RED + '40', fontSize: 11, color: RED, fontFamily: MONO }}>
+                <AlertCircle size={11} className="flex-shrink-0 mt-0.5" />
+                <span>{error.message}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="flex-shrink-0 p-4 border-t" style={{ borderColor: '#16162a', background: '#0a0a18' }}>
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-end gap-2 rounded-xl border p-2.5 transition-all"
-            style={{ background: '#07070f', borderColor: '#1e1e30' }}>
-            <textarea ref={inputRef} value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask the agent anything — leads, outreach, campaigns…"
-              rows={1} disabled={isLoading}
-              className="flex-1 bg-transparent resize-none outline-none text-[12px] leading-relaxed max-h-28 overflow-y-auto disabled:opacity-40"
-              style={{ color: '#c0c0d8', minHeight: '20px', fontFamily: 'inherit' }}
-              onInput={e => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 112) + 'px'; }} />
-            <button onClick={submit} disabled={!input.trim() || isLoading}
-              className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-30"
-              style={{ background: ACCENT }}>
-              {isLoading ? <Loader2 size={12} className="animate-spin text-black" /> : <Send size={11} className="text-black" />}
-            </button>
+      {/* ── Input bar ── */}
+      <div className="flex-shrink-0 border-t" style={{ borderColor: BORDER, background: BG2 }}>
+        <div className="flex items-end gap-0">
+          {/* Prompt prefix */}
+          <div className="flex-shrink-0 flex items-center px-4 pb-3 pt-3 self-end"
+            style={{ fontFamily: MONO, fontSize: 13, color: ACCENT, userSelect: 'none' }}>
+            &gt;
           </div>
-          <p className="text-[9px] font-mono text-center mt-2" style={{ color: '#1e1e30' }}>
-            Enter to send · Shift+Enter for new line
-          </p>
+
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="type a command…"
+            rows={1}
+            disabled={isLoading}
+            className="flex-1 bg-transparent resize-none outline-none py-3 pr-3 disabled:opacity-40"
+            style={{
+              fontFamily: MONO, fontSize: 12, color: TEXT,
+              minHeight: 20, caretColor: ACCENT,
+              lineHeight: 1.6,
+            }}
+            onInput={e => {
+              const el = e.currentTarget;
+              el.style.height = 'auto';
+              el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+            }}
+          />
+
+          <div className="flex-shrink-0 flex items-center gap-2 px-3 pb-3 pt-3 self-end">
+            {isLoading ? (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded border"
+                style={{ borderColor: AMBER + '40', background: AMBER + '10', fontSize: 10, color: AMBER, fontFamily: MONO }}>
+                <Square size={9} />
+                <span>running</span>
+              </div>
+            ) : (
+              <button onClick={submit} disabled={!input.trim()}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded border transition-all disabled:opacity-30"
+                style={{ borderColor: ACCENT + '50', background: ACCENT + '15', fontSize: 10, color: ACCENT, fontFamily: MONO }}
+                onMouseEnter={e => { if (input.trim()) e.currentTarget.style.background = ACCENT + '25'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = ACCENT + '15'; }}>
+                <Play size={9} />
+                <span>run</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Status bar */}
+        <div className="flex items-center justify-between px-4 py-1 border-t"
+          style={{ borderColor: BORDER, background: BG3 }}>
+          <div className="flex items-center gap-3" style={{ fontSize: 10, color: TEXT3, fontFamily: MONO }}>
+            <span style={{ color: ACCENT }}>● spacze-agent</span>
+            <span>openai → groq → gemini</span>
+          </div>
+          <div className="flex items-center gap-3" style={{ fontSize: 10, color: TEXT3, fontFamily: MONO }}>
+            <span>{uiMessages.length} messages</span>
+            <span>Enter ↵ send · Shift+Enter newline</span>
+          </div>
         </div>
       </div>
     </div>
@@ -312,10 +520,9 @@ function FileTab({ file, active, onClick }: { file: CodeFile; active: boolean; o
   const color = LANG_COLORS[file.lang] ?? '#6b6b8a';
   return (
     <button onClick={onClick}
-      className="flex items-center gap-1.5 px-4 h-full border-r text-[11px] font-mono whitespace-nowrap transition-all flex-shrink-0"
-      style={{ borderColor: '#1e1e2e', background: active ? '#0f0f1a' : 'transparent',
-        color: active ? '#d0d0e8' : '#3a3a5a',
-        borderBottom: active ? `2px solid ${color}` : '2px solid transparent' }}>
+      className="flex items-center gap-1.5 px-4 h-full border-r text-[11px] whitespace-nowrap transition-all flex-shrink-0"
+      style={{ fontFamily: MONO, borderColor: BORDER, background: active ? BG : 'transparent',
+        color: active ? TEXT : TEXT3, borderBottom: active ? `2px solid ${color}` : '2px solid transparent' }}>
       <FileCode2 size={10} style={{ color }} />{file.name}
     </button>
   );
@@ -323,28 +530,26 @@ function FileTab({ file, active, onClick }: { file: CodeFile; active: boolean; o
 
 function CodePanel({ files, activeFile, onFileChange, onContentChange }: {
   files: CodeFile[]; activeFile: number;
-  onFileChange: (i: number) => void;
-  onContentChange: (i: number, val: string) => void;
+  onFileChange: (i: number) => void; onContentChange: (i: number, val: string) => void;
 }) {
   const file  = files[activeFile];
   const lines = file.content.split('\n');
   return (
-    <div className="flex flex-col h-full" style={{ background: '#0a0a14' }}>
+    <div className="flex flex-col h-full" style={{ background: BG }}>
       <div className="flex items-center h-9 border-b flex-shrink-0 overflow-x-auto"
-        style={{ background: '#07070f', borderColor: '#1a1a2e' }}>
+        style={{ background: BG2, borderColor: BORDER }}>
         {files.map((f, i) => <FileTab key={f.name} file={f} active={activeFile === i} onClick={() => onFileChange(i)} />)}
         <div className="flex-1" />
         <div className="px-3 flex-shrink-0"><CopyBtn text={file.content} size={10} /></div>
       </div>
-      <div className="flex flex-1 overflow-hidden"
-        style={{ fontFamily: "'JetBrains Mono','Fira Code',monospace", fontSize: 12, lineHeight: '20px' }}>
+      <div className="flex flex-1 overflow-hidden" style={{ fontFamily: MONO, fontSize: 12, lineHeight: '20px' }}>
         <div className="select-none text-right pt-3 pb-3 pr-3 overflow-hidden flex-shrink-0"
-          style={{ width: 44, color: '#2a2a4a', background: '#07070f', borderRight: '1px solid #1a1a2e' }}>
+          style={{ width: 44, color: TEXT3, background: BG2, borderRight: `1px solid ${BORDER}` }}>
           {lines.map((_, i) => <div key={i} style={{ height: 20, lineHeight: '20px' }}>{i + 1}</div>)}
         </div>
         <textarea value={file.content} onChange={e => onContentChange(activeFile, e.target.value)}
           spellCheck={false} className="flex-1 resize-none outline-none p-3 overflow-auto"
-          style={{ background: '#0a0a14', color: '#c8c8e8', caretColor: ACCENT, tabSize: 2 }} />
+          style={{ background: BG, color: TEXT, caretColor: ACCENT, tabSize: 2, fontFamily: MONO }} />
       </div>
     </div>
   );
@@ -363,7 +568,7 @@ function PreviewPane({ doc, size, refreshKey }: { doc: string; size: PreviewSize
   return (
     <div className="flex flex-col h-full overflow-auto items-start justify-start p-4" style={{ background: '#050508' }}>
       <div className="rounded-xl overflow-hidden border transition-all duration-300 mx-auto"
-        style={{ width: w, minHeight: '100%', borderColor: '#1e1e2e', flexShrink: 0 }}>
+        style={{ width: w, minHeight: '100%', borderColor: BORDER, flexShrink: 0 }}>
         <iframe ref={iframeRef} title="preview" sandbox="allow-scripts allow-same-origin"
           className="w-full border-0 block" style={{ minHeight: 600, height: '100%' }} />
       </div>
@@ -382,8 +587,8 @@ function BuilderTab() {
   const [chatOpen, setChatOpen]       = useState(true);
   const [refreshKey, setRefreshKey]   = useState(0);
   const [files, setFiles]             = useState<CodeFile[]>([
-    { name: 'page.tsx',     lang: 'tsx', content: STARTER },
-    { name: 'globals.css',  lang: 'css', content: `/* Add custom CSS here */\n@tailwind base;\n@tailwind components;\n@tailwind utilities;\n` },
+    { name: 'page.tsx',    lang: 'tsx', content: STARTER },
+    { name: 'globals.css', lang: 'css', content: `/* Add custom CSS here */\n@tailwind base;\n@tailwind components;\n@tailwind utilities;\n` },
   ]);
 
   const { messages, sendMessage, status, error, setMessages } = useChat({
@@ -433,98 +638,112 @@ function BuilderTab() {
   };
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex h-full overflow-hidden" style={{ background: BG }}>
 
       {/* Chat sidebar */}
       <AnimatePresence initial={false}>
         {chatOpen && (
           <motion.div key="chat"
-            initial={{ width: 0, opacity: 0 }} animate={{ width: 300, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-            className="flex-shrink-0 flex flex-col border-r overflow-hidden" style={{ borderColor: '#16162a' }}>
+            initial={{ width: 0, opacity: 0 }} animate={{ width: 280, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            className="flex-shrink-0 flex flex-col border-r overflow-hidden" style={{ borderColor: BORDER }}>
 
-            {/* Sidebar header */}
-            <div className="flex-shrink-0 flex items-center justify-between px-3 h-10 border-b"
-              style={{ background: '#0a0a18', borderColor: '#16162a' }}>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-md flex items-center justify-center border"
-                  style={{ background: `${ACCENT}15`, borderColor: `${ACCENT}30` }}>
-                  <Sparkles size={10} style={{ color: ACCENT }} />
-                </div>
-                <span className="text-[11px] font-bold" style={{ color: '#c0c0d8' }}>AI Builder</span>
+            <div className="flex-shrink-0 flex items-center justify-between px-3 h-9 border-b"
+              style={{ background: BG2, borderColor: BORDER }}>
+              <div className="flex items-center gap-2" style={{ fontFamily: MONO, fontSize: 11, color: TEXT2 }}>
+                <Sparkles size={10} style={{ color: ACCENT }} />
+                <span>ai-builder</span>
               </div>
               <div className="flex items-center gap-1">
                 {!isEmpty && (
                   <button onClick={() => { setMessages([]); setFiles(prev => prev.map((f, i) => i === 0 ? { ...f, content: STARTER } : f)); setRefreshKey(k => k + 1); }}
-                    className="p-1.5 rounded-lg transition-colors" style={{ color: '#2a2a4a' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#6b6b8a')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#2a2a4a')} title="Reset">
-                    <RotateCcw size={11} />
+                    className="p-1 rounded transition-colors" style={{ color: TEXT3 }}
+                    onMouseEnter={e => (e.currentTarget.style.color = TEXT2)}
+                    onMouseLeave={e => (e.currentTarget.style.color = TEXT3)} title="Reset">
+                    <RotateCcw size={10} />
                   </button>
                 )}
                 <button onClick={() => setChatOpen(false)}
-                  className="p-1.5 rounded-lg transition-colors" style={{ color: '#2a2a4a' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#6b6b8a')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#2a2a4a')}>
-                  <X size={11} />
+                  className="p-1 rounded transition-colors" style={{ color: TEXT3 }}
+                  onMouseEnter={e => (e.currentTarget.style.color = TEXT2)}
+                  onMouseLeave={e => (e.currentTarget.style.color = TEXT3)}>
+                  <X size={10} />
                 </button>
               </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ background: '#07070f' }}>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ background: BG }}>
               {isEmpty && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3 pt-1">
-                  <div className="text-center px-2">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2.5 border"
-                      style={{ background: `${ACCENT}10`, borderColor: `${ACCENT}20` }}>
-                      <Code2 size={18} style={{ color: ACCENT }} />
-                    </div>
-                    <p className="text-[12px] font-bold mb-1" style={{ color: '#c0c0d8' }}>Website Builder</p>
-                    <p className="text-[10px] leading-relaxed" style={{ color: '#3a3a5a' }}>
-                      Describe what to build. AI writes Next.js + Tailwind and renders it live.
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    {BUILDER_SUGGESTIONS.map(s => (
-                      <button key={s} onClick={() => { setInput(s); inputRef.current?.focus(); }}
-                        className="w-full text-left px-2.5 py-1.5 rounded-lg border text-[10px] font-mono transition-all leading-snug"
-                        style={{ color: '#3a3a5a', borderColor: '#16162a', background: '#0a0a18' }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = `${ACCENT}30`; e.currentTarget.style.color = '#7a7a9a'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#16162a'; e.currentTarget.style.color = '#3a3a5a'; }}>
-                        {s}
-                      </button>
-                    ))}
-                  </div>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2 pt-2">
+                  <p style={{ fontFamily: MONO, fontSize: 10, color: TEXT3, textAlign: 'center' }}>
+                    describe what to build
+                  </p>
+                  {BUILDER_SUGGESTIONS.map(s => (
+                    <button key={s} onClick={() => { setInput(s); inputRef.current?.focus(); }}
+                      className="w-full text-left px-2.5 py-1.5 rounded border transition-colors"
+                      style={{ fontFamily: MONO, fontSize: 10, color: TEXT3, borderColor: BORDER, background: BG2 }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT + '50'; e.currentTarget.style.color = TEXT2; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = TEXT3; }}>
+                      <ChevronRight size={9} style={{ color: ACCENT, display: 'inline', marginRight: 4 }} />{s}
+                    </button>
+                  ))}
                 </motion.div>
               )}
-              {uiMessages.map(msg => <ChatMessage key={msg.id} msg={msg} />)}
+              {uiMessages.map(msg => {
+                const isUser = msg.role === 'user';
+                const text   = msgText(msg).replace(/```[\s\S]*?```/g, '').replace(/Current component[\s\S]*$/i, '').trim();
+                const hasCode = extractTsx(msgText(msg)) !== null;
+                return (
+                  <div key={msg.id} className={`flex gap-2 ${isUser ? 'flex-row-reverse' : ''}`}>
+                    <div className="flex-1 min-w-0">
+                      {text && (
+                        <p style={{ fontFamily: MONO, fontSize: 11, color: isUser ? TEXT : TEXT2,
+                          background: isUser ? BLUE + '15' : BG2, border: `1px solid ${isUser ? BLUE + '30' : BORDER}`,
+                          borderRadius: 6, padding: '6px 10px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                          {text}
+                        </p>
+                      )}
+                      {hasCode && !isUser && (
+                        <div className="flex items-center gap-1 mt-1"
+                          style={{ fontFamily: MONO, fontSize: 9, color: ACCENT }}>
+                          <Code2 size={8} /> applied to editor
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
               {isLoading && (uiMessages.length === 0 || uiMessages[uiMessages.length - 1]?.role === 'user') && (
-                <ChatMessage msg={{ id: '__stream__', role: 'assistant', content: '' }} isStreaming />
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded border"
+                  style={{ fontFamily: MONO, fontSize: 10, color: AMBER, borderColor: AMBER + '30', background: AMBER + '08' }}>
+                  <Loader2 size={9} className="animate-spin" /> generating…
+                </div>
               )}
               {error && (
-                <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg border text-[10px] text-red-400"
-                  style={{ background: '#1a0808', borderColor: '#3a1010' }}>
-                  <Zap size={10} className="flex-shrink-0 mt-0.5" />{error.message}
+                <div className="px-2.5 py-1.5 rounded border"
+                  style={{ fontFamily: MONO, fontSize: 10, color: RED, borderColor: RED + '30', background: RED + '08' }}>
+                  {error.message}
                 </div>
               )}
               <div ref={bottomRef} />
             </div>
 
-            {/* Input */}
-            <div className="flex-shrink-0 p-2.5 border-t" style={{ borderColor: '#16162a', background: '#0a0a18' }}>
-              <div className="flex items-end gap-1.5 rounded-xl border p-2 transition-all"
-                style={{ background: '#07070f', borderColor: '#1e1e30' }}>
+            <div className="flex-shrink-0 p-2 border-t" style={{ borderColor: BORDER, background: BG2 }}>
+              <div className="flex items-end gap-1 rounded border px-2 py-1.5"
+                style={{ background: BG, borderColor: BORDER }}>
+                <span style={{ fontFamily: MONO, fontSize: 12, color: ACCENT, flexShrink: 0, paddingBottom: 1 }}>&gt;</span>
                 <textarea ref={inputRef} value={input}
                   onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
-                  placeholder="Describe what to build…" rows={1} disabled={isLoading}
-                  className="flex-1 bg-transparent resize-none outline-none text-[11px] leading-relaxed max-h-24 overflow-y-auto disabled:opacity-40"
-                  style={{ color: '#c0c0d8', minHeight: '18px', fontFamily: 'inherit' }}
-                  onInput={e => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 96) + 'px'; }} />
+                  placeholder="describe…" rows={1} disabled={isLoading}
+                  className="flex-1 bg-transparent resize-none outline-none disabled:opacity-40"
+                  style={{ fontFamily: MONO, fontSize: 11, color: TEXT, minHeight: 18, caretColor: ACCENT }}
+                  onInput={e => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 80) + 'px'; }} />
                 <button onClick={submit} disabled={!input.trim() || isLoading}
-                  className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-30"
-                  style={{ background: ACCENT }}>
-                  {isLoading ? <Loader2 size={11} className="animate-spin text-black" /> : <Send size={10} className="text-black" />}
+                  className="flex-shrink-0 p-1 rounded transition-colors disabled:opacity-30"
+                  style={{ color: ACCENT }}
+                  onMouseEnter={e => (e.currentTarget.style.background = ACCENT + '20')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  {isLoading ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />}
                 </button>
               </div>
             </div>
@@ -534,79 +753,68 @@ function BuilderTab() {
 
       {/* IDE workspace */}
       <div className="flex-1 flex flex-col min-w-0">
-
         {/* Toolbar */}
-        <div className="flex-shrink-0 flex items-center justify-between px-3 h-10 border-b"
-          style={{ background: '#0a0a18', borderColor: '#16162a' }}>
-
+        <div className="flex-shrink-0 flex items-center justify-between px-3 h-9 border-b"
+          style={{ background: BG2, borderColor: BORDER }}>
           <div className="flex items-center gap-2">
             <button onClick={() => setChatOpen(v => !v)}
-              className="p-1.5 rounded-lg border transition-all"
-              style={{ color: chatOpen ? ACCENT : '#3a3a5a', borderColor: chatOpen ? `${ACCENT}30` : '#1e1e2e', background: chatOpen ? `${ACCENT}10` : 'transparent' }}
-              title={chatOpen ? 'Hide AI panel' : 'Show AI panel'}>
+              className="p-1 rounded border transition-colors"
+              style={{ color: chatOpen ? ACCENT : TEXT3, borderColor: chatOpen ? ACCENT + '40' : BORDER, background: chatOpen ? ACCENT + '10' : 'transparent' }}
+              title={chatOpen ? 'Hide panel' : 'Show panel'}>
               {chatOpen ? <PanelLeftClose size={12} /> : <PanelLeftOpen size={12} />}
             </button>
-            <div className="flex items-center gap-1 text-[10px] font-mono" style={{ color: '#2a2a4a' }}>
-              <Globe size={9} /><span>spacze/</span>
-              <span style={{ color: '#5a5a7a' }}>builder</span>
-              <ChevronRight size={8} style={{ color: '#2a2a4a' }} />
-              <span style={{ color: '#7a7a9a' }}>{files[activeFile]?.name}</span>
+            <div className="flex items-center gap-1" style={{ fontFamily: MONO, fontSize: 10, color: TEXT3 }}>
+              <Globe size={9} /><span>spacze/builder</span>
+              <ChevronRight size={8} />
+              <span style={{ color: TEXT2 }}>{files[activeFile]?.name}</span>
             </div>
             {isLoading && (
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg border ml-1"
-                style={{ borderColor: `${ACCENT}25`, background: `${ACCENT}08` }}>
-                <Loader2 size={8} className="animate-spin" style={{ color: ACCENT }} />
-                <span className="text-[9px] font-mono" style={{ color: ACCENT }}>generating…</span>
+              <div className="flex items-center gap-1" style={{ fontFamily: MONO, fontSize: 10, color: AMBER }}>
+                <Loader2 size={9} className="animate-spin" /><span>generating…</span>
               </div>
             )}
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Code / Preview toggle */}
-            <div className="flex items-center rounded-xl border overflow-hidden" style={{ borderColor: '#1e1e2e' }}>
+            <div className="flex items-center rounded border overflow-hidden" style={{ borderColor: BORDER }}>
               {(['code', 'preview'] as RightPane[]).map(p => (
                 <button key={p} onClick={() => setPane(p)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-mono transition-colors"
-                  style={{ background: pane === p ? '#1a1a2e' : 'transparent', color: pane === p ? '#c0c0d8' : '#3a3a5a' }}>
-                  {p === 'code' ? <Code2 size={10} /> : <Eye size={10} />}
-                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                  className="flex items-center gap-1.5 px-3 py-1 transition-colors"
+                  style={{ fontFamily: MONO, fontSize: 10, background: pane === p ? BG3 : 'transparent', color: pane === p ? TEXT : TEXT3 }}>
+                  {p === 'code' ? <Code2 size={10} /> : <Eye size={10} />}{p}
                 </button>
               ))}
             </div>
-
             {pane === 'preview' && (
-              <div className="flex items-center rounded-xl border overflow-hidden" style={{ borderColor: '#1e1e2e' }}>
+              <div className="flex items-center rounded border overflow-hidden" style={{ borderColor: BORDER }}>
                 {(Object.entries(PREVIEW_SIZES) as [PreviewSize, typeof PREVIEW_SIZES[PreviewSize]][]).map(([key, val]) => (
                   <button key={key} onClick={() => setPreviewSize(key)}
-                    className="flex items-center px-2.5 py-1.5 transition-colors"
-                    style={{ background: previewSize === key ? '#1a1a2e' : 'transparent', color: previewSize === key ? '#c0c0d8' : '#3a3a5a' }}
+                    className="flex items-center px-2 py-1 transition-colors"
+                    style={{ background: previewSize === key ? BG3 : 'transparent', color: previewSize === key ? TEXT : TEXT3 }}
                     title={val.label}>{val.icon}
                   </button>
                 ))}
               </div>
             )}
-
             {pane === 'preview' && (
               <button onClick={() => setRefreshKey(k => k + 1)}
-                className="p-1.5 rounded-xl border transition-colors"
-                style={{ color: '#3a3a5a', borderColor: '#1e1e2e' }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#7a7a9a')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#3a3a5a')} title="Refresh preview">
+                className="p-1 rounded border transition-colors"
+                style={{ color: TEXT3, borderColor: BORDER }}
+                onMouseEnter={e => (e.currentTarget.style.color = TEXT2)}
+                onMouseLeave={e => (e.currentTarget.style.color = TEXT3)} title="Refresh">
                 <RefreshCw size={11} />
               </button>
             )}
-
             <button onClick={handleDownload}
-              className="p-1.5 rounded-xl border transition-colors"
-              style={{ color: '#3a3a5a', borderColor: '#1e1e2e' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#7a7a9a')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#3a3a5a')} title="Download page.tsx">
+              className="p-1 rounded border transition-colors"
+              style={{ color: TEXT3, borderColor: BORDER }}
+              onMouseEnter={e => (e.currentTarget.style.color = TEXT2)}
+              onMouseLeave={e => (e.currentTarget.style.color = TEXT3)} title="Download">
               <Download size={11} />
             </button>
           </div>
         </div>
 
-        {/* Workspace */}
         <div className="flex-1 overflow-hidden">
           {pane === 'code' ? (
             <CodePanel files={files} activeFile={activeFile} onFileChange={setActiveFile}
@@ -625,32 +833,36 @@ export default function AgentPanel() {
   const [tab, setTab] = useState<TopTab>('chat');
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] overflow-hidden rounded-2xl border"
-      style={{ background: '#07070f', borderColor: '#16162a' }}>
+    <div className="flex flex-col h-[calc(100vh-140px)] overflow-hidden rounded-xl border"
+      style={{ background: BG, borderColor: BORDER }}>
 
       {/* Tab bar */}
-      <div className="flex-shrink-0 flex items-center gap-1 px-3 border-b"
-        style={{ background: '#0a0a18', borderColor: '#16162a', height: 44 }}>
+      <div className="flex-shrink-0 flex items-center border-b px-2 gap-0"
+        style={{ background: BG2, borderColor: BORDER, height: 36 }}>
 
         {([
-          { id: 'chat' as TopTab,    label: 'Chat',    icon: <MessageSquare size={12} />, hint: 'CRM · Outreach · Campaigns' },
-          { id: 'builder' as TopTab, label: 'Builder', icon: <Wrench size={12} />,        hint: 'Next.js · React · Tailwind'  },
+          { id: 'chat'    as TopTab, label: 'chat',    icon: <Terminal size={11} /> },
+          { id: 'builder' as TopTab, label: 'builder', icon: <Code2 size={11} />    },
         ]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-mono transition-all"
+            className="flex items-center gap-1.5 px-3 h-full border-b-2 transition-colors"
             style={{
-              background:  tab === t.id ? `${ACCENT}15` : 'transparent',
-              color:       tab === t.id ? ACCENT        : '#3a3a5a',
-              border:      `1px solid ${tab === t.id ? `${ACCENT}30` : 'transparent'}`,
+              fontFamily: MONO, fontSize: 11,
+              color:       tab === t.id ? TEXT  : TEXT3,
+              borderColor: tab === t.id ? ACCENT : 'transparent',
+              background:  'transparent',
             }}>
             {t.icon}{t.label}
           </button>
         ))}
 
         <div className="flex-1" />
-        <span className="text-[9px] font-mono" style={{ color: '#1e1e30' }}>
-          {tab === 'chat' ? 'CRM · Outreach · Campaigns' : 'Next.js · React · Tailwind'}
-        </span>
+        <div className="flex items-center gap-2 pr-3" style={{ fontFamily: MONO, fontSize: 10, color: TEXT3 }}>
+          <Cpu size={9} style={{ color: ACCENT }} />
+          <span>spacze-agent</span>
+          <span style={{ color: BORDER2 }}>|</span>
+          <span>{tab === 'chat' ? 'crm · outreach · campaigns' : 'next.js · react · tailwind'}</span>
+        </div>
       </div>
 
       {/* Content */}
