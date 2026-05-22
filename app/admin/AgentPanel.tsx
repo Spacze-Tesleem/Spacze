@@ -136,7 +136,7 @@ export default function Page() {
         className="relative p-[1px] rounded-[40px] bg-gradient-to-br from-indigo-500/20 via-white/5 to-sky-500/20 shadow-2xl"
       >
         <div className="bg-zinc-950/90 backdrop-blur-3xl rounded-[39px] px-12 py-16 text-center">
-          <span className="text-indigo-400 font-mono text-[10px] tracking-[0.5em] uppercase mb-6 block">Solaris Intelligence</span>
+          <span className="text-indigo-400 font-mono text-[10px] tracking-[0.5em] uppercase mb-6 block">Spacze Intelligence</span>
           <h1 className="text-6xl font-serif text-white mb-6 italic tracking-tight">
             Elegance in <span className="font-sans font-bold not-italic">Logic.</span>
           </h1>
@@ -199,17 +199,7 @@ function OperationsView({ messages, status, inputRef, input, setInput }: {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isLoading]);
 
   return (
-    <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full pt-4 min-h-0">
-      <div className="flex items-center justify-between mb-5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-serif italic text-white tracking-tight">Operations</h2>
-          <span className="text-zinc-600 font-mono text-[10px] tracking-[0.15em] uppercase">CRM · Outreach · Campaigns · Analytics</span>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/5 bg-zinc-900/30">
-          <Activity size={11} className="text-emerald-400" />
-          <span className="text-[10px] font-mono font-bold text-zinc-400">AGENT_ONLINE</span>
-        </div>
-      </div>
+    <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full pt-2 min-h-0">
 
       {isEmpty && (
         <div className="flex-1 flex flex-col items-center justify-center gap-8 overflow-y-auto py-6">
@@ -469,14 +459,13 @@ export default function AgentPanel() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b,transparent)] opacity-40 pointer-events-none rounded-2xl" />
 
       {/* Top navigation rail */}
-      <header className="relative z-50 flex items-center justify-between px-6 py-3 flex-shrink-0 border-b border-white/5">
-        <div className="flex items-center gap-10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-[0_0_16px_rgba(255,255,255,0.2)]">
-              <Zap size={14} className="text-black fill-black" />
-            </div>
-            <span className="text-white font-serif italic text-base tracking-tight">Solaris</span>
-          </div>
+      <header className="relative z-50 flex-shrink-0 border-b border-white/5">
+        {/* CRM tag strip */}
+        <div className="flex items-center gap-2 px-6 pt-3 pb-1">
+          <span className="text-zinc-600 font-mono text-[10px] tracking-[0.15em] uppercase">CRM · Outreach · Campaigns · Analytics</span>
+        </div>
+        <div className="flex items-center justify-between px-6 py-2">
+        <div className="flex items-center gap-6">
           <nav className="flex items-center gap-0.5 bg-zinc-900/60 p-0.5 rounded-full border border-white/5 backdrop-blur-md">
             {([
               { id: 'ops'  as ViewMode, label: 'Operations', icon: <MessageSquare size={11} /> },
@@ -504,6 +493,7 @@ export default function AgentPanel() {
           <button className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all text-zinc-500 hover:text-white">
             <Settings size={13} />
           </button>
+        </div>
         </div>
       </header>
 
