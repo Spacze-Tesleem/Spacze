@@ -8,130 +8,129 @@ import {
   RefreshCw, Download, MessageSquare, 
   Layers, Command, Cpu, Zap, Activity, 
   Box, Wand2, BarChart3, Globe, ShieldCheck, 
-  ArrowUpRight, Search, Hash
+  ArrowUpRight, Search, Hash, LayoutGrid, Settings,
+  Terminal, Sliders, ChevronRight, Binary
 } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-type AppMode = 'operations' | 'architect';
+// ── Configuration ─────────────────────────────────────────────────────────────
 
 const STARTER_CODE = `'use client';
 import { motion } from 'framer-motion';
 
-export default function App() {
+export default function Component() {
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center p-8 font-sans">
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md p-8 rounded-[32px] bg-zinc-900/50 border border-white/10 backdrop-blur-xl shadow-2xl"
+        className="w-full max-w-2xl border border-cyan-500/20 bg-cyan-500/5 p-12 rounded-sm relative overflow-hidden"
       >
-        <div className="w-12 h-12 rounded-2xl bg-violet-500/20 flex items-center justify-center mb-6">
-          <Zap className="text-violet-400" size={24} />
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+        <div className="flex justify-between items-start mb-12">
+          <div>
+            <h2 className="text-cyan-500 font-mono text-xs tracking-[0.3em] mb-2">SYSTEM_ARCHITECT_VR</h2>
+            <h1 className="text-4xl font-light text-white tracking-tighter">Nexus <span className="font-bold italic">Prime</span></h1>
+          </div>
+          <div className="text-right font-mono text-[10px] text-cyan-500/50">
+            LOC: 40.7128° N<br/>REF: 00-X9
+          </div>
         </div>
-        <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">System Core</h1>
-        <p className="text-zinc-400 leading-relaxed mb-8">Architect mode is active. Modify the source or describe changes to refine the interface.</p>
-        <div className="space-y-3">
-          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-            <motion.div initial={{ x: '-100%' }} animate={{ x: '0%' }} transition={{ duration: 2 }} className="h-full w-2/3 bg-violet-500" />
-          </div>
-          <div className="flex justify-between text-[10px] font-mono text-zinc-500">
-            <span>UPLOADING_ASSETS</span>
-            <span>67%</span>
-          </div>
+        <p className="text-zinc-400 text-lg font-light leading-relaxed mb-12">
+          High-performance interface component initialized. Grid alignment verified. 
+          Ready for structural deployment.
+        </p>
+        <div className="flex gap-4">
+          <button className="px-8 py-3 bg-cyan-500 text-black text-xs font-bold tracking-widest hover:bg-cyan-400 transition-colors">
+            EXECUTE_DEPLOY
+          </button>
+          <button className="px-8 py-3 border border-white/10 text-white text-xs font-bold tracking-widest hover:bg-white/5 transition-colors">
+            VIEW_LOGS
+          </button>
         </div>
       </motion.div>
     </div>
   );
 }`;
 
-// ── Shared Glass Components ───────────────────────────────────────────────────
+// ── Components ────────────────────────────────────────────────────────────────
 
-const GlassContainer = ({ children, className = "" }: any) => (
-  <div className={`backdrop-blur-3xl bg-zinc-900/40 border border-white/10 rounded-[2.5rem] overflow-hidden ${className}`}>
-    {children}
+const StatusBit = ({ label, value, color = "text-zinc-500" }: any) => (
+  <div className="flex flex-col gap-1">
+    <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{label}</span>
+    <span className={`text-[11px] font-mono ${color}`}>{value}</span>
   </div>
 );
 
-// ── MODE 1: OPERATIONS (Deep Chat & CRM) ──────────────────────────────────────
+// ── Mode 1: OPERATIONS (Telemetry Chat) ──────────────────────────────────────
 
-function OperationsView({ messages, status }: any) {
+function OperationsFeed({ messages, status }: any) {
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.98 }} 
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 1.02 }}
-      className="flex flex-col h-full max-w-5xl mx-auto w-full pt-8 pb-32"
-    >
-      {/* Metrics Row */}
-      <div className="grid grid-cols-3 gap-4 mb-12">
-        {[
-          { label: 'Active Leads', val: '1,284', icon: User, color: 'text-blue-400' },
-          { label: 'System Health', val: '99.9%', icon: ShieldCheck, color: 'text-emerald-400' },
-          { label: 'AI Tokens', val: '42.1k', icon: Cpu, color: 'text-violet-400' }
-        ].map((stat, i) => (
-          <div key={i} className="p-6 rounded-[2rem] bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group">
-            <stat.icon size={20} className={`${stat.color} mb-4`} />
-            <div className="text-2xl font-bold text-white mb-1 tracking-tight">{stat.val}</div>
-            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">{stat.label}</div>
-          </div>
-        ))}
+    <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full pt-12">
+      <div className="flex items-end justify-between mb-8 border-b border-white/5 pb-6">
+        <div>
+          <h2 className="text-xs font-mono text-cyan-500 tracking-[0.4em] mb-1">REALTIME_OPERATIONS</h2>
+          <div className="text-2xl font-light text-white">System Event Log</div>
+        </div>
+        <div className="flex gap-8">
+          <StatusBit label="Active Connections" value="128" color="text-white" />
+          <StatusBit label="Traffic" value="4.2 GB/s" color="text-white" />
+          <StatusBit label="Status" value="NOMINAL" color="text-emerald-500" />
+        </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 space-y-8 overflow-y-auto px-4 custom-scrollbar">
-        {messages.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center text-center py-20">
-            <div className="w-20 h-20 rounded-[2.5rem] bg-gradient-to-b from-zinc-800 to-zinc-900 border border-white/10 flex items-center justify-center mb-8 shadow-2xl">
-              <Command size={32} className="text-zinc-400" />
-            </div>
-            <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">Command Center</h2>
-            <p className="text-zinc-500 max-w-md mx-auto leading-relaxed">
-              Analyze your leads, generate outreach campaigns, or request data visualizations. The agent is ready.
-            </p>
-          </div>
-        )}
+      <div className="flex-1 overflow-y-auto space-y-2 pr-4 custom-scrollbar">
         {messages.map((m: any) => (
-          <div key={m.id} className={`flex gap-6 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-            <div className={`w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center border ${
-              m.role === 'user' ? 'bg-white border-white text-black' : 'bg-zinc-900 border-white/10 text-violet-400'
-            }`}>
-              {m.role === 'user' ? <User size={18} /> : <Bot size={18} />}
+          <motion.div 
+            initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }}
+            key={m.id} 
+            className={`group flex items-start gap-6 p-4 border-l-2 transition-colors ${
+              m.role === 'user' ? 'border-zinc-700 bg-zinc-900/20' : 'border-cyan-500/50 bg-cyan-500/5'
+            }`}
+          >
+            <div className="w-12 pt-1 font-mono text-[10px] text-zinc-600">
+              {new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' })}
             </div>
-            <div className={`flex flex-col gap-3 max-w-2xl ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-              <div className={`px-6 py-4 rounded-[2rem] text-sm leading-relaxed ${
-                m.role === 'user' 
-                  ? 'bg-violet-600 text-white shadow-xl shadow-violet-500/10' 
-                  : 'bg-zinc-900 border border-white/10 text-zinc-200'
-              }`}>
-                {m.content.replace(/```[\s\S]*?```/g, '').trim()}
-              </div>
-              {m.role === 'assistant' && (
-                <div className="flex gap-2">
-                  <button className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/5 bg-white/5 text-[10px] text-zinc-500 hover:text-white transition-colors">
-                    <Copy size={12} /> COPY
-                  </button>
-                  <button className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/5 bg-white/5 text-[10px] text-zinc-500 hover:text-white transition-colors">
-                    <ArrowUpRight size={12} /> ACTION
-                  </button>
-                </div>
-              )}
+            <div className="w-16 pt-1 font-mono text-[10px] font-bold uppercase tracking-tighter">
+              {m.role === 'user' ? 'USR_01' : 'AGN_PRM'}
             </div>
-          </div>
+            <div className="flex-1 text-sm leading-relaxed text-zinc-300 font-light">
+              {m.content.replace(/```[\s\S]*?```/g, '').trim()}
+            </div>
+          </motion.div>
         ))}
         {status === 'streaming' && (
-          <div className="flex gap-4 items-center text-violet-400 animate-pulse font-mono text-[10px] tracking-widest pl-16">
-            <Loader2 size={14} className="animate-spin" /> THINKING...
+          <div className="p-4 flex items-center gap-3 text-cyan-500 font-mono text-[10px] animate-pulse">
+            <Loader2 size={12} className="animate-spin" /> RUNNING_HEURISTICS...
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
-// ── MODE 2: ARCHITECT (UI Workbench) ──────────────────────────────────────────
+// ── ROOT APPLICATION ──────────────────────────────────────────────────────────
 
-function ArchitectView({ code, setCode, messages, status, device, setDevice, view, setView }: any) {
+export default function NexusPrime() {
+  const [mode, setMode] = useState<'ops' | 'arch'>('ops');
+  const [input, setInput] = useState('');
+  const [code, setCode] = useState(STARTER_CODE);
+  const [view, setView] = useState<'preview' | 'code'>('preview');
+  const [device, setDevice] = useState('desktop');
+
+  const { messages, sendMessage, status } = useChat({ api: '/api/agent' });
+
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (last?.role === 'assistant') {
+      const match = last.content.match(/```tsx\n([\s\S]*?)```/);
+      if (match) {
+        setCode(match[1]);
+        if (mode === 'ops') setMode('arch');
+      }
+    }
+  }, [messages, mode]);
+
   const previewDoc = useMemo(() => `
     <html>
       <head><script src="https://cdn.tailwindcss.com"></script></head>
@@ -149,187 +148,143 @@ function ArchitectView({ code, setCode, messages, status, device, setDevice, vie
   `, [code]);
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="flex h-full gap-4 pt-4"
-    >
-      {/* Mini Sidebar Instructions */}
-      <div className="w-80 shrink-0 flex flex-col gap-4 pb-28">
-        <GlassContainer className="flex-1 flex flex-col">
-          <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
-            <span className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase">History</span>
-            <Hash size={12} className="text-zinc-600" />
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.filter((m:any) => m.role === 'user').map((m:any, i:number) => (
-              <div key={i} className="p-3 rounded-2xl bg-white/5 border border-white/5 text-[11px] leading-relaxed group hover:border-violet-500/50 transition-colors">
-                <div className="text-violet-400 mb-1">Iteration {i+1}</div>
-                {m.content.slice(0, 80)}...
-              </div>
-            ))}
-          </div>
-        </GlassContainer>
-      </div>
-
-      {/* Main Stage */}
-      <div className="flex-1 flex flex-col gap-4 pb-28">
-        <GlassContainer className="flex-1 relative flex flex-col">
-          {/* Workbench Header */}
-          <div className="h-14 flex items-center justify-between px-6 border-b border-white/5">
-            <div className="flex bg-zinc-950 p-1 rounded-xl border border-white/10">
-              <button onClick={() => setView('preview')} className={`px-4 py-1.5 text-[11px] font-bold rounded-lg transition-all ${view === 'preview' ? 'bg-white text-black' : 'text-zinc-500'}`}>PREVIEW</button>
-              <button onClick={() => setView('code')} className={`px-4 py-1.5 text-[11px] font-bold rounded-lg transition-all ${view === 'code' ? 'bg-white text-black' : 'text-zinc-500'}`}>SOURCE</button>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-white/10">
-                <button onClick={() => setDevice('desktop')} className={`p-2 rounded-lg ${device === 'desktop' ? 'text-white' : 'text-zinc-600'}`}><Monitor size={14}/></button>
-                <button onClick={() => setDevice('mobile')} className={`p-2 rounded-lg ${device === 'mobile' ? 'text-white' : 'text-zinc-600'}`}><Smartphone size={14}/></button>
-              </div>
-              <button className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-[11px] font-bold rounded-xl shadow-lg shadow-violet-500/20">
-                <Wand2 size={14} /> DEPLOY
-              </button>
-            </div>
-          </div>
-
-          {/* Canvas Area */}
-          <div className="flex-1 relative overflow-hidden flex items-center justify-center p-8 bg-[radial-gradient(#222_1px,transparent_1px)] [background-size:32px_32px]">
-            <AnimatePresence mode="wait">
-              {view === 'preview' ? (
-                <motion.div 
-                  key="p" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                  className="relative z-10 transition-all duration-700 shadow-[0_50px_100px_rgba(0,0,0,0.8)] border border-white/10"
-                  style={{ width: device === 'desktop' ? '100%' : '375px', height: '100%', borderRadius: '2rem' }}
-                >
-                  <iframe srcDoc={previewDoc} className="w-full h-full rounded-[1.9rem] bg-black" />
-                </motion.div>
-              ) : (
-                <motion.div key="c" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full h-full bg-zinc-950 rounded-3xl p-8 border border-white/5">
-                  <textarea value={code} onChange={(e)=>setCode(e.target.value)} spellCheck={false} className="w-full h-full bg-transparent outline-none font-mono text-sm text-zinc-400 resize-none leading-relaxed" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </GlassContainer>
-      </div>
-    </motion.div>
-  );
-}
-
-// ── ROOT APPLICATION ──────────────────────────────────────────────────────────
-
-export default function LumiereOS() {
-  const [mode, setMode] = useState<AppMode>('operations');
-  const [input, setInput] = useState('');
-  const [code, setCode] = useState(STARTER_CODE);
-  const [device, setDevice] = useState('desktop');
-  const [view, setView] = useState('preview');
-
-  const { messages, sendMessage, status } = useChat({ api: '/api/agent' });
-
-  useEffect(() => {
-    const last = messages[messages.length - 1];
-    if (last?.role === 'assistant') {
-      const match = last.content.match(/```tsx\n([\s\S]*?)```/);
-      if (match) {
-        setCode(match[1]);
-        if (mode === 'operations') setMode('architect');
-      }
-    }
-  }, [messages, mode]);
-
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    sendMessage({ text: input });
-    setInput('');
-  };
-
-  return (
-    <div className="h-screen w-full bg-[#020204] text-zinc-400 font-sans selection:bg-violet-500/30 flex flex-col p-6 overflow-hidden">
+    <div className="h-screen w-full bg-[#050505] text-zinc-400 font-sans selection:bg-cyan-500/30 flex overflow-hidden">
       
-      {/* Background Atmosphere */}
-      <div className="fixed top-[-10%] left-[-10%] w-[60%] h-[60%] bg-violet-900/10 blur-[150px] rounded-full pointer-events-none" />
-      <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-900/10 blur-[150px] rounded-full pointer-events-none" />
+      {/* ── Monolith Sidebar ── */}
+      <aside className="w-20 flex flex-col items-center py-8 border-r border-white/5 bg-[#080808] z-50">
+        <div className="w-10 h-10 bg-cyan-500 flex items-center justify-center mb-12 shadow-[0_0_20px_rgba(34,211,238,0.4)]">
+          <Binary size={20} className="text-black" />
+        </div>
+        
+        <div className="flex flex-col gap-6 flex-1">
+          <button onClick={() => setMode('ops')} className={`p-3 transition-all ${mode === 'ops' ? 'text-cyan-500 bg-cyan-500/10' : 'text-zinc-600 hover:text-white'}`}>
+            <Terminal size={20} />
+          </button>
+          <button onClick={() => setMode('arch')} className={`p-3 transition-all ${mode === 'arch' ? 'text-cyan-500 bg-cyan-500/10' : 'text-zinc-600 hover:text-white'}`}>
+            <Box size={20} />
+          </button>
+          <button className="p-3 text-zinc-600 hover:text-white"><BarChart3 size={20} /></button>
+          <button className="p-3 text-zinc-600 hover:text-white"><Globe size={20} /></button>
+        </div>
 
-      {/* Global Header */}
-      <header className="flex-shrink-0 flex items-center justify-between px-6 py-2 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center">
-            <Zap size={18} className="text-black fill-black" />
+        <div className="flex flex-col gap-6">
+          <button className="p-3 text-zinc-600 hover:text-white"><Sliders size={20} /></button>
+          <button className="p-3 text-zinc-600 hover:text-white"><Settings size={20} /></button>
+        </div>
+      </aside>
+
+      {/* ── Main Environment ── */}
+      <main className="flex-1 flex flex-col relative min-w-0">
+        
+        {/* Global Action Center (Top) */}
+        <div className="absolute top-0 left-0 w-full px-12 pt-8 z-40 pointer-events-none">
+          <div className="max-w-4xl mx-auto pointer-events-auto">
+            <div className="bg-zinc-900/80 border border-white/5 backdrop-blur-2xl p-2 flex items-center shadow-2xl transition-all focus-within:border-cyan-500/50">
+              <div className="px-4 text-zinc-500"><Command size={16} /></div>
+              <form onSubmit={(e)=>{e.preventDefault(); sendMessage({text: input}); setInput('')}} className="flex-1 flex">
+                <input 
+                  value={input}
+                  onChange={(e)=>setInput(e.target.value)}
+                  placeholder={mode === 'ops' ? "RUN_COMMAND..." : "REFINE_STRUCTURE..."}
+                  className="w-full bg-transparent border-none outline-none py-3 text-xs font-mono text-white placeholder:text-zinc-700 tracking-widest"
+                />
+                <button type="submit" className="px-6 bg-cyan-500 text-black text-[10px] font-bold tracking-widest hover:bg-cyan-400 transition-all uppercase">
+                  Execute
+                </button>
+              </form>
+            </div>
           </div>
-          <span className="text-white font-bold tracking-tighter text-lg uppercase">Lumiere OS</span>
         </div>
-        <div className="flex items-center gap-6 text-[10px] font-mono tracking-widest text-zinc-500">
-          <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> SECURE_CONN</div>
-          <div className="flex items-center gap-2"><Activity size={12} /> 1.2 GB/S</div>
-        </div>
-      </header>
 
-      {/* Primary Workspace */}
-      <main className="flex-1 min-h-0 relative">
-        <AnimatePresence mode="wait">
-          {mode === 'operations' ? (
-            <OperationsView key="ops" messages={messages} status={status} />
-          ) : (
-            <ArchitectView 
-              key="arch" 
-              code={code} 
-              setCode={setCode} 
-              messages={messages} 
-              status={status} 
-              device={device}
-              setDevice={setDevice}
-              view={view}
-              setView={setView}
-            />
-          )}
-        </AnimatePresence>
+        {/* Content Area */}
+        <div className="flex-1 overflow-hidden px-12 pt-28">
+          <AnimatePresence mode="wait">
+            {mode === 'ops' ? (
+              <OperationsFeed key="ops" messages={messages} status={status} />
+            ) : (
+              <motion.div 
+                key="arch" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="h-full flex flex-col pb-8"
+              >
+                {/* Workbench Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-6">
+                    <div className="text-xl font-bold text-white italic tracking-tighter">Architect_Workbench</div>
+                    <div className="flex gap-2 p-1 bg-zinc-900 border border-white/5">
+                      <button onClick={()=>setView('preview')} className={`px-4 py-1 text-[10px] font-bold tracking-widest ${view === 'preview' ? 'bg-cyan-500 text-black' : 'text-zinc-500'}`}>VIEW</button>
+                      <button onClick={()=>setView('code')} className={`px-4 py-1 text-[10px] font-bold tracking-widest ${view === 'code' ? 'bg-cyan-500 text-black' : 'text-zinc-500'}`}>CODE</button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-1">
+                      <button onClick={()=>setDevice('desktop')} className={`p-2 border border-white/5 ${device === 'desktop' ? 'text-cyan-500' : 'text-zinc-600'}`}><Monitor size={14}/></button>
+                      <button onClick={()=>setDevice('mobile')} className={`p-2 border border-white/5 ${device === 'mobile' ? 'text-cyan-500' : 'text-zinc-600'}`}><Smartphone size={14}/></button>
+                    </div>
+                    <button className="px-6 py-2 bg-white text-black text-[10px] font-bold tracking-widest">DEPLOY_TO_PROD</button>
+                  </div>
+                </div>
+
+                {/* Workspace Canvas */}
+                <div className="flex-1 relative border border-white/5 bg-[#080808] overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    {view === 'preview' ? (
+                      <motion.div 
+                        key="p" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        className="h-full w-full flex items-center justify-center p-12 bg-[dotted-grid]"
+                        style={{ backgroundImage: 'radial-gradient(#1a1a1a 1px, transparent 0)', backgroundSize: '24px 24px' }}
+                      >
+                        <div 
+                          className="relative shadow-[0_0_100px_rgba(34,211,238,0.1)] transition-all duration-500"
+                          style={{ width: device === 'desktop' ? '100%' : '375px', height: '100%' }}
+                        >
+                          {/* HUD Corner Accents */}
+                          <div className="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-cyan-500/50" />
+                          <div className="absolute -top-2 -right-2 w-4 h-4 border-t-2 border-r-2 border-cyan-500/50" />
+                          <div className="absolute -bottom-2 -left-2 w-4 h-4 border-b-2 border-l-2 border-cyan-500/50" />
+                          <div className="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-cyan-500/50" />
+                          
+                          <iframe srcDoc={previewDoc} className="w-full h-full bg-black border border-white/10" />
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        key="c" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        className="h-full w-full bg-[#0d0d0f] p-8"
+                      >
+                        <div className="flex gap-8 h-full">
+                          <div className="w-8 flex flex-col text-[10px] font-mono text-zinc-700 select-none">
+                            {Array.from({length: 40}).map((_, i) => <div key={i} className="h-6 leading-6">{i+1}</div>)}
+                          </div>
+                          <textarea 
+                            value={code} onChange={(e)=>setCode(e.target.value)} 
+                            className="flex-1 bg-transparent border-none outline-none font-mono text-sm text-zinc-400 resize-none leading-6" 
+                            spellCheck={false}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Global Footer Status */}
+        <footer className="h-10 border-t border-white/5 px-12 flex items-center justify-between bg-black/40 text-[9px] font-mono tracking-[0.2em] text-zinc-600 uppercase">
+          <div className="flex gap-8">
+            <span className="flex items-center gap-2"><div className="w-1 h-1 rounded-full bg-cyan-500 shadow-[0_0_5px_cyan]" /> Connection: Stable</span>
+            <span>Kernel: Nexus_Core_v5.0</span>
+          </div>
+          <div className="flex gap-8">
+            <span>Buffer: 100%</span>
+            <span>Ref: {Math.random().toString(16).slice(2,8).toUpperCase()}</span>
+          </div>
+        </footer>
       </main>
 
-      {/* Global Command Bar & Dock */}
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-4xl px-6 flex flex-col items-center gap-6">
-        
-        {/* Input Bar */}
-        <div className="w-full relative group">
-          <div className="absolute inset-0 bg-violet-600/10 blur-2xl group-focus-within:bg-violet-600/20 transition-all duration-700" />
-          <div className="relative backdrop-blur-3xl bg-zinc-900/80 border border-white/10 rounded-[2rem] p-2 flex items-center shadow-2xl transition-all duration-500 group-focus-within:border-violet-500/50">
-            <div className="px-4 text-zinc-500">
-              {mode === 'operations' ? <Search size={20} /> : <Wand2 size={20} className="text-violet-400" />}
-            </div>
-            <form onSubmit={handleSend} className="flex-1 flex">
-              <input 
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={mode === 'operations' ? "Talk to the operations agent..." : "Tell architect what to build..."}
-                className="w-full bg-transparent border-none outline-none py-4 text-sm text-white placeholder:text-zinc-600"
-              />
-              <button type="submit" className="w-12 h-12 bg-white rounded-[1.4rem] flex items-center justify-center text-black hover:scale-105 active:scale-95 transition-all">
-                <Send size={20} />
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Navigation Dock */}
-        <div className="p-2 bg-zinc-900/50 backdrop-blur-2xl border border-white/10 rounded-full flex items-center gap-1">
-          <button 
-            onClick={() => setMode('operations')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-bold transition-all ${mode === 'operations' ? 'bg-white text-black shadow-lg shadow-white/10' : 'text-zinc-500 hover:text-white'}`}
-          >
-            <BarChart3 size={16} /> OPERATIONS
-          </button>
-          <button 
-            onClick={() => setMode('architect')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-bold transition-all ${mode === 'architect' ? 'bg-white text-black shadow-lg shadow-white/10' : 'text-zinc-500 hover:text-white'}`}
-          >
-            <Box size={16} /> ARCHITECT
-          </button>
-          <div className="w-px h-4 bg-white/10 mx-2" />
-          <button className="p-2.5 text-zinc-600 hover:text-white transition-colors"><Globe size={18}/></button>
-          <button className="p-2.5 text-zinc-600 hover:text-white transition-colors"><RefreshCw size={18}/></button>
-        </div>
-      </div>
+      {/* Ambient Lighting */}
+      <div className="fixed top-0 left-0 w-full h-[500px] bg-gradient-to-b from-cyan-500/5 to-transparent pointer-events-none" />
     </div>
   );
 }
