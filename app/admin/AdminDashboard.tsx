@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   LayoutDashboard, Users, LogOut,
   ChevronLeft, ChevronRight, MessageCircle, Sun, Moon, Terminal,
-  Bell, Command, Megaphone, Sparkles,
+  Bell, Command, Megaphone, Sparkles, BrainCircuit,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StatsPanel from './StatsPanel';
@@ -13,6 +13,7 @@ import CampaignsPanel from './CampaignsPanel';
 import AIStudioPanel from './AIStudioPanel';
 import WhatsAppPanel from './WhatsAppPanel';
 import TerminalPanel from './TerminalPanel';
+import SAIPanel from './SAIPanel';
 import { ToastStack, useToast } from '@/app/components/Toast';
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { id: 'campaigns',  label: 'Campaigns',  icon: Megaphone,       group: 'main' },
   { id: 'ai-studio',  label: 'AI Studio',  icon: Sparkles,        group: 'main' },
   { id: 'whatsapp',   label: 'WhatsApp',   icon: MessageCircle,   group: 'main' },
+  { id: 'sai',        label: 'SAI',        icon: BrainCircuit,    group: 'main' },
   { id: 'settings',   label: 'Settings',   icon: Terminal,        group: 'system' },
 ];
 
@@ -30,6 +32,7 @@ const pageInfo: Record<string, { title: string; subtitle: string }> = {
   campaigns: { title: 'Campaigns',   subtitle: 'Multi-channel sequences & scheduling' },
   'ai-studio': { title: 'AI Studio', subtitle: 'Copy generator & email sequences' },
   whatsapp:  { title: 'WhatsApp',    subtitle: 'Bulk messaging via Baileys' },
+  sai:       { title: 'Spacze AI',   subtitle: 'Client website intelligence & content hub' },
   settings:  { title: 'Settings',    subtitle: 'API keys & configuration' },
 };
 
@@ -37,7 +40,7 @@ function useKeyboardNav(setActive: (id: string) => void) {
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if (e.altKey) {
-        const map: Record<string, string> = { '1': 'overview', '2': 'audience', '3': 'campaigns', '4': 'ai-studio', '5': 'whatsapp', '6': 'settings' };
+        const map: Record<string, string> = { '1': 'overview', '2': 'audience', '3': 'campaigns', '4': 'ai-studio', '5': 'whatsapp', '6': 'sai', '7': 'settings' };
         if (map[e.key]) { e.preventDefault(); setActive(map[e.key]); }
       }
     }
@@ -240,6 +243,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {active === 'campaigns' && <CampaignsPanel />}
               {active === 'ai-studio' && <AIStudioPanel />}
               {active === 'whatsapp'  && <WhatsAppPanel />}
+              {active === 'sai'       && <SAIPanel />}
               {active === 'settings'  && <TerminalPanel />}
             </motion.div>
           </AnimatePresence>
