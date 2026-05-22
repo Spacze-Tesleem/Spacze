@@ -140,7 +140,15 @@ const Services = () => {
 };
 
 // --- Sub-Component: The Holographic Card ---
-const ServiceCard = ({ service, index }: { service: any, index: number }) => {
+interface ServiceItem {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  tags: string[];
+  color: string;
+}
+
+const ServiceCard = ({ service, index }: { service: ServiceItem; index: number }) => {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}

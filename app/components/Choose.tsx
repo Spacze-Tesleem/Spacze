@@ -13,18 +13,18 @@ import {
 } from 'lucide-react';
 
 // --- Sub-Component: Reusable Card Wrapper ---
-const BentoCard = ({ 
-  children, 
-  className = "", 
-  title, 
-  desc, 
-  icon: Icon 
-}: { 
-  children?: React.ReactNode, 
-  className?: string, 
-  title: string, 
-  desc: string, 
-  icon: any 
+const BentoCard = ({
+  children,
+  className = '',
+  title,
+  desc,
+  icon: Icon,
+}: {
+  children?: React.ReactNode;
+  className?: string;
+  title: string;
+  desc: string;
+  icon: React.ElementType;
 }) => {
   return (
     <motion.div

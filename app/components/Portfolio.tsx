@@ -6,7 +6,19 @@ import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import { ArrowUpRight, Github, Zap, AlertCircle, Code2, ArrowLeft, ArrowRight } from 'lucide-react';
 
 // --- Sub-Component: Project Card ---
-const ProjectCard = ({ project, index }: { project: any, index: number }) => {
+interface ProjectItem {
+  title: string;
+  category: string;
+  tags: string[];
+  problem: string;
+  solution: string;
+  result: string;
+  color: 'green' | 'blue' | 'purple';
+  image?: string;
+  url: string;
+}
+
+const ProjectCard = ({ project, index }: { project: ProjectItem; index: number }) => {
     return (
         <motion.div
             className="relative flex-shrink-0 w-[85vw] md:w-[600px] lg:w-[800px] snap-center"
@@ -241,7 +253,7 @@ const PortfolioSlider = () => {
                         
                         {/* CTA Card at the end of slider */}
                         <div className="relative flex-shrink-0 w-[85vw] md:w-[300px] snap-center flex items-center justify-center">
-                            <a href="#" className="group flex flex-col items-center gap-4 text-slate-500 hover:text-[#00D67D] transition-colors p-8 rounded-3xl border border-white/5 hover:border-[#00D67D]/30 bg-[#0A0A0A] w-full h-full justify-center">
+                            <a href="https://github.com/Spacze-Tesleem" target="_blank" rel="noopener noreferrer" className="group flex flex-col items-center gap-4 text-slate-500 hover:text-[#00D67D] transition-colors p-8 rounded-3xl border border-white/5 hover:border-[#00D67D]/30 bg-[#0A0A0A] w-full h-full justify-center">
                                 <div className="p-4 rounded-full bg-white/5 group-hover:bg-[#00D67D]/10 transition-colors">
                                     <Github size={32} />
                                 </div>

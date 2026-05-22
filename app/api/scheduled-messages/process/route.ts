@@ -181,8 +181,7 @@ export async function POST() {
         last_contacted:  now,
         outreach_status: 'Sent',
       };
-      if (msg.channel === 'email')    leadUpdate.email_sent = true;
-      if (msg.channel === 'whatsapp') leadUpdate.email_sent = true; // reuse flag — no dedicated wa_sent column yet
+      if (msg.channel === 'email') leadUpdate.email_sent = true;
       await db.from('leads').update(leadUpdate).eq('id', msg.lead_id);
 
       // Record in outreach_events for analytics

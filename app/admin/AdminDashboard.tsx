@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   LayoutDashboard, Users, LogOut,
   ChevronLeft, ChevronRight, MessageCircle, Sun, Moon, Terminal,
-  Bell, Command, Megaphone, Sparkles, BrainCircuit,
+  Bell, Command, Megaphone, Sparkles, BrainCircuit, BarChart2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StatsPanel from './StatsPanel';
@@ -21,26 +21,28 @@ const navItems = [
   { id: 'audience',   label: 'Audience',   icon: Users,           group: 'main' },
   { id: 'campaigns',  label: 'Campaigns',  icon: Megaphone,       group: 'main' },
   { id: 'ai-studio',  label: 'AI Studio',  icon: Sparkles,        group: 'main' },
+  { id: 'analytics',  label: 'Analytics',  icon: BarChart2,       group: 'main' },
   { id: 'whatsapp',   label: 'WhatsApp',   icon: MessageCircle,   group: 'main' },
   { id: 'sai',        label: 'SAI',        icon: BrainCircuit,    group: 'main' },
   { id: 'settings',   label: 'Settings',   icon: Terminal,        group: 'system' },
 ];
 
 const pageInfo: Record<string, { title: string; subtitle: string }> = {
-  overview:  { title: 'Overview',    subtitle: 'Analytics & performance at a glance' },
-  audience:  { title: 'Audience',    subtitle: 'Leads, segments & outreach status' },
-  campaigns: { title: 'Campaigns',   subtitle: 'Multi-channel sequences & scheduling' },
-  'ai-studio': { title: 'AI Studio', subtitle: 'Copy generator & email sequences' },
-  whatsapp:  { title: 'WhatsApp',    subtitle: 'Bulk messaging via Baileys' },
-  sai:       { title: 'Spacze AI',   subtitle: 'Client website intelligence & content hub' },
-  settings:  { title: 'Settings',    subtitle: 'API keys & configuration' },
+  overview:    { title: 'Overview',    subtitle: 'KPIs & quick actions at a glance' },
+  audience:    { title: 'Audience',    subtitle: 'Leads, segments & outreach status' },
+  campaigns:   { title: 'Campaigns',   subtitle: 'Multi-channel sequences & scheduling' },
+  'ai-studio': { title: 'AI Studio',   subtitle: 'Copy generator & email sequences' },
+  analytics:   { title: 'Analytics',   subtitle: 'Charts, funnels & campaign performance' },
+  whatsapp:    { title: 'WhatsApp',    subtitle: 'Bulk messaging via Baileys' },
+  sai:         { title: 'Spacze AI',   subtitle: 'Client website intelligence & content hub' },
+  settings:    { title: 'Settings',    subtitle: 'API keys & configuration' },
 };
 
 function useKeyboardNav(setActive: (id: string) => void) {
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if (e.altKey) {
-        const map: Record<string, string> = { '1': 'overview', '2': 'audience', '3': 'campaigns', '4': 'ai-studio', '5': 'whatsapp', '6': 'sai', '7': 'settings' };
+        const map: Record<string, string> = { '1': 'overview', '2': 'audience', '3': 'campaigns', '4': 'ai-studio', '5': 'analytics', '6': 'whatsapp', '7': 'sai', '8': 'settings' };
         if (map[e.key]) { e.preventDefault(); setActive(map[e.key]); }
       }
     }
@@ -238,13 +240,14 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         <main className="flex-1 p-4 lg:p-6 overflow-x-hidden">
           <AnimatePresence mode="wait">
             <motion.div key={active} initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }} transition={{ duration: 0.2 }}>
-              {active === 'overview'  && <StatsPanel onNavigate={setActive} />}
-              {active === 'audience'  && <CRMPanel />}
-              {active === 'campaigns' && <CampaignsPanel />}
-              {active === 'ai-studio' && <AIStudioPanel />}
-              {active === 'whatsapp'  && <WhatsAppPanel />}
-              {active === 'sai'       && <SAIPanel />}
-              {active === 'settings'  && <TerminalPanel />}
+              {active === 'overview'   && <StatsPanel onNavigate={setActive} />}
+              {active === 'audience'   && <CRMPanel />}
+              {active === 'campaigns'  && <CampaignsPanel />}
+              {active === 'ai-studio'  && <AIStudioPanel />}
+              {active === 'analytics'  && <StatsPanel onNavigate={setActive} hideQuickActions />}
+              {active === 'whatsapp'   && <WhatsAppPanel />}
+              {active === 'sai'        && <SAIPanel />}
+              {active === 'settings'   && <TerminalPanel />}
             </motion.div>
           </AnimatePresence>
         </main>

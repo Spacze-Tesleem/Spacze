@@ -72,7 +72,15 @@ const ProjectInput = () => {
 };
 
 // --- Sub-Component: Tech Card (Floating Element) ---
-const TechCard = ({ icon: Icon, label, value, color, delay }: any) => (
+interface TechCardProps {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  color: string;
+  delay: number;
+}
+
+const TechCard = ({ icon: Icon, label, value, color, delay }: TechCardProps) => (
     <motion.div 
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -154,9 +162,7 @@ const Hero = () => {
              className="flex flex-col sm:flex-row gap-3 w-full max-w-md mb-10"
            >
              <a
-               href="https://cal.com"
-               target="_blank"
-               rel="noopener noreferrer"
+               href="/#contact"
                className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white text-black font-bold text-sm hover:bg-[#00D67D] transition-colors duration-200"
              >
                Book a Free Strategy Call

@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     siteName: "Spacze",
     images: [
       {
-        url: "/og-image.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "Spacze — Web Apps & AI Systems",
@@ -49,7 +49,10 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Spacze — Web Apps & AI Systems for Startups and Growing Businesses",
     description: "We build fast, modern web apps and AI automation systems that get you more customers.",
-    images: ["/og-image.png"],
+    images: ["/opengraph-image"],
+  },
+  alternates: {
+    canonical: "https://spacze.vercel.app",
   },
   robots: {
     index: true,

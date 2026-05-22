@@ -116,7 +116,13 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) => void }) {
+export default function StatsPanel({
+  onNavigate,
+  hideQuickActions = false,
+}: {
+  onNavigate: (tab: string) => void;
+  hideQuickActions?: boolean;
+}) {
   const { leads,    loading: lLoading }  = useLeads();
   const { campaigns, loading: cLoading } = useCampaigns();
   const { messages,  loading: mLoading } = useScheduledMessages();
@@ -341,28 +347,30 @@ export default function StatsPanel({ onNavigate }: { onNavigate: (tab: string) =
           </div>
         </motion.div>
 
-        {/* Quick actions */}
-        <motion.div {...fu} transition={{ delay: 0.22 }} className="flex flex-col gap-3">
-          {[
-            { tab: 'audience',  icon: Users,         accent: GREEN,     title: 'Audience',   sub: `${stats.pending} pending` },
-            { tab: 'campaigns', icon: Sparkles,      accent: BLUE,      title: 'Campaigns',  sub: 'Sequences & scheduling' },
-            { tab: 'whatsapp',  icon: MessageCircle, accent: '#25D366', title: 'WhatsApp',   sub: 'Bulk messaging' },
-          ].map(({ tab, icon: Icon, accent, title, sub }) => (
-            <button key={tab} onClick={() => onNavigate(tab)}
-              className="admin-card p-4 text-left flex items-center justify-between gap-3 admin-hover transition-all hover:-translate-y-0.5 group">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: accent + '18' }}>
-                  <Icon size={14} style={{ color: accent }} />
+        {/* Quick actions — shown on overview only */}
+        {!hideQuickActions && (
+          <motion.div {...fu} transition={{ delay: 0.22 }} className="flex flex-col gap-3">
+            {[
+              { tab: 'audience',  icon: Users,         accent: GREEN,     title: 'Audience',   sub: `${stats.pending} pending` },
+              { tab: 'campaigns', icon: Sparkles,      accent: BLUE,      title: 'Campaigns',  sub: 'Sequences & scheduling' },
+              { tab: 'whatsapp',  icon: MessageCircle, accent: '#25D366', title: 'WhatsApp',   sub: 'Bulk messaging' },
+            ].map(({ tab, icon: Icon, accent, title, sub }) => (
+              <button key={tab} onClick={() => onNavigate(tab)}
+                className="admin-card p-4 text-left flex items-center justify-between gap-3 admin-hover transition-all hover:-translate-y-0.5 group">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: accent + '18' }}>
+                    <Icon size={14} style={{ color: accent }} />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[12px] admin-text">{title}</div>
+                    <div className="text-[10px] admin-muted">{sub}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-[12px] admin-text">{title}</div>
-                  <div className="text-[10px] admin-muted">{sub}</div>
-                </div>
-              </div>
-              <ArrowRight size={13} className="admin-subtle flex-shrink-0" />
-            </button>
-          ))}
-        </motion.div>
+                <ArrowRight size={13} className="admin-subtle flex-shrink-0" />
+              </button>
+            ))}
+          </motion.div>
+        )}
       </div>
 
       {/* Campaign performance table */}

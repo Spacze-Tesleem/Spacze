@@ -146,8 +146,12 @@ const Footer = () => {
 
             {/* Social Icons */}
             <div className="flex gap-4 mt-8">
-              {[Twitter, Linkedin, Github].map((Icon, i) => (
-                <a key={i} href="#" className="p-2 rounded-lg bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white hover:scale-110 transition-all duration-300">
+              {([
+                { Icon: Twitter,  href: 'https://twitter.com/spaczehq' },
+                { Icon: Linkedin, href: 'https://linkedin.com/company/spacze' },
+                { Icon: Github,   href: 'https://github.com/Spacze-Tesleem' },
+              ] as const).map(({ Icon, href }) => (
+                <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white hover:scale-110 transition-all duration-300">
                   <Icon size={18} />
                 </a>
               ))}
@@ -164,8 +168,8 @@ const Footer = () => {
             <span>© {new Date().getFullYear()} Spacze Digital Inc.</span>
             <span className="hidden md:block w-1 h-1 bg-slate-800 rounded-full" />
             <div className="flex gap-4">
-              <a href="#" className="hover:text-slate-400 transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-slate-400 transition-colors">Terms</a>
+              <a href="/contact" className="hover:text-slate-400 transition-colors">Privacy Policy</a>
+              <a href="/contact" className="hover:text-slate-400 transition-colors">Terms</a>
             </div>
           </div>
           

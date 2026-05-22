@@ -561,10 +561,16 @@ const Navbar = () => {
                 </div>
                 
                 <div className="flex gap-6">
-                  {['Twitter', 'LinkedIn', 'Dribbble'].map((social, idx) => (
+                  {([
+                    { label: 'Twitter',  href: 'https://twitter.com/spaczehq' },
+                    { label: 'LinkedIn', href: 'https://linkedin.com/company/spacze' },
+                    { label: 'GitHub',   href: 'https://github.com/Spacze-Tesleem' },
+                  ] as const).map(({ label, href }, idx) => (
                     <motion.a
-                      key={social}
-                      href="#"
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.9 + idx * 0.1 }}
@@ -572,7 +578,7 @@ const Navbar = () => {
                       style={{ color: brandColors.silverDark }}
                       whileHover={{ color: brandColors.green }}
                     >
-                      {social}
+                      {label}
                     </motion.a>
                   ))}
                 </div>

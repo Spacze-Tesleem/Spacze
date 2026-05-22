@@ -28,9 +28,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const db = getSupabaseAdmin();
   const body = await req.json();
+  const now = new Date().toISOString();
 
   // body can be a single object or an array
-  const rows = Array.isArray(body) ? body : [body];
+  const rows = (Array.isArray(body) ? body : [body]).map((r) => ({
+    ...r,
+    created_at: r.created_at ?? now,
+    updated_at: now,
+  }));
+
   const { data, error } = await db
     .from('scheduled_messages')
     .insert(rows)
@@ -49,7 +55,7 @@ export async function PUT(req: NextRequest) {
   const body = await req.json();
   const { data, error } = await db
     .from('scheduled_messages')
-    .update(body)
+    .update({ ...body, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single();

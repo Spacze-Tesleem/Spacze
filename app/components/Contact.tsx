@@ -115,8 +115,10 @@ const ContactPage = () => {
 
             {/* Grid for Secondary Info */}
             <div className="grid grid-cols-2 gap-4">
-                <motion.a 
-                    href="#"
+                <motion.a
+                    href="https://wa.me/2348000000000"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
@@ -314,7 +316,19 @@ const ContactPage = () => {
 };
 
 // --- Helper Component: Input Field with focus effects ---
-const InputField = ({ label, placeholder, type, id, name, value, onChange, focusedField, setFocusedField }: any) => {
+interface InputFieldProps {
+  label: string;
+  placeholder: string;
+  type: string;
+  id: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  focusedField: string | null;
+  setFocusedField: (id: string | null) => void;
+}
+
+const InputField = ({ label, placeholder, type, id, name, value, onChange, focusedField, setFocusedField }: InputFieldProps) => {
     const isActive = focusedField === id;
     
     return (

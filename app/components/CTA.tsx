@@ -74,13 +74,15 @@ const EnhancedCTA = () => {
                         {/* Social Stack */}
                         <div className="flex items-center justify-center md:justify-start gap-4 pt-2">
                             {[
-                                { icon: <Github size={20} />, label: "Code" },
-                                { icon: <Linkedin size={20} />, label: "Connect" },
-                                { icon: <Twitter size={20} />, label: "Follow" },
-                            ].map((social, idx) => (
-                                <a 
-                                    key={idx} 
-                                    href="#"
+                                { icon: <Github size={20} />,   href: 'https://github.com/Spacze-Tesleem' },
+                                { icon: <Linkedin size={20} />, href: 'https://linkedin.com/company/spacze' },
+                                { icon: <Twitter size={20} />,  href: 'https://twitter.com/spaczehq' },
+                            ].map((social) => (
+                                <a
+                                    key={social.href}
+                                    href={social.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="group/icon relative flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 border border-white/5 hover:bg-white hover:border-white hover:scale-110 transition-all duration-300"
                                 >
                                     <span className="text-slate-400 group-hover/icon:text-black transition-colors">{social.icon}</span>
@@ -136,7 +138,7 @@ const EnhancedCTA = () => {
                         </div>
 
                         {/* Primary CTA */}
-                        <a href="https://cal.com" target="_blank" rel="noopener noreferrer" className="group relative w-full overflow-hidden rounded-xl">
+                        <a href="/#contact" className="group relative w-full overflow-hidden rounded-xl">
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-[#00D67D] transition-transform duration-300 group-hover:scale-105" />
                             <div className="relative w-full py-4 bg-transparent flex items-center justify-center gap-2 text-white font-bold text-base tracking-wide">
                                 <span>Book a Free 20-Min Strategy Call</span>
