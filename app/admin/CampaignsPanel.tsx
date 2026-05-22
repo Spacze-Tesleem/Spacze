@@ -429,116 +429,178 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
     <ModalPortal>
       <ToastStack toasts={toasts} onDismiss={dismiss} />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-6 bg-black/50 backdrop-blur-md"
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-        <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }}
-          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="w-full sm:max-w-2xl bg-[var(--admin-surface)] border admin-border-md rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] sm:max-h-[88vh] flex flex-col">
+        <motion.div initial={{ y: 40, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 40, opacity: 0, scale: 0.97 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+          className="w-full sm:max-w-lg bg-[var(--admin-surface)] border admin-border-md rounded-t-[2rem] sm:rounded-2xl shadow-2xl overflow-hidden max-h-[94vh] sm:max-h-[86vh] flex flex-col">
 
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b admin-border flex-shrink-0">
+          <div className="flex items-center justify-between px-6 pt-6 pb-5 flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${ACCENT}18` }}>
-                <Wand2 size={14} style={{ color: ACCENT }} />
+              <div className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{ background: `${ACCENT}18`, boxShadow: `0 0 0 1px ${ACCENT}25` }}>
+                <Wand2 size={15} style={{ color: ACCENT }} />
               </div>
               <div>
-                <h2 className="font-bold text-[14px] admin-text leading-none">{step === 1 ? 'New Campaign' : 'Review Ad Creative'}</h2>
-                <p className="text-[11px] admin-muted mt-0.5">Step {step} of {hasAds ? 2 : 1}: {step === 1 ? 'Strategy & targeting' : 'AI-generated copy — edit before launch'}</p>
+                <h2 className="font-bold text-[15px] admin-text leading-none">
+                  {step === 1 ? 'New Campaign' : 'Review Ad Creative'}
+                </h2>
+                <div className="flex items-center gap-2 mt-1">
+                  {[1, hasAds ? 2 : null].filter(Boolean).map((s, i) => (
+                    <React.Fragment key={s}>
+                      {i > 0 && <div className="w-4 h-px bg-[var(--admin-border-md)]" />}
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-all ${step === s ? 'text-black' : 'admin-muted bg-[var(--admin-surface-3)]'}`}
+                        style={step === s ? { background: ACCENT } : {}}>
+                        {s === 1 ? 'Strategy' : 'Creative'}
+                      </span>
+                    </React.Fragment>
+                  ))}
+                </div>
               </div>
             </div>
-            <button onClick={onClose} className="p-1.5 rounded-xl admin-muted hover:admin-text admin-hover border admin-border transition-colors"><X size={14} /></button>
+            <button onClick={onClose}
+              className="w-8 h-8 rounded-full flex items-center justify-center admin-muted hover:admin-text transition-colors bg-[var(--admin-surface-2)] hover:bg-[var(--admin-surface-3)] border admin-border">
+              <X size={14} />
+            </button>
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
-            {error && <p className="text-red-400 text-[12px] px-3 py-2 rounded-xl bg-red-500/8 border border-red-500/20">{error}</p>}
+          <div className="flex-1 overflow-y-auto px-6 pb-2 space-y-5 min-h-0">
+            {error && (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-500/8 border border-red-500/20 text-red-400 text-[12px]">
+                <AlertCircle size={13} className="flex-shrink-0 mt-0.5" />{error}
+              </div>
+            )}
 
             {step === 1 && (
-              <motion.div key="step1" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                {/* Name + URL */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold admin-muted mb-1.5 block">Campaign Name <span style={{ color: ACCENT }}>*</span></label>
-                    <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Q3 Tech Audits" className={inp} />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold admin-muted mb-1.5 block">Target URL</label>
-                    <input value={targetUrl} onChange={e => setTargetUrl(e.target.value)} placeholder="https://spacze.vercel.app" className={inp} />
-                  </div>
+              <motion.div key="step1" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
+
+                {/* Name */}
+                <div>
+                  <label className="text-[12px] font-semibold admin-text mb-2 block">
+                    Campaign Name <span style={{ color: ACCENT }}>*</span>
+                  </label>
+                  <input value={name} onChange={e => setName(e.target.value)}
+                    placeholder="e.g. Q3 Tech Audits"
+                    className={`${inp} text-[14px] font-medium`} />
                 </div>
 
                 {/* Channels */}
                 <div>
-                  <label className="text-[11px] font-semibold admin-muted mb-2 block">Channels</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <label className="text-[12px] font-semibold admin-text mb-3 block">Channels</label>
+                  <div className="grid grid-cols-2 gap-2">
                     {ALL_CHANNELS.map(ch => {
                       const active = channels.includes(ch);
                       const isAd   = AD_CHANNELS.includes(ch);
                       return (
                         <button key={ch} onClick={() => toggleChannel(ch)}
-                          className={`relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border text-[11px] font-medium transition-all ${active ? 'shadow-sm' : 'admin-muted border-[var(--admin-border)] hover:bg-[var(--admin-hover-bg)]'}`}
-                          style={active ? { borderColor: `${CHANNEL_COLORS[ch]}40`, background: `${CHANNEL_COLORS[ch]}10`, color: CHANNEL_COLORS[ch] } : {}}>
-                          <span style={{ color: active ? CHANNEL_COLORS[ch] : undefined, opacity: active ? 1 : 0.5 }}>{CHANNEL_ICONS[ch]}</span>
-                          <span className="text-center leading-tight">{CHANNEL_LABELS[ch]}</span>
-                          {isAd && <span className="absolute top-1.5 right-1.5 text-[8px] font-bold px-1 py-0.5 rounded bg-white/10 admin-muted leading-none">AD</span>}
+                          className={`relative flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
+                            active
+                              ? 'shadow-sm'
+                              : 'border-[var(--admin-border)] bg-[var(--admin-surface-2)] hover:bg-[var(--admin-surface-3)] admin-muted'
+                          }`}
+                          style={active ? {
+                            borderColor: `${CHANNEL_COLORS[ch]}35`,
+                            background: `${CHANNEL_COLORS[ch]}0e`,
+                          } : {}}>
+                          <span className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center"
+                            style={{ background: `${CHANNEL_COLORS[ch]}${active ? '22' : '12'}`, color: CHANNEL_COLORS[ch], opacity: active ? 1 : 0.55 }}>
+                            {CHANNEL_ICONS[ch]}
+                          </span>
+                          <span className={`text-[12px] font-semibold leading-none ${active ? 'admin-text' : ''}`}
+                            style={active ? { color: CHANNEL_COLORS[ch] } : {}}>
+                            {CHANNEL_LABELS[ch]}
+                          </span>
+                          {isAd && (
+                            <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0"
+                              style={{ background: `${CHANNEL_COLORS[ch]}18`, color: CHANNEL_COLORS[ch] }}>
+                              AD
+                            </span>
+                          )}
+                          {active && (
+                            <span className="ml-auto w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-black text-[9px] font-black"
+                              style={{ background: CHANNEL_COLORS[ch] }}>✓</span>
+                          )}
                         </button>
                       );
                     })}
                   </div>
-                  <p className="text-[10px] admin-muted mt-2">Channels marked <strong className="admin-text">AD</strong> push one AI-generated ad per campaign — no per-lead contact needed.</p>
+                  {hasAds && (
+                    <p className="text-[11px] admin-muted mt-2.5 leading-relaxed">
+                      <strong className="admin-text">AD</strong> channels push one AI-generated ad — no per-lead contact needed.
+                    </p>
+                  )}
                 </div>
 
-                {/* Daily budget */}
-                {hasAds && (
-                  <div className="sm:max-w-xs">
-                    <label className="text-[11px] font-semibold admin-muted mb-1.5 block">Daily Budget (₦)</label>
-                    <input type="number" value={dailyBudget} onChange={e => setDailyBudget(e.target.value)} placeholder="500" className={inp} />
+                {/* Settings row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[12px] font-semibold admin-text mb-2 block">Start Date</label>
+                    <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} className={inp} />
                   </div>
-                )}
-
-                {/* Start date */}
-                <div className="sm:max-w-xs">
-                  <label className="text-[11px] font-semibold admin-muted mb-1.5 block">Start Date & Time</label>
-                  <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} className={inp} />
+                  {hasAds ? (
+                    <div>
+                      <label className="text-[12px] font-semibold admin-text mb-2 block">Daily Budget (₦)</label>
+                      <input type="number" value={dailyBudget} onChange={e => setDailyBudget(e.target.value)} placeholder="500" className={inp} />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="text-[12px] font-semibold admin-text mb-2 block">Target URL</label>
+                      <input value={targetUrl} onChange={e => setTargetUrl(e.target.value)} placeholder="https://spacze.vercel.app" className={inp} />
+                    </div>
+                  )}
                 </div>
 
                 {/* Lead selection */}
                 {outreachChannels.length > 0 && (
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-[11px] font-semibold admin-muted">Target Leads</label>
-                      <button onClick={toggleAllLeads} className="text-[11px] font-semibold transition-colors" style={{ color: ACCENT }}>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <label className="text-[12px] font-semibold admin-text">
+                        Target Leads
+                        {selectedLeadIds.length > 0 && (
+                          <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-black" style={{ background: ACCENT }}>
+                            {selectedLeadIds.length}
+                          </span>
+                        )}
+                      </label>
+                      <button onClick={toggleAllLeads} className="text-[11px] font-semibold transition-colors hover:opacity-80" style={{ color: ACCENT }}>
                         {selectedLeadIds.length === leads.length ? 'Deselect all' : 'Select all'}
                       </button>
                     </div>
-                    <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
                       {leads.map(lead => {
                         const sel = selectedLeadIds.includes(lead.id!);
                         return (
-                          <label key={lead.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${sel ? 'border-[#00D67D]/25' : 'admin-border admin-hover'}`}
-                            style={sel ? { background: `${ACCENT}08` } : {}}>
-                            <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all ${sel ? 'border-transparent' : 'admin-border-md'}`}
-                              style={sel ? { background: ACCENT } : {}}>
-                              {sel && <span className="text-black text-[9px] font-black">✓</span>}
+                          <label key={lead.id}
+                            className={`flex items-center gap-3 px-3.5 py-3 rounded-xl border cursor-pointer transition-all ${
+                              sel ? '' : 'border-[var(--admin-border)] bg-[var(--admin-surface-2)] hover:bg-[var(--admin-surface-3)]'
+                            }`}
+                            style={sel ? { borderColor: `${ACCENT}30`, background: `${ACCENT}08` } : {}}>
+                            <div className={`w-4 h-4 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-all`}
+                              style={sel ? { background: ACCENT, borderColor: ACCENT } : { borderColor: 'var(--admin-border-lg)' }}>
+                              {sel && <span className="text-black text-[9px] font-black leading-none">✓</span>}
                             </div>
                             <input type="checkbox" checked={sel} onChange={() => toggleLead(lead.id!)} className="sr-only" />
+                            <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-black"
+                              style={{ background: `${ACCENT}30`, color: ACCENT }}>
+                              {lead.business_name.charAt(0).toUpperCase()}
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[12px] font-semibold admin-text truncate">{lead.business_name}</p>
-                              <div className="flex items-center gap-2 mt-0.5">
+                              <p className="text-[13px] font-semibold admin-text truncate">{lead.business_name}</p>
+                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                 {outreachChannels.map(ch => {
                                   const req = CHANNEL_REQUIREMENTS[ch];
                                   const has = req ? !!lead[req.field] : true;
-                                  return <span key={ch} className="text-[10px] font-mono" style={{ color: has ? CHANNEL_COLORS[ch] : '#71717a', opacity: has ? 1 : 0.5 }}>{CHANNEL_LABELS[ch]}</span>;
+                                  return (
+                                    <span key={ch} className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+                                      style={{ color: has ? CHANNEL_COLORS[ch] : '#71717a', background: has ? `${CHANNEL_COLORS[ch]}15` : 'var(--admin-surface-3)', opacity: has ? 1 : 0.6 }}>
+                                      {CHANNEL_LABELS[ch]}
+                                    </span>
+                                  );
                                 })}
                               </div>
                             </div>
-                            {outreachChannels.map(ch => {
-                              const req = CHANNEL_REQUIREMENTS[ch];
-                              if (!req) return null;
-                              return !lead[req.field] ? (
-                                <span key={ch} className="text-[10px] admin-muted flex-shrink-0">no {req.label}</span>
-                              ) : null;
-                            })}
                           </label>
                         );
                       })}
@@ -602,29 +664,38 @@ function CreateModal({ leads, onClose, onCreated }: { leads: Lead[]; onClose: ()
           </div>
 
           {/* Footer */}
-          <div className="px-5 py-4 border-t admin-border flex gap-3 flex-shrink-0">
+          <div className="px-6 py-5 flex gap-2.5 flex-shrink-0">
             {step === 1 ? (
               <>
-                <button onClick={handleNext} disabled={generating || saving}
-                  className="flex-[2] flex items-center justify-center gap-2 py-2.5 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-40 hover:opacity-90"
-                  style={{ background: ACCENT, boxShadow: '0 0 20px rgba(0,214,125,0.2)' }}>
-                  {generating ? <RefreshCw size={13} className="animate-spin" /> : hasAds ? <Wand2 size={13} /> : <Play size={13} />}
-                  {generating ? 'Generating copy…' : hasAds ? 'Generate Ad Creative' : 'Activate Campaign'}
+                <button
+                  onClick={() => { setError(''); publishCampaign(false, googleDraft, metaDraft); }}
+                  disabled={saving || generating}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border admin-border-md admin-muted hover:admin-text bg-[var(--admin-surface-2)] hover:bg-[var(--admin-surface-3)] font-semibold text-[13px] transition-all disabled:opacity-40 flex-shrink-0">
+                  {saving ? <RefreshCw size={13} className="animate-spin" /> : null}
+                  Draft
                 </button>
-                <button onClick={() => { setError(''); publishCampaign(false, googleDraft, metaDraft); }} disabled={saving || generating}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl admin-muted hover:admin-text admin-hover border admin-border font-semibold text-[13px] transition-all disabled:opacity-40">
-                  {saving ? <RefreshCw size={13} className="animate-spin" /> : null} Save Draft
+                <button
+                  onClick={handleNext}
+                  disabled={generating || saving}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-40 hover:opacity-90"
+                  style={{ background: ACCENT, boxShadow: `0 4px 20px ${ACCENT}35` }}>
+                  {generating
+                    ? <><RefreshCw size={13} className="animate-spin" /> Generating…</>
+                    : hasAds
+                      ? <><Wand2 size={13} /> Generate Ad Creative</>
+                      : <><Play size={13} /> Activate Campaign</>
+                  }
                 </button>
               </>
             ) : (
               <>
                 <button onClick={() => { setStep(1); setError(''); }}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl admin-muted hover:admin-text admin-hover border admin-border font-semibold text-[13px] transition-all">
+                  className="flex items-center gap-1.5 px-4 py-3 rounded-xl border admin-border-md admin-muted hover:admin-text bg-[var(--admin-surface-2)] hover:bg-[var(--admin-surface-3)] font-semibold text-[13px] transition-all flex-shrink-0">
                   <ArrowLeft size={13} /> Back
                 </button>
                 <button onClick={() => publishCampaign(true, googleDraft, metaDraft)} disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-40 hover:opacity-90"
-                  style={{ background: ACCENT }}>
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-[13px] transition-all disabled:opacity-40 hover:opacity-90"
+                  style={{ background: ACCENT, boxShadow: `0 4px 20px ${ACCENT}35` }}>
                   {saving ? <RefreshCw size={13} className="animate-spin" /> : <Play size={13} />}
                   {saving ? 'Publishing…' : 'Launch Campaign'}
                 </button>
