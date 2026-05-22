@@ -6,7 +6,7 @@
  * Returns a single self-contained React component per response.
  */
 
-import { streamText, convertToModelMessages } from 'ai';
+import { streamText, convertToModelMessages, generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
@@ -92,6 +92,9 @@ export async function POST(req: NextRequest) {
   let lastError: unknown;
   for (const { name, model } of providers) {
     try {
+      // Probe the key before committing to a stream — auth errors throw here.
+      await generateText({ model, prompt: 'hi', maxOutputTokens: 1, maxRetries: 0 });
+
       const result = streamText({
         model,
         system: SYSTEM_PROMPT,
@@ -101,7 +104,7 @@ export async function POST(req: NextRequest) {
       });
       return result.toUIMessageStreamResponse();
     } catch (err) {
-      console.warn(`[build] ${name} failed:`, err instanceof Error ? err.message : err);
+      console.warn(`[build] ${name} failed, trying next provider:`, err instanceof Error ? err.message : err);
       lastError = err;
     }
   }
