@@ -87,7 +87,7 @@ export const analyzeLead = tool({
     'Analyse a lead\'s website. Scrapes the site and uses AI to score quality, detect weak points, and identify AI/automation opportunities. Updates the lead record in the CRM. Use this before generating outreach for a lead that hasn\'t been analysed yet.',
   inputSchema: z.object({
     lead_id: z.string().describe('The UUID of the lead to analyse'),
-    website: z.string().url().describe('The lead\'s website URL'),
+    website: z.string().describe('The lead\'s website URL'),
     business_name: z.string().describe('The lead\'s business name'),
     industry: z.string().optional().describe('The lead\'s industry'),
   }),
@@ -157,7 +157,7 @@ export const sendEmail = tool({
     'Send an outreach email to a lead. Requires the lead\'s email address, a subject line, and the email body. Updates the lead\'s outreach status in the CRM.',
   inputSchema: z.object({
     lead_id: z.string().describe('UUID of the lead'),
-    to: z.string().email().describe('Recipient email address'),
+    to: z.string().describe('Recipient email address'),
     subject: z.string().describe('Email subject line'),
     body: z.string().describe('Email body text'),
   }),
