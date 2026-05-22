@@ -14,7 +14,7 @@
  * Provider fallback: OpenAI → Groq → Gemini (same order as other routes).
  */
 
-import { streamText, stepCountIs, convertToModelMessages, APICallError } from 'ai';
+import { streamText, stepCountIs, convertToModelMessages, generateText, APICallError } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
@@ -55,6 +55,12 @@ BEHAVIOUR RULES:
 8. If a tool fails, explain the error and suggest a fix — never silently skip.
 9. Keep responses concise. Use bullet points for lists of actions.
 10. You are operating inside the Spacze admin — the user is the Spacze team, not a client.`;
+
+// ── Provider key validation cache ─────────────────────────────────────────────
+// Validated provider names persist for the lifetime of the server process so
+// the probe call only fires once per provider, not on every request.
+const validatedProviders = new Set<string>();
+const invalidProviders = new Set<string>();
 
 // ── Provider list (ordered: OpenAI → Groq → Gemini) ──────────────────────────
 
@@ -99,7 +105,18 @@ export async function POST(req: NextRequest) {
   let lastError: unknown;
 
   for (const { name, model } of providers) {
+    // Skip providers whose keys have already failed auth in this process.
+    if (invalidProviders.has(name)) continue;
+
     try {
+      // If this provider hasn't been validated yet in this process, run a
+      // minimal probe to catch auth errors before committing to a stream.
+      // The result is cached so subsequent requests skip the probe entirely.
+      if (!validatedProviders.has(name)) {
+        await generateText({ model, prompt: 'hi', maxOutputTokens: 1, maxRetries: 0 });
+        validatedProviders.add(name);
+      }
+
       const result = streamText({
         model,
         system: SYSTEM_PROMPT,
@@ -114,15 +131,13 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       lastError = err;
 
-      // Classify the error before deciding whether to try the next provider.
       if (err instanceof APICallError) {
         if (err.statusCode === 401 || err.statusCode === 403) {
-          // Auth failure is permanent for this key — skip to next provider.
-          console.warn(`[agent] ${name}: auth error (${err.statusCode}), skipping provider`);
+          // Permanent auth failure — blacklist this provider for the process lifetime.
+          invalidProviders.add(name);
+          console.warn(`[agent] ${name}: auth error (${err.statusCode}), blacklisting provider`);
         } else if (err.statusCode === 429) {
-          // Rate limit is temporary — fall back now but log distinctly so it's
-          // visible in monitoring. Inline retry/backoff is intentionally omitted
-          // on a streaming endpoint to avoid stalling the UI.
+          // Rate limit is temporary — fall back now, but don't blacklist.
           console.warn(`[agent] ${name}: rate limited (429), falling back to next provider`);
         } else {
           console.warn(`[agent] ${name}: API error (${err.statusCode}), trying next provider:`, err.message);
