@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
+import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
@@ -86,11 +88,54 @@ async function analyseWithGroq(prompt: string): Promise<string> {
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.3, // low temp for structured JSON
+    temperature: 0.3,
     max_tokens: 600,
     response_format: { type: 'json_object' },
   });
   return completion.choices[0].message.content || '{}';
+}
+
+async function analyseWithOpenAI(prompt: string): Promise<string> {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.3,
+    max_tokens: 600,
+    response_format: { type: 'json_object' },
+  });
+  return completion.choices[0].message.content || '{}';
+}
+
+async function analyseWithGemini(prompt: string): Promise<string> {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.0-flash',
+    generationConfig: { responseMimeType: 'application/json' },
+  });
+  const result = await model.generateContent(prompt);
+  return result.response.text();
+}
+
+async function analyseWithFallback(prompt: string): Promise<string> {
+  const providers = [
+    { name: 'groq',   key: process.env.GROQ_API_KEY,   fn: () => analyseWithGroq(prompt) },
+    { name: 'openai', key: process.env.OPENAI_API_KEY,  fn: () => analyseWithOpenAI(prompt) },
+    { name: 'gemini', key: process.env.GEMINI_API_KEY,  fn: () => analyseWithGemini(prompt) },
+  ].filter(p => p.key);
+
+  if (providers.length === 0) throw new Error('No AI provider configured.');
+
+  let lastError: unknown;
+  for (const { name, fn } of providers) {
+    try {
+      return await fn();
+    } catch (err) {
+      console.warn(`[analyze-lead] ${name} failed, trying next:`, err instanceof Error ? err.message : err);
+      lastError = err;
+    }
+  }
+  throw lastError ?? new Error('All AI providers failed.');
 }
 
 // ── 3. Parse & validate ───────────────────────────────────────────────────────
@@ -131,8 +176,10 @@ export async function POST(req: NextRequest) {
 
     if (!leadId) return NextResponse.json({ error: 'leadId is required' }, { status: 400 });
     if (!website) return NextResponse.json({ error: 'website is required' }, { status: 400 });
-    if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json({ error: 'GROQ_API_KEY is not configured' }, { status: 503 });
+
+    const hasAnyProvider = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY;
+    if (!hasAnyProvider) {
+      return NextResponse.json({ error: 'No AI provider configured. Set GROQ_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY.' }, { status: 503 });
     }
 
     // Step 1 — scrape
@@ -147,7 +194,7 @@ export async function POST(req: NextRequest) {
 
     // Step 2 — analyse
     const prompt = buildAnalysisPrompt(business_name || '', industry || '', websiteContent);
-    const raw = await analyseWithGroq(prompt);
+    const raw = await analyseWithFallback(prompt);
     const analysis = parseAnalysis(raw);
 
     // Step 3 — patch Supabase

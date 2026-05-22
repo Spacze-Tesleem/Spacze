@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
+import Groq from 'groq-sdk';
 
-export async function POST(req: NextRequest) {
-  try {
-    const { business_name, industry, website, ai_opportunity, weak_points, possible_improvements } = await req.json();
-
-    if (!business_name) return NextResponse.json({ error: 'business_name is required' }, { status: 400 });
-
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-    if (!apiKey) return NextResponse.json({ error: 'No Gemini API key configured' }, { status: 500 });
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-    const prompt = `You are a senior web copywriter at Spacze, a Nigerian AI & web development agency.
+function buildPrompt(business_name: string, industry: string, website: string, ai_opportunity: string, weak_points: string, possible_improvements: string): string {
+  return `You are a senior web copywriter at Spacze, a Nigerian AI & web development agency.
 
 Generate website copy for a client with these details:
 - Business: ${business_name}
@@ -35,22 +26,80 @@ Rules:
 - Be specific to ${business_name} and their ${industry || 'industry'} — no generic filler
 - Tone: confident, clear, human — no corporate jargon
 - Hero and about must be fully developed paragraphs, not one-liners`;
+}
 
-    const result = await model.generateContent(prompt);
-    const raw = result.response.text().trim();
+function parseResponse(raw: string): { tagline: string; hero: string; about: string; cta: string } {
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Could not parse AI response as JSON');
+    return JSON.parse(match[0]);
+  }
+}
 
-    // Strip markdown code fences if present
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+async function generateWithGemini(prompt: string): Promise<string> {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const result = await model.generateContent(prompt);
+  return result.response.text().trim();
+}
 
-    let parsed: { tagline: string; hero: string; about: string; cta: string };
+async function generateWithOpenAI(prompt: string): Promise<string> {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.8,
+    max_tokens: 500,
+    response_format: { type: 'json_object' },
+  });
+  return completion.choices[0].message.content || '{}';
+}
+
+async function generateWithGroq(prompt: string): Promise<string> {
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  const completion = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.8,
+    max_tokens: 500,
+    response_format: { type: 'json_object' },
+  });
+  return completion.choices[0].message.content || '{}';
+}
+
+async function generateWithFallback(prompt: string): Promise<string> {
+  const providers = [
+    { name: 'gemini', key: process.env.GEMINI_API_KEY,  fn: () => generateWithGemini(prompt) },
+    { name: 'openai', key: process.env.OPENAI_API_KEY,  fn: () => generateWithOpenAI(prompt) },
+    { name: 'groq',   key: process.env.GROQ_API_KEY,    fn: () => generateWithGroq(prompt) },
+  ].filter(p => p.key);
+
+  if (providers.length === 0) throw new Error('No AI provider configured. Set GEMINI_API_KEY, OPENAI_API_KEY, or GROQ_API_KEY.');
+
+  let lastError: unknown;
+  for (const { name, fn } of providers) {
     try {
-      parsed = JSON.parse(cleaned);
-    } catch {
-      // Fallback: extract JSON object from response
-      const match = cleaned.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error('Could not parse AI response as JSON');
-      parsed = JSON.parse(match[0]);
+      return await fn();
+    } catch (err) {
+      console.warn(`[generate-site-content] ${name} failed, trying next:`, err instanceof Error ? err.message : err);
+      lastError = err;
     }
+  }
+  throw lastError ?? new Error('All AI providers failed.');
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { business_name, industry, website, ai_opportunity, weak_points, possible_improvements } = await req.json();
+
+    if (!business_name) return NextResponse.json({ error: 'business_name is required' }, { status: 400 });
+
+    const prompt = buildPrompt(business_name, industry, website, ai_opportunity, weak_points, possible_improvements);
+    const raw = await generateWithFallback(prompt);
+    const parsed = parseResponse(raw);
 
     return NextResponse.json(parsed);
   } catch (e: unknown) {
