@@ -212,7 +212,7 @@ function OperationsView({ messages, status, inputRef, input, setInput }: {
       </div>
 
       {isEmpty && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-8 pb-32">
+        <div className="flex-1 flex flex-col items-center justify-center gap-8 overflow-y-auto py-6">
           <div className="text-center space-y-3">
             <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto">
               <Zap size={28} className="text-indigo-400" />
@@ -235,7 +235,7 @@ function OperationsView({ messages, status, inputRef, input, setInput }: {
       )}
 
       {!isEmpty && (
-        <div className="flex-1 overflow-y-auto space-y-6 pr-2 pb-32 min-h-0">
+        <div className="flex-1 overflow-y-auto space-y-6 pr-2 py-4 min-h-0">
           {messages.map(m => {
             const text = msgText(m).replace(/```[\s\S]*?```/g, '').replace(/Current component[\s\S]*$/i, '').trim();
             const toolParts = (m.parts ?? []).filter(p =>
@@ -369,7 +369,7 @@ function ArchitectView({ code, setCode, messages, status, view, setView, device,
       </div>
 
       {/* Builder chat sidebar */}
-      <div className="w-72 flex-shrink-0 flex flex-col gap-3 pb-28 min-h-0">
+      <div className="w-72 flex-shrink-0 flex flex-col gap-3 min-h-0">
         <div className="flex items-center gap-2 px-1">
           <Wand2 size={13} className="text-indigo-400" />
           <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest">Builder Chat</span>
@@ -510,8 +510,8 @@ export default function AgentPanel() {
         </div>
       </header>
 
-      {/* Main canvas */}
-      <main className="flex-1 relative min-h-0 z-10 px-8">
+      {/* Main canvas — flex-1, scrollable, sits above the command bar */}
+      <main className="flex-1 relative min-h-0 z-10 px-8 overflow-hidden">
         <AnimatePresence mode="wait">
           {mode === 'ops' ? (
             <motion.div key="ops" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="h-full flex flex-col">
@@ -529,11 +529,11 @@ export default function AgentPanel() {
         </AnimatePresence>
       </main>
 
-      {/* Floating command bar */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-3xl px-8 z-[100]">
-        <div className="relative group">
+      {/* Command bar — real flex footer, never overlaps content */}
+      <div className="relative z-50 flex-shrink-0 px-8 py-5 border-t border-white/5">
+        <div className="relative group max-w-3xl mx-auto">
           <div className="absolute -inset-3 bg-indigo-500/8 blur-3xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-700 pointer-events-none" />
-          <SolarisCard className="p-2 bg-zinc-950/85 backdrop-blur-3xl border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.6)]">
+          <SolarisCard className="p-2 bg-zinc-950/85 backdrop-blur-3xl border-white/10 shadow-[0_-8px_40px_rgba(0,0,0,0.4)]">
             <div className="flex items-end gap-3 px-3 py-1">
               <div className="pb-3 text-indigo-400 flex-shrink-0">
                 {mode === 'ops' ? <Search size={18} /> : <Wand2 size={18} />}
@@ -559,7 +559,7 @@ export default function AgentPanel() {
               </div>
             </div>
           </SolarisCard>
-          <div className="mt-3 flex justify-center gap-6 text-[9px] font-mono text-zinc-700 uppercase tracking-[0.2em]">
+          <div className="mt-2 flex justify-center gap-6 text-[9px] font-mono text-zinc-700 uppercase tracking-[0.2em]">
             <span className="flex items-center gap-1.5"><Command size={9} />K Search</span>
             <span className="flex items-center gap-1.5"><Command size={9} />J Architect</span>
             {mode === 'arch' && <span className="flex items-center gap-1.5"><Command size={9} />L Source</span>}
