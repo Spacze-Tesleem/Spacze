@@ -148,6 +148,27 @@ create index if not exists idx_whatsapp_replies_lead
 create index if not exists idx_whatsapp_replies_phone
   on public.whatsapp_replies(phone, received_at desc);
 
+-- ── settings ─────────────────────────────────────────────────────────────────
+-- Persistent key/value store for admin-configurable settings (API keys, etc.).
+-- Values are encrypted at rest by Supabase (column-level encryption not required
+-- here — the table is protected by RLS + service role key access only).
+create table if not exists public.settings (
+  key        text primary key,
+  value      text not null default '',
+  updated_at timestamptz not null default now()
+);
+
+-- Only the service role can read/write — anon and authenticated roles are denied.
+alter table public.settings enable row level security;
+
+-- No RLS policies = deny all by default for non-service-role clients.
+-- The API route uses the service role key via getSupabaseAdmin().
+
+drop trigger if exists settings_updated_at on public.settings;
+create trigger settings_updated_at
+  before update on public.settings
+  for each row execute procedure public.set_updated_at();
+
 -- ── outreach_events ───────────────────────────────────────────────────────────
 -- Event-sourced outreach history. Analytics should be built from this table
 -- rather than from mutable flags on the leads row (email_sent, reply_received,

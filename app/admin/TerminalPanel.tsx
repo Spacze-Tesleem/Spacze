@@ -6,7 +6,7 @@ import {
   Terminal, Key, Eye, EyeOff, CheckCircle2, AlertCircle,
   Save, RefreshCw, Zap, Mail, MessageCircle, Database,
   Globe, Shield, ChevronDown, ChevronRight, Linkedin, Twitter,
-  Facebook, Search,
+  Facebook, Search, Trash2,
 } from 'lucide-react';
 
 const fadeUp = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
@@ -305,11 +305,13 @@ function SecretField({
   field,
   value,
   onChange,
+  onClear,
   saved,
 }: {
   field: ApiField;
   value: string;
   onChange: (v: string) => void;
+  onClear: (key: string) => void;
   saved: boolean;
 }) {
   const [show, setShow] = useState(false);
@@ -318,16 +320,28 @@ function SecretField({
     <div>
       <div className="flex items-center justify-between mb-1.5">
         <label className="label-xs">{field.label}</label>
-        {field.link && (
-          <a
-            href={field.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] text-[#00D67D] hover:underline"
-          >
-            {field.linkLabel}
-          </a>
-        )}
+        <div className="flex items-center gap-3">
+          {saved && (
+            <button
+              type="button"
+              onClick={() => onClear(field.key)}
+              className="text-[10px] text-red-400/60 hover:text-red-400 flex items-center gap-1 transition-colors"
+              title="Remove this key"
+            >
+              <Trash2 size={10} /> clear
+            </button>
+          )}
+          {field.link && (
+            <a
+              href={field.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-[#00D67D] hover:underline"
+            >
+              {field.linkLabel}
+            </a>
+          )}
+        </div>
       </div>
       <div className="relative">
         <Key size={12} className="absolute left-3 top-1/2 -translate-y-1/2 admin-subtle pointer-events-none" />
@@ -361,6 +375,7 @@ function GroupCard({
   values,
   onChange,
   onSave,
+  onClear,
   saving,
   savedKeys,
   delay,
@@ -369,6 +384,7 @@ function GroupCard({
   values: Record<string, string>;
   onChange: (key: string, val: string) => void;
   onSave: (groupId: string) => void;
+  onClear: (key: string) => void;
   saving: boolean;
   savedKeys: Set<string>;
   delay: number;
@@ -418,6 +434,7 @@ function GroupCard({
                   field={field}
                   value={values[field.key] || ''}
                   onChange={val => onChange(field.key, val)}
+                  onClear={onClear}
                   saved={savedKeys.has(field.key)}
                 />
               ))}
@@ -492,7 +509,6 @@ export default function TerminalPanel() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Save failed');
 
-      // Mark saved keys
       setSavedKeys(prev => {
         const next = new Set(prev);
         group.fields.forEach(f => {
@@ -501,11 +517,27 @@ export default function TerminalPanel() {
         });
         return next;
       });
-      setNotice(`${group.label} settings applied for this session. To persist across restarts, set them as environment variables in your hosting platform (Vercel / Railway / .env.local).`);
+      setNotice(`${group.label} saved to database — active immediately and persisted across restarts.`);
     } catch (e: unknown) {
-      setSaveError(e instanceof Error ? e.message : 'Failed to apply settings');
+      setSaveError(e instanceof Error ? e.message : 'Failed to save settings');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleClear(key: string) {
+    setSaveError('');
+    setNotice('');
+    try {
+      const res = await fetch(`/api/settings?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+
+      setValues(prev => { const next = { ...prev }; delete next[key]; return next; });
+      setSavedKeys(prev => { const next = new Set(prev); next.delete(key); return next; });
+      setNotice(`${key} removed.`);
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : 'Failed to remove key');
     }
   }
 
@@ -553,8 +585,9 @@ export default function TerminalPanel() {
       >
         <Shield size={14} className="flex-shrink-0 mt-0.5" />
         <span>
-          API keys are sensitive. They are saved to your server environment and never exposed in the browser.
-          Do not share or commit them to version control.
+          Settings are encrypted in Supabase and applied to the server process immediately.
+          They persist across restarts — no need to set environment variables manually.
+          Never share API keys or commit them to version control.
         </span>
       </motion.div>
 
@@ -566,6 +599,7 @@ export default function TerminalPanel() {
           values={values}
           onChange={handleChange}
           onSave={handleSave}
+          onClear={handleClear}
           saving={saving}
           savedKeys={savedKeys}
           delay={0.08 + i * 0.06}

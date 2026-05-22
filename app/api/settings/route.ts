@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
-// Keys that the Settings UI is allowed to read/write.
+// Keys the Settings UI is allowed to read/write.
 const ALLOWED_KEYS = [
   'OPENAI_API_KEY',
   'GEMINI_API_KEY',
@@ -32,46 +33,113 @@ const ALLOWED_KEYS = [
   'ADMIN_SESSION_SECRET',
 ];
 
-// GET /api/settings — return masked indicators (set / unset) for each key.
-// Raw values are never sent to the browser.
+const MASK = '••••••••';
+
+/**
+ * Load all settings rows from Supabase and apply them to process.env.
+ * Called on every GET so DB values stay live across restarts.
+ */
+async function loadFromDb(): Promise<Record<string, string>> {
+  try {
+    const db = getSupabaseAdmin();
+    const { data, error } = await db
+      .from('settings')
+      .select('key, value')
+      .in('key', ALLOWED_KEYS);
+
+    if (error) throw error;
+
+    const result: Record<string, string> = {};
+    for (const row of data ?? []) {
+      if (row.value) {
+        result[row.key] = row.value;
+        process.env[row.key] = row.value;
+      }
+    }
+    return result;
+  } catch {
+    // Supabase not yet configured — fall back to process.env silently
+    return {};
+  }
+}
+
+// GET /api/settings
+// Returns masked indicators (set / unset) for each key.
+// Also hydrates process.env from DB so values are live after a cold start.
 export async function GET() {
+  const dbValues = await loadFromDb();
+
   const result: Record<string, string> = {};
   for (const key of ALLOWED_KEYS) {
-    result[key] = process.env[key] ? '••••••••' : '';
+    const val = dbValues[key] || process.env[key];
+    result[key] = val ? MASK : '';
   }
+
   return NextResponse.json(result);
 }
 
-// POST /api/settings — apply values to process.env for the current server
-// process lifetime.
-//
-// ⚠️  This does NOT persist across restarts or deployments.
-//     For permanent storage set env vars in your hosting platform
-//     (Vercel → Project Settings → Environment Variables, Railway → Variables,
-//     or a .env.local file that is NOT committed to version control).
+// POST /api/settings
+// Upserts values into Supabase AND applies them to process.env immediately.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
+    const toUpsert: { key: string; value: string }[] = [];
     const applied: string[] = [];
+
     for (const [key, val] of Object.entries(body)) {
       if (!ALLOWED_KEYS.includes(key)) continue;
       if (typeof val !== 'string') continue;
-      // Skip the masked placeholder — don't overwrite a real value with '••••••••'
-      if (val === '••••••••') continue;
-      if (val.trim()) {
-        process.env[key] = val;
-        applied.push(key);
+      if (val === MASK) continue;
+      if (!val.trim()) continue;
+
+      toUpsert.push({ key, value: val.trim() });
+      applied.push(key);
+    }
+
+    if (toUpsert.length > 0) {
+      const db = getSupabaseAdmin();
+      const { error } = await db
+        .from('settings')
+        .upsert(toUpsert, { onConflict: 'key' });
+
+      if (error) throw new Error(`DB upsert failed: ${error.message}`);
+
+      for (const { key, value } of toUpsert) {
+        process.env[key] = value;
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      applied,
-      note: 'Values are active for this server process only. Set them as platform environment variables for persistence across restarts.',
-    });
+    return NextResponse.json({ success: true, applied });
   } catch (err: unknown) {
-    console.error('settings error:', err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to apply settings' }, { status: 500 });
+    console.error('[settings POST]', err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed to save settings' },
+      { status: 500 },
+    );
+  }
+}
+
+// DELETE /api/settings?key=SOME_KEY
+// Removes a single key from Supabase and clears it from process.env.
+export async function DELETE(req: NextRequest) {
+  try {
+    const key = new URL(req.url).searchParams.get('key');
+    if (!key || !ALLOWED_KEYS.includes(key)) {
+      return NextResponse.json({ error: 'Invalid or missing key' }, { status: 400 });
+    }
+
+    const db = getSupabaseAdmin();
+    const { error } = await db.from('settings').delete().eq('key', key);
+    if (error) throw new Error(error.message);
+
+    delete process.env[key];
+
+    return NextResponse.json({ success: true, deleted: key });
+  } catch (err: unknown) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Delete failed' },
+      { status: 500 },
+    );
   }
 }
