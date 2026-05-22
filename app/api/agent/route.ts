@@ -14,7 +14,7 @@
  * Provider fallback: OpenAI → Groq → Gemini (same order as other routes).
  */
 
-import { streamText, stepCountIs } from 'ai';
+import { streamText, stepCountIs, convertToModelMessages } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
@@ -80,12 +80,21 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const model = getModel();
+  let model;
+  try {
+    model = getModel();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'No AI provider configured';
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   const result = streamText({
     model,
     system: SYSTEM_PROMPT,
-    messages,
+    messages: await convertToModelMessages(messages),
     tools: agentTools,
     stopWhen: stepCountIs(10), // max tool-call iterations before forcing a final answer
     temperature: 0.4,          // lower = more deterministic planning
