@@ -1,443 +1,348 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import {
   Send, Bot, User, Loader2, Sparkles, RotateCcw, Copy, Check,
   Code2, Eye, Monitor, Smartphone, Tablet, FileCode2,
-  ChevronRight, ChevronDown, Globe, RefreshCw, Download,
+  ChevronRight, Globe, RefreshCw, Download,
   MessageSquare, PanelLeftClose, PanelLeftOpen, X,
-  Circle, CheckCircle2, AlertCircle, Terminal, Cpu, Zap,
-  Play, Square, Layers, Command, Search, Settings2
+  Terminal, Cpu, Zap, Maximize2, Layers, Command, Search,
+  Plus, Github, ExternalLink, Activity
 } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
 
-// ── Design Tokens ─────────────────────────────────────────────────────────────
-const THEME = {
-  bg: '#09090b',
-  bgElevated: '#121217',
-  bgSubtle: '#18181b',
-  border: 'rgba(255,255,255,0.08)',
-  borderBright: 'rgba(255,255,255,0.15)',
-  accent: '#10b981', // Emerald 500
-  accentMuted: 'rgba(16, 185, 129, 0.15)',
-  textMain: '#fafafa',
-  textSecondary: '#a1a1aa',
-  textMuted: '#52525b',
-  mono: "'JetBrains Mono', 'Fira Code', monospace",
-  sans: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-};
+// ── Configuration ─────────────────────────────────────────────────────────────
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-interface MsgPart {
-  type: string;
-  text?: string;
-  toolName?: string;
-  toolCallId?: string;
-  state?: string;
-  args?: Record<string, unknown>;
-  result?: unknown;
-}
-interface UIMessage {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  parts?: MsgPart[];
-}
-interface CodeFile { name: string; lang: 'tsx' | 'css'; content: string; }
-type PreviewSize = 'desktop' | 'tablet' | 'mobile';
-type RightPane  = 'code' | 'preview';
-type TopTab     = 'chat' | 'builder';
-
-// ── Constants & Helpers ───────────────────────────────────────────────────────
 const STARTER_CODE = `'use client';
 import { motion } from 'framer-motion';
 
-export default function Page() {
+export default function Component() {
   return (
-    <main className="min-h-screen bg-neutral-950 text-white flex items-center justify-center p-6">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <motion.div 
-        initial={{ opacity: 0, y: 20 }} 
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-xl w-full"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative group p-[1px] rounded-3xl bg-gradient-to-b from-indigo-500 to-cyan-500 shadow-2xl"
       >
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent mb-8" />
-        <h1 className="text-4xl font-light tracking-tight mb-4">
-          Next Generation <span className="text-emerald-500 font-medium">Interfaces</span>
-        </h1>
-        <p className="text-neutral-400 text-lg font-light leading-relaxed mb-8">
-          The builder is ready. Describe your vision and watch the code materialize in real-time.
-        </p>
-        <div className="flex gap-4">
-          <button className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 transition-colors rounded-full text-sm font-medium">
-            Deploy Component
-          </button>
-          <button className="px-6 py-2 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 transition-colors rounded-full text-sm font-medium">
-            View Documentation
+        <div className="bg-zinc-950 rounded-[23px] px-8 py-12 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.15),transparent)]" />
+          <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500 mb-4">
+            Future is Here
+          </h1>
+          <p className="text-zinc-400 max-w-sm mx-auto mb-8 leading-relaxed">
+            Every line of code is orchestrated by intelligence. Ready to deploy?
+          </p>
+          <button className="px-6 py-2.5 rounded-full bg-white text-black font-semibold hover:bg-zinc-200 transition-colors">
+            Initialize Sequence
           </button>
         </div>
       </motion.div>
-    </main>
+    </div>
   );
 }`;
 
-function extractTsx(text: string): string | null {
-  const m = text.match(/```(?:tsx|jsx|typescript|javascript|js|ts)\n([\s\S]*?)```/i);
-  if (m) return m[1].trim();
-  if (text.includes('export default') && text.includes('return (')) return text.trim();
-  return null;
-}
+// ── UI Atomic Components ──────────────────────────────────────────────────────
 
-// ── Reusable UI Components ────────────────────────────────────────────────────
+const GlassCard = ({ children, className = "" }: any) => (
+  <div className={`backdrop-blur-xl bg-zinc-900/40 border border-white/10 rounded-2xl ${className}`}>
+    {children}
+  </div>
+);
 
-const IconButton = ({ icon: Icon, onClick, active, title }: any) => (
+const TabButton = ({ active, onClick, icon: Icon, label }: any) => (
   <button
     onClick={onClick}
-    title={title}
-    className={`p-1.5 rounded-md transition-all duration-200 ${
-      active 
-        ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
-        : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent'
+    className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+      active ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
     }`}
   >
-    <Icon size={16} />
+    {active && (
+      <motion.div 
+        layoutId="active-tab"
+        className="absolute inset-0 bg-white/5 border border-white/10 rounded-xl"
+        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+      />
+    )}
+    <Icon size={16} className={active ? 'text-indigo-400' : ''} />
+    <span className="relative z-10">{label}</span>
   </button>
 );
 
-const Badge = ({ children, variant = 'default' }: any) => {
-  const styles = {
-    default: 'bg-zinc-800 text-zinc-400 border-zinc-700',
-    success: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-    warning: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  };
+// ── Agent Log Card ────────────────────────────────────────────────────────────
+
+function ToolInvocation({ part }: { part: any }) {
   return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${styles[variant as keyof typeof styles]}`}>
-      {children}
-    </span>
-  );
-};
-
-// ── Chat Activity Row ────────────────────────────────────────────────────────
-function ChatRow({ msg, isStreaming }: { msg: UIMessage; isStreaming?: boolean }) {
-  const isUser = msg.role === 'user';
-  const text = msg.content.replace(/```[\s\S]*?```/g, '').trim();
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, x: isUser ? 10 : -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      className={`flex flex-col mb-6 ${isUser ? 'items-end' : 'items-start'}`}
-    >
-      <div className={`flex items-center gap-2 mb-1.5 ${isUser ? 'flex-row-reverse' : ''}`}>
-        <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${
-          isUser ? 'bg-zinc-100 border-white' : 'bg-emerald-500/10 border-emerald-500/30'
-        }`}>
-          {isUser ? <User size={12} className="text-black" /> : <Bot size={12} className="text-emerald-500" />}
+    <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/5 font-mono text-[10px] space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-indigo-400">
+          <Cpu size={12} />
+          <span className="uppercase tracking-widest">{part.toolName}</span>
         </div>
-        <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
-          {isUser ? 'Authorized User' : 'System Agent'}
-        </span>
-      </div>
-      
-      <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed ${
-        isUser 
-          ? 'bg-zinc-100 text-black rounded-tr-none' 
-          : 'bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-tl-none'
-      }`}>
-        {text}
-        {isStreaming && (
-          <span className="inline-block w-1.5 h-4 ml-1 bg-emerald-500 animate-pulse align-middle" />
-        )}
-      </div>
-
-      {msg.parts?.filter(p => p.toolName).map((p, i) => (
-        <div key={i} className="mt-2 ml-2 flex items-center gap-2 text-[11px] text-zinc-500 font-mono">
-          <Terminal size={12} className="text-emerald-500" />
-          <span>executing: <span className="text-zinc-300">{p.toolName}</span></span>
-          {p.state === 'result' ? <CheckCircle2 size={10} className="text-emerald-500" /> : <Loader2 size={10} className="animate-spin" />}
+        <div className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          {part.state === 'result' ? 'SUCCESS' : 'EXECUTING'}
         </div>
-      ))}
-    </motion.div>
-  );
-}
-
-// ── BUILDER: Code & Preview ───────────────────────────────────────────────────
-
-function CodePanel({ code, onChange }: { code: string; onChange: (v: string) => void }) {
-  return (
-    <div className="flex flex-col h-full bg-[#0d0d0f]">
-      <div className="flex items-center justify-between px-4 h-10 border-b border-white/5 bg-zinc-900/50">
-        <div className="flex items-center gap-2 text-[11px] text-zinc-400 font-mono">
-          <FileCode2 size={14} className="text-blue-400" />
-          <span>page.tsx</span>
-        </div>
-        <IconButton icon={Copy} onClick={() => navigator.clipboard.writeText(code)} />
       </div>
-      <textarea
-        value={code}
-        onChange={(e) => onChange(e.target.value)}
-        className="flex-1 p-6 bg-transparent outline-none resize-none text-[13px] leading-relaxed text-zinc-300 font-mono"
-        spellCheck={false}
-      />
+      <div className="text-zinc-500 break-all leading-relaxed">
+        {JSON.stringify(part.args)}
+      </div>
     </div>
   );
 }
 
-// ── MAIN PANEL COMPONENT ──────────────────────────────────────────────────────
+function MessageBubble({ msg, isStreaming }: { msg: any; isStreaming?: boolean }) {
+  const isUser = msg.role === 'user';
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }} 
+      animate={{ opacity: 1, y: 0 }}
+      className={`flex gap-4 mb-8 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+    >
+      <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center border ${
+        isUser ? 'bg-white border-white text-black' : 'bg-zinc-900 border-white/10 text-indigo-400'
+      }`}>
+        {isUser ? <User size={16} /> : <Bot size={16} />}
+      </div>
+      
+      <div className={`flex flex-col gap-2 max-w-[80%] ${isUser ? 'items-end' : 'items-start'}`}>
+        <div className={`px-5 py-3.5 rounded-2xl text-[14px] leading-relaxed ${
+          isUser 
+            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
+            : 'bg-zinc-900/80 border border-white/5 text-zinc-300'
+        }`}>
+          {msg.content.replace(/```[\s\S]*?```/g, '').trim()}
+          {isStreaming && <span className="inline-block w-1 h-4 ml-1 bg-indigo-400 animate-pulse" />}
+        </div>
+        
+        {msg.parts?.filter((p: any) => p.toolName).map((p: any, i: number) => (
+          <ToolInvocation key={i} part={p} />
+        ))}
+      </div>
+    </motion.div>
+  );
+}
 
-export default function ProfessionalAgentPanel() {
-  const [activeTab, setActiveTab] = useState<TopTab>('chat');
-  const [isBuilderSidebarOpen, setBuilderSidebarOpen] = useState(true);
-  const [builderInput, setBuilderInput] = useState('');
-  const [chatInput, setChatInput] = useState('');
+// ── MAIN APPLICATION ──────────────────────────────────────────────────────────
+
+export default function SpatialAgent() {
+  const [activeTab, setActiveTab] = useState('chat');
   const [code, setCode] = useState(STARTER_CODE);
-  const [previewSize, setPreviewSize] = useState<PreviewSize>('desktop');
-  const [previewKey, setPreviewKey] = useState(0);
-  const [viewMode, setViewMode] = useState<'code' | 'preview'>('preview');
+  const [input, setInput] = useState('');
+  const [previewSize, setPreviewSize] = useState('desktop');
+  const [viewMode, setViewMode] = useState<'preview' | 'code'>('preview');
 
-  const { messages: chatMsgs, sendMessage: sendChatMessage, status: chatStatus } = useChat({
+  const { messages, sendMessage, status } = useChat({
     api: '/api/agent',
   });
 
-  const { messages: buildMsgs, sendMessage: sendBuildMessage, status: buildStatus } = useChat({
-    api: '/api/build',
-  });
-
-  // Sync builder code
+  // Extract code from builder messages if needed
   useEffect(() => {
-    const lastMsg = buildMsgs[buildMsgs.length - 1];
+    const lastMsg = messages[messages.length - 1];
     if (lastMsg?.role === 'assistant') {
-      const extracted = extractTsx(lastMsg.content);
-      if (extracted) {
-        setCode(extracted);
-        setPreviewKey(k => k + 1);
-      }
+      const match = lastMsg.content.match(/```tsx\n([\s\S]*?)```/);
+      if (match) setCode(match[1]);
     }
-  }, [buildMsgs]);
+  }, [messages]);
 
-  const handleChatSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!chatInput.trim()) return;
-    sendChatMessage({ text: chatInput });
-    setChatInput('');
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    sendMessage({ text: input });
+    setInput('');
   };
 
-  const handleBuildSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!builderInput.trim()) return;
-    const prompt = `Current code:\n${code}\n\nTask: ${builderInput}`;
-    sendBuildMessage({ text: prompt });
-    setBuilderInput('');
-  };
-
-  const previewDoc = useMemo(() => {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <script src="https://cdn.tailwindcss.com"></script>
-          <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-          <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-          <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-          <style>body { background: #000; margin: 0; color: white; font-family: sans-serif; }</style>
-        </head>
-        <body>
-          <div id="root"></div>
-          <script type="text/babel">
-            const { useState, useEffect } = React;
-            ${code.replace(/import.*from.*/g, '').replace(/export default/g, 'const Page =')}
-            const root = ReactDOM.createRoot(document.getElementById('root'));
-            root.render(<Page />);
-          </script>
-        </body>
-      </html>
-    `;
-  }, [code]);
+  const previewDoc = useMemo(() => `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+      </head>
+      <body>
+        <div id="root"></div>
+        <script type="text/babel">
+          ${code.replace(/import.*from.*/g, '').replace(/export default/g, 'const Component =')}
+          ReactDOM.createRoot(document.getElementById('root')).render(<Component />);
+        </script>
+      </body>
+    </html>
+  `, [code]);
 
   return (
-    <div className="flex flex-col h-[90vh] max-h-[900px] w-full max-w-6xl mx-auto rounded-3xl border border-white/10 bg-[#09090b] shadow-2xl overflow-hidden shadow-emerald-500/5">
-      
-      {/* ── Top Navigation ── */}
-      <header className="flex items-center justify-between px-6 h-16 border-b border-white/5 bg-zinc-900/20 backdrop-blur-xl">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <Zap size={18} className="text-white fill-white" />
+    <div className="h-screen w-full bg-[#020203] text-zinc-400 font-sans selection:bg-indigo-500/30 overflow-hidden flex flex-col">
+      {/* ── Sub-pixel Noise Overlay ── */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+
+      {/* ── Header ── */}
+      <header className="h-16 flex items-center justify-between px-8 border-b border-white/5 relative z-10 bg-black/20 backdrop-blur-md">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 rounded bg-white flex items-center justify-center">
+              <Zap size={14} className="text-black fill-black" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold tracking-tight text-white">Spacze Agent</span>
-              <span className="text-[10px] text-emerald-500/80 font-mono font-medium flex items-center gap-1">
-                <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" /> 
-                SYSTEM_ONLINE v2.4
-              </span>
-            </div>
+            <span className="text-white font-bold tracking-tighter text-lg">SPACZE</span>
           </div>
           
-          <nav className="flex items-center ml-8 bg-zinc-800/40 p-1 rounded-xl border border-white/5">
-            <button
-              onClick={() => setActiveTab('chat')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'chat' ? 'bg-zinc-100 text-black' : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <MessageSquare size={16} /> Activity
-            </button>
-            <button
-              onClick={() => setActiveTab('builder')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'builder' ? 'bg-zinc-100 text-black' : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <Layers size={16} /> UI Builder
-            </button>
-          </nav>
+          <div className="h-4 w-px bg-white/10" />
+          
+          <div className="flex gap-1">
+            <TabButton active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} icon={Activity} label="Operations" />
+            <TabButton active={activeTab === 'builder'} onClick={() => setActiveTab('builder')} icon={Layers} label="Architect" />
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Badge variant={chatStatus === 'streaming' || buildStatus === 'streaming' ? 'warning' : 'success'}>
-            {chatStatus === 'streaming' || buildStatus === 'streaming' ? 'Processing...' : 'Ready'}
-          </Badge>
-          <div className="w-px h-4 bg-white/10 mx-2" />
-          <IconButton icon={Settings2} />
+        <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/5 text-[11px] font-mono">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            AGENT_ACTIVE
+          </div>
+          <button className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors">
+            <Github size={16} />
+          </button>
         </div>
       </header>
 
-      {/* ── Main Content Area ── */}
-      <main className="flex-1 overflow-hidden relative">
+      {/* ── Main Canvas ── */}
+      <main className="flex-1 relative flex overflow-hidden">
+        
+        {/* Tab 1: Chat / Operations */}
         <AnimatePresence mode="wait">
-          {activeTab === 'chat' ? (
+          {activeTab === 'chat' && (
             <motion.div 
-              key="chat-tab"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex flex-col h-full bg-zinc-950/50"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="flex-1 flex flex-col relative"
             >
-              <div className="flex-1 overflow-y-auto p-8 max-w-4xl mx-auto w-full">
-                {chatMsgs.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 rounded-3xl bg-zinc-900 flex items-center justify-center mb-6 border border-white/5">
-                      <Command size={32} className="text-zinc-600" />
+              <div className="flex-1 overflow-y-auto pt-12 pb-32 px-6">
+                <div className="max-w-3xl mx-auto">
+                  {messages.length === 0 && (
+                    <div className="py-20 text-center">
+                      <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                        className="w-12 h-12 mx-auto mb-6 border-2 border-dashed border-indigo-500/50 rounded-full flex items-center justify-center"
+                      >
+                        <Command size={20} className="text-indigo-400" />
+                      </motion.div>
+                      <h2 className="text-2xl font-semibold text-white mb-2">System Initialized</h2>
+                      <p className="text-zinc-500 max-w-sm mx-auto">Awaiting instructions for CRM automation, lead scoring, or campaign orchestration.</p>
                     </div>
-                    <h2 className="text-xl font-medium text-white mb-2">How can I assist today?</h2>
-                    <p className="text-zinc-500 text-sm max-w-xs">Enter a command to analyze leads, manage campaigns, or generate outreach content.</p>
-                  </div>
-                )}
-                {chatMsgs.map((m: any) => <ChatRow key={m.id} msg={m} />)}
-                {chatStatus === 'streaming' && <ChatRow msg={{ id: 'stream', role: 'assistant', content: '' }} isStreaming />}
+                  )}
+                  {messages.map((m: any) => <MessageBubble key={m.id} msg={m} />)}
+                  {status === 'streaming' && <MessageBubble msg={{ role: 'assistant', content: '' }} isStreaming />}
+                </div>
               </div>
 
-              {/* Chat Input Bar */}
-              <div className="p-6 bg-gradient-to-t from-zinc-950 to-transparent">
-                <form 
-                  onSubmit={handleChatSubmit}
-                  className="max-w-3xl mx-auto relative group"
-                >
-                  <input
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Type a command or ask a question..."
-                    className="w-full bg-zinc-900/80 border border-white/10 rounded-2xl py-4 pl-6 pr-16 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-xl"
-                  />
-                  <button 
-                    type="submit"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-black hover:scale-105 transition-transform active:scale-95"
-                  >
-                    <Send size={18} />
-                  </button>
-                </form>
+              {/* Floating Command Bar */}
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6">
+                <GlassCard className="p-2 shadow-2xl shadow-indigo-500/10 group focus-within:border-indigo-500/50 transition-all duration-500">
+                  <form onSubmit={handleSubmit} className="flex items-center gap-2">
+                    <div className="pl-3 text-zinc-500">
+                      <Search size={18} />
+                    </div>
+                    <input 
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Ask the system anything..."
+                      className="flex-1 bg-transparent border-none outline-none py-3 text-sm text-white placeholder:text-zinc-600"
+                    />
+                    <div className="flex gap-1 pr-1">
+                      <div className="px-2 py-1 rounded bg-zinc-800 text-[10px] font-bold text-zinc-500 flex items-center gap-1 border border-white/5">
+                        <Command size={10} /> K
+                      </div>
+                      <button 
+                        type="submit"
+                        className="bg-white text-black p-2 rounded-xl hover:scale-105 active:scale-95 transition-all"
+                      >
+                        <Send size={18} />
+                      </button>
+                    </div>
+                  </form>
+                </GlassCard>
               </div>
             </motion.div>
-          ) : (
-            <motion.div 
-              key="builder-tab"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex h-full"
-            >
-              {/* Builder Sidebar */}
-              <AnimatePresence initial={false}>
-                {isBuilderSidebarOpen && (
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: 320 }}
-                    exit={{ width: 0 }}
-                    className="border-r border-white/5 bg-zinc-900/30 flex flex-col"
-                  >
-                    <div className="p-4 border-b border-white/5 flex items-center justify-between">
-                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Builder Chat</span>
-                      <IconButton icon={RotateCcw} onClick={() => setCode(STARTER_CODE)} />
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                      {buildMsgs.filter(m => m.content.replace(/```[\s\S]*?```/g, '').trim()).map((m: any) => (
-                        <div key={m.id} className={`p-3 rounded-xl text-[12px] ${m.role === 'user' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-800/50 text-zinc-300'}`}>
-                          {m.content.replace(/```[\s\S]*?```/g, '').trim()}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="p-4 border-t border-white/5">
-                      <form onSubmit={handleBuildSubmit} className="relative">
-                        <textarea
-                          value={builderInput}
-                          onChange={(e) => setBuilderInput(e.target.value)}
-                          placeholder="Change colors, add a section..."
-                          className="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-xs text-zinc-300 focus:outline-none focus:border-emerald-500/50 resize-none h-24"
-                        />
-                        <button className="absolute bottom-3 right-3 p-1.5 bg-emerald-500 rounded-lg text-black">
-                          <Send size={14} />
-                        </button>
-                      </form>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+          )}
 
-              {/* Builder Canvas Area */}
-              <div className="flex-1 flex flex-col bg-[#050505]">
-                <div className="h-12 border-b border-white/5 flex items-center justify-between px-4 bg-zinc-900/20">
-                  <div className="flex items-center gap-3">
-                    <IconButton icon={isBuilderSidebarOpen ? PanelLeftClose : PanelLeftOpen} onClick={() => setBuilderSidebarOpen(!isBuilderSidebarOpen)} />
-                    <div className="w-px h-4 bg-white/10" />
-                    <div className="flex bg-zinc-800/50 p-1 rounded-lg border border-white/5">
-                      <button onClick={() => setViewMode('preview')} className={`px-3 py-1 text-[11px] rounded-md transition-all ${viewMode === 'preview' ? 'bg-zinc-100 text-black' : 'text-zinc-400'}`}>Preview</button>
-                      <button onClick={() => setViewMode('code')} className={`px-3 py-1 text-[11px] rounded-md transition-all ${viewMode === 'code' ? 'bg-zinc-100 text-black' : 'text-zinc-400'}`}>Code</button>
+          {/* Tab 2: Architect / Builder */}
+          {activeTab === 'builder' && (
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="flex-1 flex"
+            >
+              {/* Sidebar Architect Controls */}
+              <aside className="w-80 border-r border-white/5 flex flex-col bg-black/40 backdrop-blur-sm">
+                <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500">History</span>
+                  <button className="p-1.5 hover:bg-white/5 rounded-md text-zinc-500"><Plus size={14}/></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                   {messages.filter(m => m.role === 'user').map((m, i) => (
+                     <div key={i} className="p-3 rounded-xl border border-white/5 bg-zinc-900/30 text-[12px] text-zinc-400 hover:border-indigo-500/30 cursor-pointer transition-colors group">
+                       <div className="flex items-center gap-2 mb-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                        <span className="text-zinc-500 text-[10px]">REVISION {i + 1}</span>
+                       </div>
+                       {m.content.slice(0, 60)}...
+                     </div>
+                   ))}
+                </div>
+              </aside>
+
+              {/* Workbench */}
+              <div className="flex-1 flex flex-col bg-[#050506]">
+                <div className="h-14 border-b border-white/5 flex items-center justify-between px-6">
+                  <div className="flex items-center gap-4">
+                    <div className="flex p-1 bg-zinc-900 rounded-lg border border-white/5">
+                      <button onClick={() => setViewMode('preview')} className={`px-4 py-1 text-xs rounded-md transition-all ${viewMode === 'preview' ? 'bg-white text-black shadow-lg' : 'text-zinc-500'}`}>Preview</button>
+                      <button onClick={() => setViewMode('code')} className={`px-4 py-1 text-xs rounded-md transition-all ${viewMode === 'code' ? 'bg-white text-black shadow-lg' : 'text-zinc-500'}`}>Code</button>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {viewMode === 'preview' && (
-                      <div className="flex items-center bg-zinc-800/50 rounded-lg border border-white/5 p-1 mr-2">
-                        <IconButton icon={Monitor} active={previewSize === 'desktop'} onClick={() => setPreviewSize('desktop')} />
-                        <IconButton icon={Tablet} active={previewSize === 'tablet'} onClick={() => setPreviewSize('tablet')} />
-                        <IconButton icon={Smartphone} active={previewSize === 'mobile'} onClick={() => setPreviewSize('mobile')} />
-                      </div>
-                    )}
-                    <IconButton icon={RefreshCw} onClick={() => setPreviewKey(k => k + 1)} />
-                    <IconButton icon={Download} onClick={() => {}} />
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 bg-zinc-900 p-1 rounded-lg border border-white/5">
+                      <button onClick={() => setPreviewSize('desktop')} className={`p-1.5 rounded-md ${previewSize === 'desktop' ? 'bg-zinc-800 text-white' : 'text-zinc-600'}`}><Monitor size={14}/></button>
+                      <button onClick={() => setPreviewSize('tablet')} className={`p-1.5 rounded-md ${previewSize === 'tablet' ? 'bg-zinc-800 text-white' : 'text-zinc-600'}`}><Tablet size={14}/></button>
+                      <button onClick={() => setPreviewSize('mobile')} className={`p-1.5 rounded-md ${previewSize === 'mobile' ? 'bg-zinc-800 text-white' : 'text-zinc-600'}`}><Smartphone size={14}/></button>
+                    </div>
+                    <div className="w-px h-4 bg-white/10" />
+                    <button className="p-2 hover:bg-white/5 text-zinc-500 rounded-lg transition-colors"><Download size={16}/></button>
+                    <button className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 transition-all">DEPLOY</button>
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-hidden relative">
-                  {viewMode === 'code' ? (
-                    <CodePanel code={code} onChange={setCode} />
+                <div className="flex-1 relative overflow-hidden flex items-center justify-center p-12 bg-[radial-gradient(#161618_1px,transparent_1px)] [background-size:32px_32px]">
+                  {viewMode === 'preview' ? (
+                    <motion.div 
+                      layout
+                      className="relative z-10 shadow-[0_0_100px_rgba(99,102,241,0.1)] transition-all duration-700 ease-in-out border border-white/10"
+                      style={{ 
+                        width: previewSize === 'desktop' ? '100%' : previewSize === 'tablet' ? '768px' : '390px',
+                        height: '100%',
+                        maxHeight: '800px',
+                        borderRadius: '24px'
+                      }}
+                    >
+                      <div className="absolute -inset-4 bg-indigo-500/5 blur-3xl rounded-[40px] -z-10" />
+                      <iframe 
+                        srcDoc={previewDoc}
+                        className="w-full h-full rounded-[23px] bg-black"
+                        title="Architect Preview"
+                      />
+                    </motion.div>
                   ) : (
-                    <div className="h-full w-full flex items-center justify-center p-8 overflow-auto bg-[radial-gradient(#1a1a1a_1px,transparent_1px)] [background-size:20px_20px]">
-                      <div 
-                        className="bg-black shadow-2xl transition-all duration-500 border border-white/10 overflow-hidden"
-                        style={{ 
-                          width: previewSize === 'desktop' ? '100%' : previewSize === 'tablet' ? '768px' : '375px',
-                          height: '100%',
-                          borderRadius: previewSize === 'desktop' ? '0' : '24px'
-                        }}
-                      >
-                        <iframe
-                          key={previewKey}
-                          srcDoc={previewDoc}
-                          className="w-full h-full border-0"
-                          title="UI Preview"
-                        />
-                      </div>
+                    <div className="w-full h-full max-w-5xl mx-auto rounded-2xl border border-white/5 bg-[#0d0d0f] overflow-hidden flex flex-col">
+                       <div className="flex items-center justify-between px-4 h-10 border-b border-white/5 bg-white/5">
+                          <span className="text-[10px] font-mono text-zinc-500 tracking-widest uppercase">page.tsx</span>
+                          <button onClick={() => navigator.clipboard.writeText(code)} className="text-zinc-500 hover:text-white transition-colors"><Copy size={14}/></button>
+                       </div>
+                       <textarea 
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        spellCheck={false}
+                        className="flex-1 p-8 bg-transparent outline-none text-zinc-300 font-mono text-sm leading-relaxed resize-none"
+                       />
                     </div>
                   )}
                 </div>
@@ -446,6 +351,9 @@ export default function ProfessionalAgentPanel() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* ── Visual Backdrop ── */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-indigo-600/10 blur-[120px] rounded-full -z-10 pointer-events-none" />
     </div>
   );
 }
