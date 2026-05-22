@@ -14,8 +14,8 @@ export default function AdminPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch('/api/leads', { method: 'HEAD' })
-      .then(r => { if (r.ok || r.status !== 401) setAuthed(true); })
+    fetch('/api/leads', { method: 'HEAD', credentials: 'include' })
+      .then(r => { if (r.ok) setAuthed(true); })
       .catch(() => {})
       .finally(() => setChecking(false));
   }, []);
