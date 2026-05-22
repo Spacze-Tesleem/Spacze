@@ -44,7 +44,7 @@ async function apiGet(path: string) {
 export const getLeads = tool({
   description:
     'Fetch leads from the CRM. Optionally filter by industry (e.g. "logistics", "fashion") or outreach status ("Pending", "Sent", "Replied", "Meeting Booked", "Not Interested"). Returns an array of lead objects.',
-  parameters: z.object({
+  inputSchema: z.object({
     industry: z
       .string()
       .optional()
@@ -85,7 +85,7 @@ export const getLeads = tool({
 export const analyzeLead = tool({
   description:
     'Analyse a lead\'s website. Scrapes the site and uses AI to score quality, detect weak points, and identify AI/automation opportunities. Updates the lead record in the CRM. Use this before generating outreach for a lead that hasn\'t been analysed yet.',
-  parameters: z.object({
+  inputSchema: z.object({
     lead_id: z.string().describe('The UUID of the lead to analyse'),
     website: z.string().url().describe('The lead\'s website URL'),
     business_name: z.string().describe('The lead\'s business name'),
@@ -108,7 +108,7 @@ export const analyzeLead = tool({
 export const generateCopy = tool({
   description:
     'Generate AI outreach copy for a lead on a specific platform. Platforms: instagram, twitter, google_ads, email, whatsapp, linkedin. Uses the lead\'s CRM data (industry, weak points, AI opportunity) to personalise the copy.',
-  parameters: z.object({
+  inputSchema: z.object({
     lead_id: z.string().describe('UUID of the lead to generate copy for'),
     platform: z
       .enum(['instagram', 'twitter', 'google_ads', 'email', 'whatsapp', 'linkedin'])
@@ -155,7 +155,7 @@ export const generateCopy = tool({
 export const sendEmail = tool({
   description:
     'Send an outreach email to a lead. Requires the lead\'s email address, a subject line, and the email body. Updates the lead\'s outreach status in the CRM.',
-  parameters: z.object({
+  inputSchema: z.object({
     lead_id: z.string().describe('UUID of the lead'),
     to: z.string().email().describe('Recipient email address'),
     subject: z.string().describe('Email subject line'),
@@ -173,7 +173,7 @@ export const sendEmail = tool({
 export const sendWhatsApp = tool({
   description:
     'Send a WhatsApp message to a lead via the connected WhatsApp account. The number must include the country code (e.g. +2348012345678).',
-  parameters: z.object({
+  inputSchema: z.object({
     to: z.string().describe('WhatsApp number with country code (e.g. +2348012345678)'),
     message: z.string().describe('The message to send'),
   }),
@@ -193,7 +193,7 @@ export const sendWhatsApp = tool({
 export const updateLead = tool({
   description:
     'Update one or more fields on a lead record in the CRM. Use this to mark a lead as contacted, update outreach status, set follow-up dates, or record meeting bookings.',
-  parameters: z.object({
+  inputSchema: z.object({
     lead_id: z.string().describe('UUID of the lead to update'),
     fields: z
       .object({
@@ -229,7 +229,7 @@ export const updateLead = tool({
 export const createCampaign = tool({
   description:
     'Create a new outreach campaign targeting a list of leads across one or more channels. Automatically schedules messages at +0, +3, +7, +14 days from today. Returns the created campaign.',
-  parameters: z.object({
+  inputSchema: z.object({
     name: z.string().describe('Campaign name'),
     description: z.string().optional().describe('Campaign description'),
     lead_ids: z.array(z.string()).describe('Array of lead UUIDs to target'),
@@ -284,7 +284,7 @@ export const createCampaign = tool({
 export const getCampaignStats = tool({
   description:
     'Get performance statistics for all campaigns or a specific campaign. Returns sent/pending/failed message counts and lead reply/meeting rates.',
-  parameters: z.object({
+  inputSchema: z.object({
     campaign_id: z
       .string()
       .optional()
@@ -324,7 +324,7 @@ export const getCampaignStats = tool({
 export const processQueue = tool({
   description:
     'Process the outreach queue — sends all scheduled messages that are due now. Returns how many messages were sent and any failures.',
-  parameters: z.object({}),
+  inputSchema: z.object({}),
   execute: async () => {
     const result = await apiPost('/api/scheduled-messages/process', {});
     return result;

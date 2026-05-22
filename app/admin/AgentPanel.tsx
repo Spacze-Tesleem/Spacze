@@ -8,6 +8,7 @@ import {
   Copy, Check, Terminal,
 } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -286,7 +287,7 @@ export default function AgentPanel() {
 
   // @ai-sdk/react v3 — input state is managed locally; hook provides sendMessage
   const { messages, sendMessage, status, error, setMessages } = useChat({
-    api: '/api/agent',
+    transport: new DefaultChatTransport({ api: '/api/agent' }),
   });
 
   const isLoading = status === 'streaming' || status === 'submitted';
@@ -300,7 +301,7 @@ export default function AgentPanel() {
     if (!text || isLoading) return;
     setInput('');
     if (inputRef.current) inputRef.current.style.height = 'auto';
-    sendMessage({ role: 'user', content: text });
+    sendMessage({ text });
   }, [input, isLoading, sendMessage]);
 
   const handleKeyDown = useCallback(

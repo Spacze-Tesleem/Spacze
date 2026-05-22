@@ -80,7 +80,7 @@ const NoiseOverlay = () => (
 
 // --- NEW 3D HERO VISUAL ---
 const MindBlowingHeroVisual = () => {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   
   // Mouse movement logic
   const x = useMotionValue(0);
@@ -89,7 +89,8 @@ const MindBlowingHeroVisual = () => {
   const mouseX = useSpring(x, { stiffness: 150, damping: 15 });
   const mouseY = useSpring(y, { stiffness: 150, damping: 15 });
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;

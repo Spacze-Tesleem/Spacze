@@ -22,8 +22,9 @@ function b64uEncode(buf: ArrayBuffer): string {
   return Buffer.from(buf).toString('base64url');
 }
 
-function b64uDecode(s: string): Uint8Array {
-  return new Uint8Array(Buffer.from(s, 'base64url'));
+function b64uDecode(s: string): Uint8Array<ArrayBuffer> {
+  const buf = Buffer.from(s, 'base64url');
+  return new Uint8Array(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer);
 }
 
 async function importKey(secret: string): Promise<CryptoKey> {

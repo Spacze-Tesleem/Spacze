@@ -34,7 +34,8 @@ export type Lead = {
   created_at?: string;
 };
 
-export type { CampaignStatus, CampaignChannel } from './constants';
+export type { CampaignStatus, CampaignChannel, ScheduledMessageStatus } from './constants';
+import type { CampaignStatus, CampaignChannel, ScheduledMessageStatus } from './constants';
 
 export type Campaign = {
   id?: string;
@@ -48,8 +49,6 @@ export type Campaign = {
   created_at?: string;
   updated_at?: string;
 };
-
-export type { ScheduledMessageStatus } from './constants';
 
 export type ScheduledMessage = {
   id?: string;

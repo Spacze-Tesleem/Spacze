@@ -14,7 +14,7 @@
  * Provider fallback: OpenAI → Groq → Gemini (same order as other routes).
  */
 
-import { streamText } from 'ai';
+import { streamText, stepCountIs } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
@@ -87,12 +87,12 @@ export async function POST(req: NextRequest) {
     system: SYSTEM_PROMPT,
     messages,
     tools: agentTools,
-    maxSteps: 10,       // max tool-call iterations before forcing a final answer
-    temperature: 0.4,   // lower = more deterministic planning
+    stopWhen: stepCountIs(10), // max tool-call iterations before forcing a final answer
+    temperature: 0.4,          // lower = more deterministic planning
     onError: ({ error }) => {
       console.error('[agent] streamText error:', error);
     },
   });
 
-  return result.toDataStreamResponse();
+  return result.toUIMessageStreamResponse();
 }

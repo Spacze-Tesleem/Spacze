@@ -125,7 +125,7 @@ const PortfolioSlider = () => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [scrollProgress, setScrollProgress] = useState(0);
 
-    const projects = [
+    const projects: ProjectItem[] = [
         {
             title: "Jannah Vizora",
             category: "Real Estate Marketing Website",

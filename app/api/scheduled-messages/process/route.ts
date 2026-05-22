@@ -211,16 +211,18 @@ export async function POST() {
       const errMsg = err instanceof Error ? err.message : String(err);
       await db.from('scheduled_messages').update({ status: 'failed', updated_at: now }).eq('id', msg.id);
 
-      // Record failure in outreach_events
-      await db.from('outreach_events').insert({
-        lead_id:              msg.lead_id,
-        campaign_id:          msg.campaign_id,
-        scheduled_message_id: msg.id,
-        event_type:           'message_failed',
-        channel:              msg.channel,
-        sequence_step:        msg.sequence_step,
-        metadata:             { error: errMsg },
-      }).catch(() => {}); // non-critical — don't mask the original error
+      // Record failure in outreach_events (non-critical — don't mask the original error)
+      try {
+        await db.from('outreach_events').insert({
+          lead_id:              msg.lead_id,
+          campaign_id:          msg.campaign_id,
+          scheduled_message_id: msg.id,
+          event_type:           'message_failed',
+          channel:              msg.channel,
+          sequence_step:        msg.sequence_step,
+          metadata:             { error: errMsg },
+        });
+      } catch { /* ignore */ }
 
       results.push({ id: msg.id, channel: msg.channel, status: 'failed', error: errMsg });
     }
