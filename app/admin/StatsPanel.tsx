@@ -11,7 +11,7 @@ import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import {
   TrendingUp, Mail, MessageCircle, Megaphone, Users, Calendar,
   Sparkles, ArrowRight, Activity, BarChart2, Linkedin, Twitter,
-  CheckCircle2, Clock, XCircle, Zap, Reply,
+  CheckCircle2, Clock, XCircle, Zap, Reply, Bot,
 } from 'lucide-react';
 import { Lead, Campaign, ScheduledMessage } from '@/lib/supabase';
 
@@ -351,9 +351,10 @@ export default function StatsPanel({
         {!hideQuickActions && (
           <motion.div {...fu} transition={{ delay: 0.22 }} className="flex flex-col gap-3">
             {[
-              { tab: 'audience',  icon: Users,         accent: GREEN,     title: 'Audience',   sub: `${stats.pending} pending` },
-              { tab: 'campaigns', icon: Sparkles,      accent: BLUE,      title: 'Campaigns',  sub: 'Sequences & scheduling' },
-              { tab: 'whatsapp',  icon: MessageCircle, accent: '#25D366', title: 'WhatsApp',   sub: 'Bulk messaging' },
+              { tab: 'audience',  icon: Users,         accent: GREEN,     title: 'Audience',   sub: `${stats.pending} pending leads` },
+              { tab: 'campaigns', icon: Megaphone,     accent: BLUE,      title: 'Campaigns',  sub: 'Sequences & scheduling' },
+              { tab: 'ai-studio', icon: Sparkles,      accent: PURPLE,    title: 'AI Copy',    sub: 'Generate outreach copy' },
+              { tab: 'agent',     icon: Bot,           accent: AMBER,     title: 'Agent',      sub: 'Autonomous operator' },
             ].map(({ tab, icon: Icon, accent, title, sub }) => (
               <button key={tab} onClick={() => onNavigate(tab)}
                 className="admin-card p-4 text-left flex items-center justify-between gap-3 admin-hover transition-all hover:-translate-y-0.5 group">
