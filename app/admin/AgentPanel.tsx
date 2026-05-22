@@ -348,7 +348,7 @@ export default function AgentPanel() {
   ]);
 
   const { messages, sendMessage, status, error, setMessages } = useChat({
-    transport: new DefaultChatTransport({ api: '/api/build' }),
+    transport: new DefaultChatTransport({ api: '/api/agent' }),
   });
 
   const isLoading  = status === 'streaming' || status === 'submitted';

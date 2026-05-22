@@ -6,6 +6,24 @@
  *
  * Tools are server-side only (called from /api/agent). They use the internal
  * base URL so they go through the same auth middleware as the admin UI.
+ *
+ * Safety model
+ * ────────────
+ * Read-only tools (getLeads, generateCopy, getCampaignStats) execute immediately.
+ *
+ * Destructive tools (sendEmail, sendWhatsApp, updateLead, createCampaign,
+ * scheduleCampaign, processQueue) accept a `dry_run` flag.
+ * When dry_run=true the tool returns a predicted_impact summary without
+ * touching the database or sending any messages. The agent must present
+ * this summary and wait for explicit user confirmation before calling
+ * the same tool with dry_run=false.
+ *
+ * Campaign two-phase commit
+ * ─────────────────────────
+ * createCampaign  → creates a DRAFT record only, returns a plan for review.
+ * scheduleCampaign → activates the draft and bulk-inserts scheduled messages.
+ * The agent must never call scheduleCampaign without user confirmation of the
+ * createCampaign summary.
  */
 
 import { tool } from 'ai';
@@ -84,14 +102,42 @@ export const getLeads = tool({
  */
 export const analyzeLead = tool({
   description:
-    'Analyse a lead\'s website. Scrapes the site and uses AI to score quality, detect weak points, and identify AI/automation opportunities. Updates the lead record in the CRM. Use this before generating outreach for a lead that hasn\'t been analysed yet.',
+    "Analyse a lead's website. Scrapes the site and uses AI to score quality, detect weak points, and identify AI/automation opportunities. " +
+    'Set dry_run=true to preview what will be analysed without updating the CRM. ' +
+    "Set dry_run=false (default) to run the full analysis and update the lead record.",
   inputSchema: z.object({
     lead_id: z.string().describe('The UUID of the lead to analyse'),
-    website: z.string().describe('The lead\'s website URL'),
-    business_name: z.string().describe('The lead\'s business name'),
-    industry: z.string().optional().describe('The lead\'s industry'),
+    website: z.string().describe("The lead's website URL"),
+    business_name: z.string().describe("The lead's business name"),
+    industry: z.string().optional().describe("The lead's industry"),
+    dry_run: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe('If true, preview what will be analysed without modifying the database.'),
   }),
-  execute: async ({ lead_id, website, business_name, industry }) => {
+  execute: async ({ lead_id, website, business_name, industry, dry_run }) => {
+    if (dry_run) {
+      return {
+        dry_run: true,
+        predicted_impact: {
+          action: 'analyse_lead',
+          lead_id,
+          business_name,
+          website,
+          will_update_fields: [
+            'website_quality_score',
+            'mobile_responsiveness',
+            'seo_quality',
+            'has_dashboard',
+            'ai_opportunity',
+            'weak_points',
+            'possible_improvements',
+          ],
+          note: 'Scrapes the website via Jina Reader then scores it with AI. No database changes until dry_run=false.',
+        },
+      };
+    }
     const result = await apiPost('/api/analyze-lead', {
       leadId: lead_id,
       website,
@@ -151,17 +197,37 @@ export const generateCopy = tool({
 
 /**
  * Send an email to a lead.
+ * dry_run=true returns a preview without delivering the email.
  */
 export const sendEmail = tool({
   description:
-    'Send an outreach email to a lead. Requires the lead\'s email address, a subject line, and the email body. Updates the lead\'s outreach status in the CRM.',
+    "Send an outreach email to a lead. Requires the lead's email address, a subject line, and the email body. Updates the lead's outreach status in the CRM. " +
+    'ALWAYS call with dry_run=true first, show the preview to the user, and only call with dry_run=false after explicit confirmation.',
   inputSchema: z.object({
     lead_id: z.string().describe('UUID of the lead'),
     to: z.string().describe('Recipient email address'),
     subject: z.string().describe('Email subject line'),
     body: z.string().describe('Email body text'),
+    dry_run: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe('If true, preview the email without sending it. Always use true first.'),
   }),
-  execute: async ({ lead_id, to, subject, body }) => {
+  execute: async ({ lead_id, to, subject, body, dry_run }) => {
+    if (dry_run) {
+      return {
+        dry_run: true,
+        predicted_impact: {
+          action: 'send_email',
+          lead_id,
+          to,
+          subject,
+          body_preview: body.slice(0, 300) + (body.length > 300 ? '…' : ''),
+          note: "Email will be delivered and the lead's outreach_status set to \"Sent\" when dry_run=false.",
+        },
+      };
+    }
     const result = await apiPost('/api/send-email', { lead_id, to, subject, body });
     return result;
   },
@@ -169,15 +235,33 @@ export const sendEmail = tool({
 
 /**
  * Send a WhatsApp message to a lead via the Baileys worker.
+ * dry_run=true returns a preview without sending.
  */
 export const sendWhatsApp = tool({
   description:
-    'Send a WhatsApp message to a lead via the connected WhatsApp account. The number must include the country code (e.g. +2348012345678).',
+    'Send a WhatsApp message to a lead via the connected WhatsApp account. The number must include the country code (e.g. +2348012345678). ' +
+    'ALWAYS call with dry_run=true first, show the preview to the user, and only call with dry_run=false after explicit confirmation.',
   inputSchema: z.object({
     to: z.string().describe('WhatsApp number with country code (e.g. +2348012345678)'),
     message: z.string().describe('The message to send'),
+    dry_run: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe('If true, preview the message without sending it. Always use true first.'),
   }),
-  execute: async ({ to, message }) => {
+  execute: async ({ to, message, dry_run }) => {
+    if (dry_run) {
+      return {
+        dry_run: true,
+        predicted_impact: {
+          action: 'send_whatsapp',
+          to,
+          message_preview: message.slice(0, 300) + (message.length > 300 ? '…' : ''),
+          note: 'Message will be delivered via the connected WhatsApp account when dry_run=false.',
+        },
+      };
+    }
     const result = await apiPost('/api/whatsapp-worker', {
       action: 'send',
       to,
@@ -189,10 +273,12 @@ export const sendWhatsApp = tool({
 
 /**
  * Update a lead's CRM fields.
+ * dry_run=true previews the change without writing to the database.
  */
 export const updateLead = tool({
   description:
-    'Update one or more fields on a lead record in the CRM. Use this to mark a lead as contacted, update outreach status, set follow-up dates, or record meeting bookings.',
+    'Update one or more fields on a lead record in the CRM. Use this to mark a lead as contacted, update outreach status, set follow-up dates, or record meeting bookings. ' +
+    'Use dry_run=true to preview the update before committing.',
   inputSchema: z.object({
     lead_id: z.string().describe('UUID of the lead to update'),
     fields: z
@@ -209,8 +295,24 @@ export const updateLead = tool({
         email_sent: z.boolean().optional(),
       })
       .describe('Fields to update on the lead'),
+    dry_run: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe('If true, preview the update without writing to the database.'),
   }),
-  execute: async ({ lead_id, fields }) => {
+  execute: async ({ lead_id, fields, dry_run }) => {
+    if (dry_run) {
+      return {
+        dry_run: true,
+        predicted_impact: {
+          action: 'update_lead',
+          lead_id,
+          fields_to_write: { ...fields, last_contacted: new Date().toISOString() },
+          note: 'Lead record will be updated in the CRM when dry_run=false.',
+        },
+      };
+    }
     const db = getSupabaseAdmin();
     const { data, error } = await db
       .from('leads')
@@ -224,11 +326,15 @@ export const updateLead = tool({
 });
 
 /**
- * Create a campaign and schedule outreach messages for a set of leads.
+ * Phase 1 — create a campaign record in DRAFT status.
+ * Does NOT schedule any messages. Returns a plan summary for user review.
+ * After showing the summary, ask the user to confirm before calling scheduleCampaign.
  */
 export const createCampaign = tool({
   description:
-    'Create a new outreach campaign targeting a list of leads across one or more channels. Automatically schedules messages at +0, +3, +7, +14 days from today. Returns the created campaign.',
+    'Phase 1 of 2: Create a new outreach campaign in DRAFT status. ' +
+    'This does NOT schedule or send any messages — it only creates the campaign record. ' +
+    'After calling this, present the plan summary to the user and wait for explicit confirmation before calling scheduleCampaign.',
   inputSchema: z.object({
     name: z.string().describe('Campaign name'),
     description: z.string().optional().describe('Campaign description'),
@@ -241,14 +347,61 @@ export const createCampaign = tool({
     const campaign = await apiPost('/api/campaigns', {
       name,
       description: description ?? '',
-      status: 'active',
+      status: 'draft',
       channels,
       lead_ids,
       auto_sequence: true,
       start_date: new Date().toISOString(),
     });
 
-    // Schedule messages: 4 steps × each lead × each channel
+    const offsets = [0, 3, 7, 14];
+    const totalMessages = lead_ids.length * channels.length * offsets.length;
+
+    return {
+      campaign_id:       campaign.id,
+      name:              campaign.name,
+      status:            'draft',
+      leads_targeted:    lead_ids.length,
+      channels,
+      messages_to_queue: totalMessages,
+      schedule_preview:  offsets.map((days) => {
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        return {
+          step:          offsets.indexOf(days) + 1,
+          send_date:     d.toISOString().split('T')[0],
+          days_from_now: days,
+        };
+      }),
+      next_step:
+        `Campaign saved as draft. Call scheduleCampaign with campaign_id="${campaign.id}" only after the user confirms they want to queue ${totalMessages} messages across ${channels.join(', ')}.`,
+    };
+  },
+});
+
+/**
+ * Phase 2 — activate a draft campaign and bulk-insert all scheduled messages.
+ * Only call this after the user has explicitly confirmed the createCampaign summary.
+ * dry_run=true shows the full schedule without inserting any rows.
+ */
+export const scheduleCampaign = tool({
+  description:
+    'Phase 2 of 2: Activate a draft campaign and schedule all outreach messages. ' +
+    'Only call this after the user has confirmed the plan from createCampaign. ' +
+    'Use dry_run=true to show the exact schedule without inserting any messages.',
+  inputSchema: z.object({
+    campaign_id: z.string().describe('UUID of the draft campaign returned by createCampaign'),
+    lead_ids: z.array(z.string()).describe('Same lead UUIDs passed to createCampaign'),
+    channels: z
+      .array(z.enum(['email', 'whatsapp', 'linkedin', 'twitter']))
+      .describe('Same channels passed to createCampaign'),
+    dry_run: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe('If true, return the full schedule preview without inserting any messages.'),
+  }),
+  execute: async ({ campaign_id, lead_ids, channels, dry_run }) => {
     const offsets = [0, 3, 7, 14];
     const rows = lead_ids.flatMap((lead_id) =>
       channels.flatMap((channel) =>
@@ -256,7 +409,7 @@ export const createCampaign = tool({
           const d = new Date();
           d.setDate(d.getDate() + days);
           return {
-            campaign_id:   campaign.id,
+            campaign_id,
             lead_id,
             channel,
             sequence_step: offsets.indexOf(days) + 1,
@@ -267,13 +420,40 @@ export const createCampaign = tool({
       )
     );
 
+    if (dry_run) {
+      return {
+        dry_run: true,
+        predicted_impact: {
+          action:            'schedule_campaign',
+          campaign_id,
+          messages_to_queue: rows.length,
+          channels,
+          leads_count:       lead_ids.length,
+          schedule:          offsets.map((days) => {
+            const d = new Date();
+            d.setDate(d.getDate() + days);
+            return {
+              step:          offsets.indexOf(days) + 1,
+              send_date:     d.toISOString().split('T')[0],
+              days_from_now: days,
+            };
+          }),
+          note: `Will insert ${rows.length} scheduled_messages rows and set campaign status to "active" when dry_run=false.`,
+        },
+      };
+    }
+
     await apiPost('/api/scheduled-messages', rows);
+
+    const db = getSupabaseAdmin();
+    await db.from('campaigns').update({ status: 'active' }).eq('id', campaign_id);
+
     return {
-      campaign_id:      campaign.id,
-      name:             campaign.name,
-      leads_targeted:   lead_ids.length,
+      campaign_id,
+      status:          'active',
+      messages_queued: rows.length,
       channels,
-      messages_queued:  rows.length,
+      leads_targeted:  lead_ids.length,
     };
   },
 });
@@ -320,12 +500,44 @@ export const getCampaignStats = tool({
 
 /**
  * Process the scheduled message queue — fires all due messages.
+ * dry_run=true shows how many messages are due without sending them.
  */
 export const processQueue = tool({
   description:
-    'Process the outreach queue — sends all scheduled messages that are due now. Returns how many messages were sent and any failures.',
-  inputSchema: z.object({}),
-  execute: async () => {
+    'Process the outreach queue — sends all scheduled messages that are due now. Returns how many messages were sent and any failures. ' +
+    'Use dry_run=true to preview how many messages are due before firing them.',
+  inputSchema: z.object({
+    dry_run: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe('If true, count due messages without sending them.'),
+  }),
+  execute: async ({ dry_run }) => {
+    if (dry_run) {
+      const db = getSupabaseAdmin();
+      const { data, error } = await db
+        .from('scheduled_messages')
+        .select('id,channel,lead_id,scheduled_at')
+        .eq('status', 'pending')
+        .lte('scheduled_at', new Date().toISOString());
+
+      if (error) throw new Error(error.message);
+      const due = data ?? [];
+
+      return {
+        dry_run: true,
+        predicted_impact: {
+          action:       'process_queue',
+          messages_due: due.length,
+          by_channel:   due.reduce((acc: Record<string, number>, m: { channel: string }) => {
+            acc[m.channel] = (acc[m.channel] ?? 0) + 1;
+            return acc;
+          }, {}),
+          note: `Will send ${due.length} messages when dry_run=false.`,
+        },
+      };
+    }
     const result = await apiPost('/api/scheduled-messages/process', {});
     return result;
   },
@@ -341,6 +553,7 @@ export const agentTools = {
   sendWhatsApp,
   updateLead,
   createCampaign,
+  scheduleCampaign,
   getCampaignStats,
   processQueue,
 };
