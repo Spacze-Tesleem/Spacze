@@ -14,7 +14,7 @@
  * Provider fallback: OpenAI → Groq → Gemini (same order as other routes).
  */
 
-import { streamText, stepCountIs, convertToModelMessages, createUIMessageStreamResponse } from 'ai';
+import { streamText, stepCountIs, convertToModelMessages, generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
@@ -94,6 +94,16 @@ export async function POST(req: NextRequest) {
 
   for (const { name, model } of providers) {
     try {
+      // Validate the provider key with a minimal non-streaming call before
+      // committing to a stream. Auth errors throw here synchronously.
+      await generateText({
+        model,
+        prompt: 'hi',
+        maxOutputTokens: 1,
+        maxRetries: 0,
+      });
+
+      // Key is valid — now stream the real request.
       const result = streamText({
         model,
         system: SYSTEM_PROMPT,
@@ -101,34 +111,10 @@ export async function POST(req: NextRequest) {
         tools: agentTools,
         stopWhen: stepCountIs(10),
         temperature: 0.4,
-        maxRetries: 0, // disable SDK retries so errors surface immediately
+        maxRetries: 0,
       });
 
-      // Pull the first chunk from the UI message stream to force the provider
-      // connection — auth errors (invalid key, quota exceeded) throw here.
-      const uiStream = result.toUIMessageStream();
-      const reader = uiStream.getReader();
-      const first = await reader.read(); // throws if the provider rejects
-
-      // Provider accepted — reconstruct the stream with the first chunk
-      // prepended and return it as a proper SSE response.
-      const replayed = new ReadableStream({
-        async start(controller) {
-          if (!first.done) controller.enqueue(first.value);
-          try {
-            while (true) {
-              const { value, done } = await reader.read();
-              if (done) break;
-              controller.enqueue(value);
-            }
-          } catch (e) {
-            controller.error(e);
-          }
-          controller.close();
-        },
-      });
-
-      return createUIMessageStreamResponse({ stream: replayed });
+      return result.toUIMessageStreamResponse();
     } catch (err) {
       console.warn(`[agent] ${name} failed, trying next provider:`, err instanceof Error ? err.message : err);
       lastError = err;
