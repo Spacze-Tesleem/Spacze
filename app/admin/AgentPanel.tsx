@@ -24,27 +24,27 @@ interface ToolCallDisplay {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const TOOL_LABELS: Record<string, string> = {
-  getLeads:        'Fetching leads',
-  analyzeLead:     'Analysing website',
-  generateCopy:    'Generating copy',
-  sendEmail:       'Sending email',
-  sendWhatsApp:    'Sending WhatsApp',
-  updateLead:      'Updating CRM',
-  createCampaign:  'Creating campaign',
-  getCampaignStats:'Fetching stats',
-  processQueue:    'Processing queue',
+  getLeads:         'Fetching leads',
+  analyzeLead:      'Analysing website',
+  generateCopy:     'Generating copy',
+  sendEmail:        'Sending email',
+  sendWhatsApp:     'Sending WhatsApp',
+  updateLead:       'Updating CRM',
+  createCampaign:   'Creating campaign',
+  getCampaignStats: 'Fetching stats',
+  processQueue:     'Processing queue',
 };
 
 const TOOL_ICONS: Record<string, React.ElementType> = {
-  getLeads:        Zap,
-  analyzeLead:     Sparkles,
-  generateCopy:    Sparkles,
-  sendEmail:       Send,
-  sendWhatsApp:    Send,
-  updateLead:      CheckCircle2,
-  createCampaign:  Zap,
-  getCampaignStats:Zap,
-  processQueue:    Zap,
+  getLeads:         Zap,
+  analyzeLead:      Sparkles,
+  generateCopy:     Sparkles,
+  sendEmail:        Send,
+  sendWhatsApp:     Send,
+  updateLead:       CheckCircle2,
+  createCampaign:   Zap,
+  getCampaignStats: Zap,
+  processQueue:     Zap,
 };
 
 const ACCENT = '#00D67D';
@@ -54,18 +54,18 @@ const SUGGESTIONS = [
   'Run outreach for all pending logistics leads',
   'Create a campaign for the top 5 leads',
   'How are my campaigns performing?',
-  'Analyse the website for lead ID …',
-  'Generate a LinkedIn message for lead ID …',
   'Process the outreach queue',
 ];
 
 function formatToolArgs(args: Record<string, unknown>): string {
   const entries = Object.entries(args).filter(([, v]) => v !== undefined && v !== null);
   if (entries.length === 0) return '';
-  return entries.map(([k, v]) => {
-    const val = Array.isArray(v) ? `[${(v as unknown[]).length} items]` : String(v);
-    return `${k}: ${val}`;
-  }).join(' · ');
+  return entries
+    .map(([k, v]) => {
+      const val = Array.isArray(v) ? `[${(v as unknown[]).length} items]` : String(v);
+      return `${k}: ${val}`;
+    })
+    .join(' · ');
 }
 
 function formatResult(result: unknown): string {
@@ -97,7 +97,6 @@ function ToolCallCard({ call }: { call: ToolCallDisplay }) {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left"
       >
-        {/* Status indicator */}
         {call.status === 'running' && (
           <Loader2 size={12} className="animate-spin flex-shrink-0" style={{ color: ACCENT }} />
         )}
@@ -109,7 +108,6 @@ function ToolCallCard({ call }: { call: ToolCallDisplay }) {
         )}
 
         <Icon size={11} className="flex-shrink-0 admin-muted" />
-
         <span className="font-semibold admin-text flex-1">{label}</span>
 
         {call.args && Object.keys(call.args).length > 0 && (
@@ -119,8 +117,9 @@ function ToolCallCard({ call }: { call: ToolCallDisplay }) {
         )}
 
         {call.result !== undefined && (
-          expanded ? <ChevronDown size={11} className="admin-muted flex-shrink-0" />
-                   : <ChevronRight size={11} className="admin-muted flex-shrink-0" />
+          expanded
+            ? <ChevronDown size={11} className="admin-muted flex-shrink-0" />
+            : <ChevronRight size={11} className="admin-muted flex-shrink-0" />
         )}
       </button>
 
@@ -147,7 +146,11 @@ function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
-      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+      onClick={() => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
       className="p-1 rounded admin-muted hover:admin-text transition-colors"
     >
       {copied ? <Check size={12} className="text-[#00D67D]" /> : <Copy size={12} />}
@@ -155,18 +158,66 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function MessageBubble({
-  role,
-  content,
-  toolCalls,
-  isStreaming,
-}: {
-  role: 'user' | 'assistant';
+// ── Message shape from @ai-sdk/react v3 ──────────────────────────────────────
+
+interface MsgPart {
+  type: string;
+  text?: string;
+  toolCallId?: string;
+  toolName?: string;
+  args?: Record<string, unknown>;
+  result?: unknown;
+  state?: string;
+}
+
+interface UIMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
   content: string;
-  toolCalls?: ToolCallDisplay[];
-  isStreaming?: boolean;
-}) {
-  const isUser = role === 'user';
+  parts?: MsgPart[];
+  toolInvocations?: Array<{
+    toolCallId: string;
+    toolName: string;
+    args: Record<string, unknown>;
+    result?: unknown;
+    state: string;
+  }>;
+}
+
+function MessageBubble({ msg, isStreaming }: { msg: UIMessage; isStreaming?: boolean }) {
+  const isUser = msg.role === 'user';
+
+  // Collect tool calls from parts (v3) or toolInvocations (v2 compat)
+  const toolCalls: ToolCallDisplay[] = [];
+  if (msg.parts) {
+    for (const p of msg.parts) {
+      if (p.type === 'tool-invocation' && p.toolCallId) {
+        toolCalls.push({
+          toolCallId: p.toolCallId,
+          toolName:   p.toolName ?? '',
+          args:       p.args ?? {},
+          result:     p.result,
+          status:     p.state === 'result' ? 'done' : 'running',
+        });
+      }
+    }
+  } else if (msg.toolInvocations) {
+    for (const inv of msg.toolInvocations) {
+      toolCalls.push({
+        toolCallId: inv.toolCallId,
+        toolName:   inv.toolName,
+        args:       inv.args,
+        result:     inv.result,
+        status:     inv.state === 'result' ? 'done' : 'running',
+      });
+    }
+  }
+
+  // Extract text
+  let text = msg.content ?? '';
+  if (!text && msg.parts) {
+    text = msg.parts.filter((p) => p.type === 'text').map((p) => p.text ?? '').join('');
+  }
 
   return (
     <motion.div
@@ -175,11 +226,8 @@ function MessageBubble({
       transition={{ duration: 0.2 }}
       className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
     >
-      {/* Avatar */}
       <div
-        className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${
-          isUser ? 'bg-blue-500/20' : ''
-        }`}
+        className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${isUser ? 'bg-blue-500/20' : ''}`}
         style={!isUser ? { background: ACCENT + '20' } : {}}
       >
         {isUser
@@ -188,20 +236,14 @@ function MessageBubble({
         }
       </div>
 
-      {/* Content */}
       <div className={`flex flex-col gap-2 max-w-[85%] ${isUser ? 'items-end' : 'items-start'}`}>
-
-        {/* Tool calls */}
-        {toolCalls && toolCalls.length > 0 && (
+        {toolCalls.length > 0 && (
           <div className="w-full space-y-1.5">
-            {toolCalls.map((tc) => (
-              <ToolCallCard key={tc.toolCallId} call={tc} />
-            ))}
+            {toolCalls.map((tc) => <ToolCallCard key={tc.toolCallId} call={tc} />)}
           </div>
         )}
 
-        {/* Text content */}
-        {(content || isStreaming) && (
+        {(text || isStreaming) && (
           <div
             className={`relative group rounded-2xl px-4 py-3 text-[13px] leading-relaxed ${
               isUser
@@ -209,24 +251,23 @@ function MessageBubble({
                 : 'admin-card admin-text'
             }`}
           >
-            {content
-              ? content.split('\n').map((line, i) => (
+            {text
+              ? text.split('\n').map((line, i, arr) => (
                   <React.Fragment key={i}>
                     {line}
-                    {i < content.split('\n').length - 1 && <br />}
+                    {i < arr.length - 1 && <br />}
                   </React.Fragment>
                 ))
-              : null
-            }
+              : null}
             {isStreaming && (
               <span
                 className="inline-block w-1.5 h-3.5 ml-0.5 rounded-sm animate-pulse align-middle"
                 style={{ background: ACCENT }}
               />
             )}
-            {!isUser && content && (
+            {!isUser && text && (
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <CopyButton text={content} />
+                <CopyButton text={text} />
               </div>
             )}
           </div>
@@ -241,87 +282,39 @@ function MessageBubble({
 export default function AgentPanel() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLTextAreaElement>(null);
-  const [toolCallMap, setToolCallMap] = useState<Map<string, ToolCallDisplay>>(new Map());
+  const [input, setInput] = useState('');
 
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    error,
-    reload,
-    setMessages,
-  } = useChat({
+  // @ai-sdk/react v3 — input state is managed locally; hook provides sendMessage
+  const { messages, sendMessage, status, error, setMessages } = useChat({
     api: '/api/agent',
-    onToolCall: ({ toolCall }) => {
-      setToolCallMap((prev) => {
-        const next = new Map(prev);
-        next.set(toolCall.toolCallId, {
-          toolCallId: toolCall.toolCallId,
-          toolName:   toolCall.toolName,
-          args:       toolCall.args as Record<string, unknown>,
-          status:     'running',
-        });
-        return next;
-      });
-    },
-    onFinish: (message) => {
-      // Mark all tool calls in this message as done
-      if (message.toolInvocations) {
-        setToolCallMap((prev) => {
-          const next = new Map(prev);
-          for (const inv of message.toolInvocations!) {
-            const existing = next.get(inv.toolCallId);
-            if (existing) {
-              next.set(inv.toolCallId, {
-                ...existing,
-                result: 'result' in inv ? inv.result : undefined,
-                status: 'done',
-              });
-            }
-          }
-          return next;
-        });
-      }
-    },
   });
 
-  // Auto-scroll
+  const isLoading = status === 'streaming' || status === 'submitted';
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (input.trim() && !isLoading) {
-        handleSubmit(e as unknown as React.FormEvent);
+  const submit = useCallback(() => {
+    const text = input.trim();
+    if (!text || isLoading) return;
+    setInput('');
+    if (inputRef.current) inputRef.current.style.height = 'auto';
+    sendMessage({ role: 'user', content: text });
+  }, [input, isLoading, sendMessage]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submit();
       }
-    }
-  }, [input, isLoading, handleSubmit]);
+    },
+    [submit],
+  );
 
-  const clearChat = () => {
-    setMessages([]);
-    setToolCallMap(new Map());
-  };
-
-  // Build tool calls for a given message
-  const getToolCallsForMessage = useCallback((msg: typeof messages[0]): ToolCallDisplay[] => {
-    if (!msg.toolInvocations) return [];
-    return msg.toolInvocations.map((inv) => {
-      const live = toolCallMap.get(inv.toolCallId);
-      return live ?? {
-        toolCallId: inv.toolCallId,
-        toolName:   inv.toolName,
-        args:       inv.args as Record<string, unknown>,
-        result:     'result' in inv ? inv.result : undefined,
-        status:     ('result' in inv ? 'done' : 'running') as ToolStatus,
-      };
-    });
-  }, [toolCallMap]);
-
-  const isEmpty = messages.length === 0;
+  const uiMessages = messages as unknown as UIMessage[];
+  const isEmpty = uiMessages.length === 0;
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] max-w-4xl mx-auto">
@@ -335,14 +328,17 @@ export default function AgentPanel() {
           <div>
             <div className="font-semibold text-sm admin-text">Spacze Agent</div>
             <div className="text-[10px] admin-muted flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00D67D] animate-pulse inline-block" />
-              Autonomous · 9 tools · Multi-step reasoning
+              <span
+                className="w-1.5 h-1.5 rounded-full inline-block"
+                style={{ background: isLoading ? '#f59e0b' : ACCENT }}
+              />
+              {isLoading ? 'Working…' : 'Ready · 9 tools · Multi-step reasoning'}
             </div>
           </div>
         </div>
         {!isEmpty && (
           <button
-            onClick={clearChat}
+            onClick={() => setMessages([])}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] admin-muted hover:admin-text admin-hover transition-colors"
           >
             <RotateCcw size={11} />
@@ -351,10 +347,9 @@ export default function AgentPanel() {
         )}
       </div>
 
-      {/* Message area */}
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-5 pr-1 pb-2">
 
-        {/* Empty state */}
         {isEmpty && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -362,10 +357,7 @@ export default function AgentPanel() {
             className="flex flex-col items-center justify-center h-full gap-8 py-12"
           >
             <div className="text-center">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                style={{ background: ACCENT + '15' }}
-              >
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: ACCENT + '15' }}>
                 <Terminal size={28} style={{ color: ACCENT }} />
               </div>
               <h3 className="font-semibold admin-text text-base mb-1">Spacze Agent</h3>
@@ -373,16 +365,11 @@ export default function AgentPanel() {
                 Give me a goal. I'll plan the steps, use the right tools, and execute — no hand-holding needed.
               </p>
             </div>
-
-            {/* Suggestion chips */}
             <div className="flex flex-wrap gap-2 justify-center max-w-lg">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
-                  onClick={() => {
-                    handleInputChange({ target: { value: s } } as React.ChangeEvent<HTMLTextAreaElement>);
-                    inputRef.current?.focus();
-                  }}
+                  onClick={() => { setInput(s); inputRef.current?.focus(); }}
                   className="px-3 py-1.5 rounded-full text-[11px] border admin-border admin-muted hover:admin-text admin-hover transition-colors"
                 >
                   {s}
@@ -392,26 +379,14 @@ export default function AgentPanel() {
           </motion.div>
         )}
 
-        {/* Messages */}
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            role={msg.role as 'user' | 'assistant'}
-            content={msg.content}
-            toolCalls={getToolCallsForMessage(msg)}
-          />
+        {uiMessages.map((msg) => (
+          <MessageBubble key={msg.id} msg={msg} />
         ))}
 
-        {/* Streaming indicator */}
-        {isLoading && messages[messages.length - 1]?.role === 'user' && (
-          <MessageBubble
-            role="assistant"
-            content=""
-            isStreaming
-          />
+        {isLoading && (uiMessages.length === 0 || uiMessages[uiMessages.length - 1]?.role === 'user') && (
+          <MessageBubble msg={{ id: '__streaming__', role: 'assistant', content: '' }} isStreaming />
         )}
 
-        {/* Error */}
         {error && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -420,7 +395,6 @@ export default function AgentPanel() {
           >
             <XCircle size={14} className="flex-shrink-0" />
             <span className="flex-1">{error.message}</span>
-            <button onClick={reload} className="underline hover:no-underline flex-shrink-0">Retry</button>
           </motion.div>
         )}
 
@@ -429,43 +403,41 @@ export default function AgentPanel() {
 
       {/* Input */}
       <div className="flex-shrink-0 pt-3">
-        <form onSubmit={handleSubmit}>
-          <div
-            className="flex items-end gap-3 rounded-2xl border admin-border p-3 transition-colors focus-within:border-[var(--accent-border)]"
-            style={{ background: 'var(--admin-surface)' }}
+        <div
+          className="flex items-end gap-3 rounded-2xl border admin-border p-3 transition-colors focus-within:border-[var(--accent-border)]"
+          style={{ background: 'var(--admin-surface)' }}
+        >
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Give me a goal — e.g. 'Run outreach for all pending logistics leads'"
+            rows={1}
+            disabled={isLoading}
+            className="flex-1 bg-transparent resize-none outline-none text-[13px] admin-text placeholder:admin-muted leading-relaxed max-h-32 overflow-y-auto disabled:opacity-50"
+            style={{ minHeight: '24px' }}
+            onInput={(e) => {
+              const el = e.currentTarget;
+              el.style.height = 'auto';
+              el.style.height = Math.min(el.scrollHeight, 128) + 'px';
+            }}
+          />
+          <button
+            onClick={submit}
+            disabled={!input.trim() || isLoading}
+            className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-30"
+            style={{ background: ACCENT }}
           >
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Give me a goal — e.g. 'Run outreach for all pending logistics leads'"
-              rows={1}
-              disabled={isLoading}
-              className="flex-1 bg-transparent resize-none outline-none text-[13px] admin-text placeholder:admin-muted leading-relaxed max-h-32 overflow-y-auto disabled:opacity-50"
-              style={{ minHeight: '24px' }}
-              onInput={(e) => {
-                const el = e.currentTarget;
-                el.style.height = 'auto';
-                el.style.height = Math.min(el.scrollHeight, 128) + 'px';
-              }}
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-30"
-              style={{ background: ACCENT }}
-            >
-              {isLoading
-                ? <Loader2 size={14} className="animate-spin text-black" />
-                : <Send size={13} className="text-black" />
-              }
-            </button>
-          </div>
-          <p className="text-[10px] admin-muted text-center mt-2">
-            Enter to send · Shift+Enter for new line · Agent may take multiple steps
-          </p>
-        </form>
+            {isLoading
+              ? <Loader2 size={14} className="animate-spin text-black" />
+              : <Send size={13} className="text-black" />
+            }
+          </button>
+        </div>
+        <p className="text-[10px] admin-muted text-center mt-2">
+          Enter to send · Shift+Enter for new line · Agent may take multiple steps
+        </p>
       </div>
     </div>
   );
