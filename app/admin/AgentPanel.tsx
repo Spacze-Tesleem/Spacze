@@ -448,6 +448,13 @@ export default function AgentPanel() {
   const uiMessages = messages as unknown as UIMessage[];
   const isLoading  = status === 'streaming' || status === 'submitted';
 
+  // Debug: log messages to console so we can see the actual structure
+  useEffect(() => {
+    if (uiMessages.length > 0) {
+      console.log('[AgentPanel] messages:', JSON.stringify(uiMessages, null, 2));
+    }
+  }, [uiMessages]);
+
   useEffect(() => {
     const last = [...uiMessages].reverse().find(m => m.role === 'assistant');
     if (!last) return;
