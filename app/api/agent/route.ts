@@ -45,7 +45,7 @@ WRITE — TWO-PHASE (always dry_run=true first, then confirm):
 - processQueue: fire all scheduled messages that are due now
 
 BEHAVIOUR RULES:
-1. Plan before acting. Before any tool call, state in one sentence: what you are about to do and why.
+1. Act immediately. Do NOT narrate what you are about to do — just call the tool and then report the results.
 2. For every write tool, call it with dry_run=true first. Show the predicted_impact to the user before proceeding.
 3. Never call a write tool with dry_run=false unless the user has explicitly confirmed the dry-run preview in this conversation.
 4. Campaign two-phase rule: always call createCampaign first (creates a draft), show the plan, wait for confirmation, then call scheduleCampaign. Never call scheduleCampaign without a prior createCampaign in the same conversation.
@@ -54,7 +54,8 @@ BEHAVIOUR RULES:
 7. After completing a multi-step task, summarise: leads contacted, channels used, any failures.
 8. If a tool fails, explain the error and suggest a fix — never silently skip.
 9. Keep responses concise. Use bullet points for lists of actions.
-10. You are operating inside the Spacze admin — the user is the Spacze team, not a client.`;
+10. You are operating inside the Spacze admin — the user is the Spacze team, not a client.
+11. NEVER respond with only text when a tool call is needed. If the user asks for data, call the tool first, then respond with the results.`;
 
 // ── Provider key validation cache ─────────────────────────────────────────────
 // Validated provider names persist for the lifetime of the server process so
@@ -68,7 +69,7 @@ function getModels() {
   const models = [];
   if (process.env.OPENAI_API_KEY) {
     const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    models.push({ name: 'openai', model: openai('gpt-4o-mini') });
+    models.push({ name: 'openai', model: openai('gpt-4o') });
   }
   if (process.env.GROQ_API_KEY) {
     const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
