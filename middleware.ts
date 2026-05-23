@@ -39,14 +39,20 @@ export async function middleware(req: NextRequest) {
   // form is reachable without a session. Sub-paths and all /api routes require
   // a valid session.
   //
-  // If ADMIN_SESSION_SECRET is not configured the middleware passes through
-  // rather than blocking all traffic — the site stays up while the env var
-  // is being added to the hosting platform.
+  // If ADMIN_SESSION_SECRET is not configured the middleware fails closed:
+  // all protected routes return 401/redirect rather than passing through.
+  // This prevents a misconfigured deployment from silently exposing the admin
+  // panel and every API route to unauthenticated callers.
   const isAdminLogin = pathname === '/admin';
   if (!isAdminLogin && (pathname.startsWith('/admin') || pathname.startsWith('/api'))) {
     if (!process.env.ADMIN_SESSION_SECRET) {
-      console.warn('[middleware] ADMIN_SESSION_SECRET is not set — auth enforcement is disabled.');
-      return NextResponse.next();
+      console.error('[middleware] ADMIN_SESSION_SECRET is not set — all protected routes are blocked.');
+      if (pathname.startsWith('/api')) {
+        return NextResponse.json({ error: 'Service misconfigured' }, { status: 503 });
+      }
+      const loginUrl = req.nextUrl.clone();
+      loginUrl.pathname = '/admin';
+      return NextResponse.redirect(loginUrl);
     }
     const authed = await getSession(req);
     if (!authed) {
