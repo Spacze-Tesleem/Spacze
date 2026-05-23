@@ -2,6 +2,8 @@
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import {
   Send, Bot, User, Loader2, RotateCcw, Copy, Check,
   Monitor, Smartphone, Tablet, FileCode2,
@@ -440,9 +442,12 @@ export default function AgentPanel() {
   const [view, setView]     = useState<SourceView>('preview');
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const [uiMessages, setUiMessages] = useState<UIMessage[]>([]);
-  const [isLoading, setIsLoading]   = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
+  const { messages, sendMessage, status, setMessages } = useChat({
+    transport: new DefaultChatTransport({ api: '/api/agent', credentials: 'include' }),
+  });
+
+  const isLoading  = status === 'streaming' || status === 'submitted';
+  const uiMessages = messages as unknown as UIMessage[];
 
   useEffect(() => {
     const last = [...uiMessages].reverse().find(m => m.role === 'assistant');
@@ -454,138 +459,16 @@ export default function AgentPanel() {
     }
   }, [uiMessages]); // eslint-disable-line
 
-  const submit = useCallback(async () => {
+  const submit = useCallback(() => {
     const text = input.trim();
     if (!text || isLoading) return;
     setInput('');
     if (inputRef.current) inputRef.current.style.height = 'auto';
-
-    const userMsg: UIMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: mode === 'arch'
-        ? `${text}\n\nCurrent component:\n\`\`\`tsx\n${code.slice(0, 4000)}\n\`\`\``
-        : text,
-      parts: [{ type: 'text', text: mode === 'arch'
-        ? `${text}\n\nCurrent component:\n\`\`\`tsx\n${code.slice(0, 4000)}\n\`\`\``
-        : text }],
-    };
-
-    const history = [...uiMessages, userMsg];
-    setUiMessages(history);
-    setIsLoading(true);
-
-    abortRef.current = new AbortController();
-
-    try {
-      const res = await fetch('/api/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        signal: abortRef.current.signal,
-        body: JSON.stringify({
-          messages: history.map(m => ({
-            role: m.role,
-            content: msgText(m) || m.content || '',
-          })),
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        const errMsg: UIMessage = {
-          id: Date.now().toString() + '-err',
-          role: 'assistant',
-          content: `Error: ${err.error || 'Request failed'}`,
-          parts: [{ type: 'text', text: `Error: ${err.error || 'Request failed'}` }],
-        };
-        setUiMessages(prev => [...prev, errMsg]);
-        return;
-      }
-
-      // Parse the SSE / data stream
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let assistantText = '';
-      const assistantId = Date.now().toString() + '-ai';
-      const toolPartsMap: Record<string, MsgPart> = {};
-
-      // Add placeholder assistant message
-      setUiMessages(prev => [...prev, {
-        id: assistantId, role: 'assistant', content: '', parts: [],
-      }]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        console.log('[agent stream raw]', chunk);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const raw = line.slice(6).trim();
-          if (!raw || raw === '[DONE]') continue;
-
-          let evt: Record<string, unknown>;
-          try { evt = JSON.parse(raw); } catch { continue; }
-
-          console.log('[agent evt]', evt);
-          const type = evt.type as string;
-
-          if (type === 'text-delta' && typeof evt.delta === 'string') {
-            assistantText += evt.delta;
-          } else if (type === 'tool-input-available') {
-            const id = evt.toolCallId as string;
-            toolPartsMap[id] = {
-              type: 'tool-invocation',
-              toolName: evt.toolName as string,
-              toolCallId: id,
-              state: 'input-available',
-              input: evt.input,
-            };
-          } else if (type === 'tool-output-available') {
-            const id = evt.toolCallId as string;
-            if (toolPartsMap[id]) {
-              toolPartsMap[id].state = 'output-available';
-              toolPartsMap[id].output = evt.output;
-            }
-          } else if (type === 'tool-output-error') {
-            const id = evt.toolCallId as string;
-            if (toolPartsMap[id]) {
-              toolPartsMap[id].state = 'error';
-              toolPartsMap[id].output = { error: evt.errorText };
-            }
-          }
-
-          // Update assistant message live
-          setUiMessages(prev => prev.map(m => {
-            if (m.id !== assistantId) return m;
-            const textParts: MsgPart[] = assistantText
-              ? [{ type: 'text', text: assistantText }]
-              : [];
-            return {
-              ...m,
-              content: assistantText,
-              parts: [...textParts, ...Object.values(toolPartsMap)],
-            };
-          }));
-        }
-      }
-    } catch (e) {
-      if ((e as Error).name === 'AbortError') return;
-      const errMsg: UIMessage = {
-        id: Date.now().toString() + '-err',
-        role: 'assistant',
-        content: `Error: ${(e as Error).message}`,
-        parts: [{ type: 'text', text: `Error: ${(e as Error).message}` }],
-      };
-      setUiMessages(prev => [...prev, errMsg]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [input, isLoading, mode, code, uiMessages]); // eslint-disable-line
+    const fullText = mode === 'arch'
+      ? `${text}\n\nCurrent component:\n\`\`\`tsx\n${code.slice(0, 4000)}\n\`\`\``
+      : text;
+    sendMessage({ text: fullText });
+  }, [input, isLoading, mode, code, sendMessage]); // eslint-disable-line
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
@@ -625,7 +508,7 @@ export default function AgentPanel() {
             {isLoading ? 'PROCESSING…' : 'SYSTEM_SYNCHRONIZED'}
           </div>
           {!isLoading && uiMessages.length > 0 && (
-            <button onClick={() => setUiMessages([])}
+            <button onClick={() => setMessages([])}
               className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-white/10 text-zinc-500 hover:text-white hover:border-white/20 transition-all text-[10px] font-mono">
               <RotateCcw size={9} /> clear
             </button>
