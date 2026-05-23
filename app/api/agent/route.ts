@@ -14,7 +14,7 @@
  * Provider fallback: OpenAI → Groq → Gemini (same order as other routes).
  */
 
-import { streamText, stepCountIs, convertToModelMessages, generateText, APICallError, type UIMessage } from 'ai';
+import { streamText, stepCountIs, generateText, APICallError } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
@@ -102,32 +102,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Normalize messages to the UIMessage shape expected by convertToModelMessages
-  // (AI SDK v6). The client may send plain { role, content: string } objects
-  // without a `parts` array; convertToModelMessages crashes on missing `parts`.
+  // Build CoreMessage array directly from the client payload.
+  // The client sends plain { role, content: string } objects; convertToModelMessages
+  // requires UIMessage with a parts array and crashes without it.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const normalized: UIMessage[] = (messages as any[]).map((m, i) => {
-    if (Array.isArray(m.parts) && m.parts.length > 0) return m as UIMessage;
-    const text = typeof m.content === 'string' ? m.content : '';
-    return {
-      id: m.id ?? String(i),
-      role: m.role,
-      content: text,
-      parts: [{ type: 'text' as const, text }],
-    } satisfies UIMessage;
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let modelMessages: any;
-  try {
-    modelMessages = await convertToModelMessages(normalized);
-    console.log('[agent] modelMessages count:', modelMessages.length);
-  } catch (e) {
-    console.error('[agent] convertToModelMessages error:', e);
-    return new Response(JSON.stringify({ error: 'Failed to parse messages: ' + (e instanceof Error ? e.message : String(e)) }), {
-      status: 400, headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  const modelMessages = (messages as any[]).map((m) => ({
+    role: m.role as 'user' | 'assistant' | 'system',
+    content: typeof m.content === 'string' ? m.content : String(m.content ?? ''),
+  }));
   let lastError: unknown;
 
   for (const { name, model } of providers) {
