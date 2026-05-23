@@ -23,8 +23,13 @@ type SourceView = 'preview' | 'code';
 interface MsgPart {
   type: string;
   text?: string;
+  // AI SDK v4 dynamic-tool part fields
   toolName?: string;
+  toolCallId?: string;
   state?: string;
+  input?: unknown;
+  output?: unknown;
+  // legacy fallback fields
   args?: Record<string, unknown>;
   result?: unknown;
 }
@@ -37,11 +42,23 @@ interface UIMessage {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function msgText(msg: UIMessage): string {
-  if (msg.parts) {
+  if (msg.parts && msg.parts.length > 0) {
     const t = msg.parts.filter(p => p.type === 'text').map(p => p.text ?? '').join('');
     if (t) return t;
   }
-  return msg.content ?? '';
+  // Fallback to content string (AI SDK v4 may use this)
+  if (typeof msg.content === 'string') return msg.content;
+  return '';
+}
+
+function isToolPart(p: MsgPart): boolean {
+  return (
+    p.type === 'dynamic-tool' ||
+    p.type === 'tool-invocation' ||
+    p.type === 'tool-call' ||
+    p.type === 'tool-result' ||
+    (typeof p.type === 'string' && p.type.startsWith('tool-'))
+  );
 }
 
 function extractTsx(text: string): string | null {
@@ -96,10 +113,14 @@ function CopyBtn({ text }: { text: string }) {
 // ── ToolCallRow ───────────────────────────────────────────────────────────────
 function ToolCallRow({ part }: { part: MsgPart }) {
   const [open, setOpen] = useState(false);
-  const isRunning = part.state === 'partial-call' || (part.state !== 'result' && part.result === undefined);
-  const hasResult = part.result !== undefined;
-  const argsStr   = part.args   ? JSON.stringify(part.args,   null, 2) : '';
-  const resultStr = hasResult   ? JSON.stringify(part.result, null, 2) : '';
+  // Support both AI SDK v4 (input/output) and legacy (args/result) shapes
+  const args      = part.input  ?? part.args;
+  const result    = part.output ?? part.result;
+  const isRunning = part.state === 'input-streaming' || part.state === 'partial-call' ||
+    (part.state !== 'output-available' && part.state !== 'result' && result === undefined);
+  const hasResult = result !== undefined;
+  const argsStr   = args   ? JSON.stringify(args,   null, 2) : '';
+  const resultStr = hasResult ? JSON.stringify(result, null, 2) : '';
   return (
     <div className="mt-3 border-l-2 pl-3" style={{ borderColor: isRunning ? '#f59e0b40' : '#10b98140' }}>
       <button onClick={() => setOpen(v => !v)} className="flex items-center gap-2 text-left w-full">
@@ -227,10 +248,10 @@ function OperationsView({ messages, status, inputRef, input, setInput }: {
       {!isEmpty && (
         <div className="flex-1 overflow-y-auto space-y-6 pr-2 py-4 min-h-0">
           {messages.map(m => {
-            const text = msgText(m).replace(/```[\s\S]*?```/g, '').replace(/Current component[\s\S]*$/i, '').trim();
-            const toolParts = (m.parts ?? []).filter(p =>
-              p.type === 'tool-invocation' || p.type === 'tool-call' || p.type === 'tool-result'
-            );
+            const rawText = msgText(m);
+            const text = rawText.replace(/```[\s\S]*?```/g, '').replace(/Current component[\s\S]*$/i, '').trim();
+            const allParts = m.parts ?? [];
+            const toolParts = allParts.filter(isToolPart);
             const isUser = m.role === 'user';
             // Skip rendering empty assistant bubbles
             if (!isUser && !text && toolParts.length === 0) return null;

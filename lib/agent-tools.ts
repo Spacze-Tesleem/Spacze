@@ -79,7 +79,7 @@ export const getLeads = tool({
       .optional()
       .default(20)
       .describe('Maximum number of leads to return'),
-  }).optional().default({}),
+  }),
   execute: async ({ industry, outreach_status, limit }) => {
     const db = getSupabaseAdmin();
     let query = db
