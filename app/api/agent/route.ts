@@ -85,7 +85,10 @@ function getModels() {
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  const { messages } = await req.json();
+  const body = await req.json();
+  console.log('[agent] POST body keys:', Object.keys(body));
+  console.log('[agent] messages sample:', JSON.stringify(body.messages?.[0]).slice(0, 200));
+  const { messages } = body;
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return new Response(JSON.stringify({ error: 'messages array required' }), {
