@@ -232,6 +232,8 @@ function OperationsView({ messages, status, inputRef, input, setInput }: {
               p.type === 'tool-invocation' || p.type === 'tool-call' || p.type === 'tool-result'
             );
             const isUser = m.role === 'user';
+            // Skip rendering empty assistant bubbles
+            if (!isUser && !text && toolParts.length === 0) return null;
             return (
               <motion.div key={m.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                 className={`flex gap-5 ${isUser ? 'flex-row-reverse' : ''}`}>
