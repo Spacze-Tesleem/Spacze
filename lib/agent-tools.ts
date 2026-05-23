@@ -77,16 +77,16 @@ export const getLeads = tool({
       .min(1)
       .max(50)
       .optional()
-      .default(20)
-      .describe('Maximum number of leads to return'),
+      .describe('Maximum number of leads to return (default: 20)'),
   }),
   execute: async ({ industry, outreach_status, limit }) => {
+    const limit_ = limit ?? 20;
     const db = getSupabaseAdmin();
     let query = db
       .from('leads')
       .select('id,business_name,industry,contact_email,whatsapp_number,outreach_status,website,ai_opportunity,weak_points,possible_improvements,website_quality_score')
       .order('created_at', { ascending: false })
-      .limit(limit ?? 20);
+      .limit(limit_);
 
     if (outreach_status) query = query.eq('outreach_status', outreach_status);
     if (industry) query = query.ilike('industry', `%${industry}%`);
@@ -113,11 +113,10 @@ export const analyzeLead = tool({
     dry_run: z
       .boolean()
       .optional()
-      .default(false)
-      .describe('If true, preview what will be analysed without modifying the database.'),
+      .describe('If true, preview what will be analysed without modifying the database. Default: false.'),
   }),
   execute: async ({ lead_id, website, business_name, industry, dry_run }) => {
-    if (dry_run) {
+    if (dry_run ?? false) {
       return {
         dry_run: true,
         predicted_impact: {
@@ -162,15 +161,15 @@ export const generateCopy = tool({
     tone: z
       .enum(['Professional', 'Friendly', 'Bold', 'Urgent'])
       .optional()
-      .default('Professional')
-      .describe('Tone of the copy'),
+      .describe('Tone of the copy (default: Professional)'),
     goal: z
       .enum(['Awareness', 'Clicks', 'Leads', 'Sales'])
       .optional()
-      .default('Leads')
-      .describe('Goal of the copy'),
+      .describe('Goal of the copy (default: Leads)'),
   }),
   execute: async ({ lead_id, platform, tone, goal }) => {
+    const tone_ = tone ?? 'Professional';
+    const goal_ = goal ?? 'Leads';
     // Fetch the lead first to get context
     const db = getSupabaseAdmin();
     const { data: lead, error } = await db
@@ -182,8 +181,8 @@ export const generateCopy = tool({
 
     const result = await apiPost('/api/generate-copy', {
       platform,
-      tone,
-      goal,
+      tone: tone_,
+      goal: goal_,
       businessName:         lead.business_name,
       industry:             lead.industry,
       aiOpportunity:        lead.ai_opportunity,
@@ -211,11 +210,10 @@ export const sendEmail = tool({
     dry_run: z
       .boolean()
       .optional()
-      .default(false)
       .describe('If true, preview the email without sending it. Always use true first.'),
   }),
   execute: async ({ lead_id, to, subject, body, dry_run }) => {
-    if (dry_run) {
+    if (dry_run ?? false) {
       return {
         dry_run: true,
         predicted_impact: {
@@ -247,11 +245,10 @@ export const sendWhatsApp = tool({
     dry_run: z
       .boolean()
       .optional()
-      .default(false)
       .describe('If true, preview the message without sending it. Always use true first.'),
   }),
   execute: async ({ to, message, dry_run }) => {
-    if (dry_run) {
+    if (dry_run ?? false) {
       return {
         dry_run: true,
         predicted_impact: {
@@ -298,11 +295,10 @@ export const updateLead = tool({
     dry_run: z
       .boolean()
       .optional()
-      .default(false)
       .describe('If true, preview the update without writing to the database.'),
   }),
   execute: async ({ lead_id, fields, dry_run }) => {
-    if (dry_run) {
+    if (dry_run ?? false) {
       return {
         dry_run: true,
         predicted_impact: {
@@ -398,7 +394,6 @@ export const scheduleCampaign = tool({
     dry_run: z
       .boolean()
       .optional()
-      .default(false)
       .describe('If true, return the full schedule preview without inserting any messages.'),
   }),
   execute: async ({ campaign_id, lead_ids, channels, dry_run }) => {
@@ -420,7 +415,7 @@ export const scheduleCampaign = tool({
       )
     );
 
-    if (dry_run) {
+    if (dry_run ?? false) {
       return {
         dry_run: true,
         predicted_impact: {
@@ -510,11 +505,10 @@ export const processQueue = tool({
     dry_run: z
       .boolean()
       .optional()
-      .default(false)
       .describe('If true, count due messages without sending them.'),
   }),
   execute: async ({ dry_run }) => {
-    if (dry_run) {
+    if (dry_run ?? false) {
       const db = getSupabaseAdmin();
       const { data, error } = await db
         .from('scheduled_messages')

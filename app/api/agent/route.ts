@@ -85,10 +85,7 @@ function getModels() {
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  console.log('[agent] POST body keys:', Object.keys(body));
-  console.log('[agent] messages sample:', JSON.stringify(body.messages?.[0]).slice(0, 200));
-  const { messages } = body;
+  const { messages } = await req.json();
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return new Response(JSON.stringify({ error: 'messages array required' }), {
@@ -138,17 +135,14 @@ export async function POST(req: NextRequest) {
 
       if (err instanceof APICallError) {
         if (err.statusCode === 401 || err.statusCode === 403) {
-          // Permanent auth failure — blacklist this provider for the process lifetime.
           invalidProviders.add(name);
-          console.warn(`[agent] ${name}: auth error (${err.statusCode}), blacklisting provider`);
-        } else if (err.statusCode === 429) {
-          // Rate limit is temporary — fall back now, but don't blacklist.
-          console.warn(`[agent] ${name}: rate limited (429), falling back to next provider`);
+          console.warn(`[agent] ${name}: auth error (${err.statusCode}), blacklisting`);
         } else {
-          console.warn(`[agent] ${name}: API error (${err.statusCode}), trying next provider:`, err.message);
+          // 429 rate limit, 400 invalid_request (bad tool schema for this model), 5xx — all fall through
+          console.warn(`[agent] ${name}: API error (${err.statusCode}), trying next provider:`, err.message.slice(0, 120));
         }
       } else {
-        console.warn(`[agent] ${name}: unexpected error, trying next provider:`, err instanceof Error ? err.message : err);
+        console.warn(`[agent] ${name}: unexpected error, trying next provider:`, err instanceof Error ? err.message.slice(0, 120) : err);
       }
     }
   }
