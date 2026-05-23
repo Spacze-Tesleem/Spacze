@@ -102,10 +102,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Normalize messages to the UIMessage shape expected by convertToModelMessages
+  // (AI SDK v6). The client may send plain { role, content: string } objects
+  // without a `parts` array; convertToModelMessages crashes on missing `parts`.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const normalized: UIMessage[] = (messages as any[]).map((m, i) => {
+    if (Array.isArray(m.parts) && m.parts.length > 0) return m as UIMessage;
+    const text = typeof m.content === 'string' ? m.content : '';
+    return {
+      id: m.id ?? String(i),
+      role: m.role,
+      content: text,
+      parts: [{ type: 'text' as const, text }],
+    } satisfies UIMessage;
+  });
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let modelMessages: any;
   try {
-    modelMessages = await convertToModelMessages(messages as any);
+    modelMessages = convertToModelMessages(normalized);
     console.log('[agent] modelMessages count:', modelMessages.length);
   } catch (e) {
     console.error('[agent] convertToModelMessages error:', e);
