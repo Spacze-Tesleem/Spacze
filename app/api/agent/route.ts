@@ -14,7 +14,7 @@
  * Provider fallback: OpenAI → Groq → Gemini (same order as other routes).
  */
 
-import { streamText, stepCountIs, convertToModelMessages, generateText, APICallError } from 'ai';
+import { streamText, stepCountIs, convertToModelMessages, generateText, APICallError, type UIMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
@@ -102,7 +102,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const modelMessages = await convertToModelMessages(messages);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let modelMessages: any;
+  try {
+    modelMessages = await convertToModelMessages(messages as any);
+    console.log('[agent] modelMessages count:', modelMessages.length);
+  } catch (e) {
+    console.error('[agent] convertToModelMessages error:', e);
+    return new Response(JSON.stringify({ error: 'Failed to parse messages: ' + (e instanceof Error ? e.message : String(e)) }), {
+      status: 400, headers: { 'Content-Type': 'application/json' },
+    });
+  }
   let lastError: unknown;
 
   for (const { name, model } of providers) {
