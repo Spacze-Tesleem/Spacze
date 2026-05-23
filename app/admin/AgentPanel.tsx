@@ -12,8 +12,7 @@ import {
   ChevronRight, ChevronDown,
   X, Code2, Circle, CheckCircle2, AlertCircle,
 } from 'lucide-react';
-import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
+
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type ViewMode = 'ops' | 'arch';
@@ -441,19 +440,9 @@ export default function AgentPanel() {
   const [view, setView]     = useState<SourceView>('preview');
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const { messages, sendMessage, status, setMessages } = useChat({
-    transport: new DefaultChatTransport({ api: '/api/agent', credentials: 'include' }),
-  });
-
-  const uiMessages = messages as unknown as UIMessage[];
-  const isLoading  = status === 'streaming' || status === 'submitted';
-
-  // Debug: log messages to console so we can see the actual structure
-  useEffect(() => {
-    if (uiMessages.length > 0) {
-      console.log('[AgentPanel] messages:', JSON.stringify(uiMessages, null, 2));
-    }
-  }, [uiMessages]);
+  const [uiMessages, setUiMessages] = useState<UIMessage[]>([]);
+  const [isLoading, setIsLoading]   = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const last = [...uiMessages].reverse().find(m => m.role === 'assistant');
@@ -465,17 +454,136 @@ export default function AgentPanel() {
     }
   }, [uiMessages]); // eslint-disable-line
 
-  const submit = useCallback(() => {
+  const submit = useCallback(async () => {
     const text = input.trim();
     if (!text || isLoading) return;
     setInput('');
     if (inputRef.current) inputRef.current.style.height = 'auto';
-    sendMessage({
-      text: mode === 'arch'
+
+    const userMsg: UIMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: mode === 'arch'
         ? `${text}\n\nCurrent component:\n\`\`\`tsx\n${code.slice(0, 4000)}\n\`\`\``
         : text,
-    });
-  }, [input, isLoading, mode, code, sendMessage]);
+      parts: [{ type: 'text', text: mode === 'arch'
+        ? `${text}\n\nCurrent component:\n\`\`\`tsx\n${code.slice(0, 4000)}\n\`\`\``
+        : text }],
+    };
+
+    const history = [...uiMessages, userMsg];
+    setUiMessages(history);
+    setIsLoading(true);
+
+    abortRef.current = new AbortController();
+
+    try {
+      const res = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        signal: abortRef.current.signal,
+        body: JSON.stringify({
+          messages: history.map(m => ({
+            role: m.role,
+            content: msgText(m) || m.content || '',
+          })),
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        const errMsg: UIMessage = {
+          id: Date.now().toString() + '-err',
+          role: 'assistant',
+          content: `Error: ${err.error || 'Request failed'}`,
+          parts: [{ type: 'text', text: `Error: ${err.error || 'Request failed'}` }],
+        };
+        setUiMessages(prev => [...prev, errMsg]);
+        return;
+      }
+
+      // Parse the SSE / data stream
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let assistantText = '';
+      const assistantId = Date.now().toString() + '-ai';
+      const toolPartsMap: Record<string, MsgPart> = {};
+
+      // Add placeholder assistant message
+      setUiMessages(prev => [...prev, {
+        id: assistantId, role: 'assistant', content: '', parts: [],
+      }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6).trim();
+          if (!raw || raw === '[DONE]') continue;
+
+          let evt: Record<string, unknown>;
+          try { evt = JSON.parse(raw); } catch { continue; }
+
+          const type = evt.type as string;
+
+          if (type === 'text-delta' && typeof evt.textDelta === 'string') {
+            assistantText += evt.textDelta;
+          } else if (type === 'tool-input-available') {
+            const id = evt.toolCallId as string;
+            toolPartsMap[id] = {
+              type: 'tool-invocation',
+              toolName: evt.toolName as string,
+              toolCallId: id,
+              state: 'input-available',
+              input: evt.input,
+            };
+          } else if (type === 'tool-output-available') {
+            const id = evt.toolCallId as string;
+            if (toolPartsMap[id]) {
+              toolPartsMap[id].state = 'output-available';
+              toolPartsMap[id].output = evt.output;
+            }
+          } else if (type === 'tool-output-error') {
+            const id = evt.toolCallId as string;
+            if (toolPartsMap[id]) {
+              toolPartsMap[id].state = 'error';
+              toolPartsMap[id].output = { error: evt.errorText };
+            }
+          }
+
+          // Update assistant message live
+          setUiMessages(prev => prev.map(m => {
+            if (m.id !== assistantId) return m;
+            const textParts: MsgPart[] = assistantText
+              ? [{ type: 'text', text: assistantText }]
+              : [];
+            return {
+              ...m,
+              content: assistantText,
+              parts: [...textParts, ...Object.values(toolPartsMap)],
+            };
+          }));
+        }
+      }
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') return;
+      const errMsg: UIMessage = {
+        id: Date.now().toString() + '-err',
+        role: 'assistant',
+        content: `Error: ${(e as Error).message}`,
+        parts: [{ type: 'text', text: `Error: ${(e as Error).message}` }],
+      };
+      setUiMessages(prev => [...prev, errMsg]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [input, isLoading, mode, code, uiMessages]); // eslint-disable-line
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
@@ -515,7 +623,7 @@ export default function AgentPanel() {
             {isLoading ? 'PROCESSING…' : 'SYSTEM_SYNCHRONIZED'}
           </div>
           {!isLoading && uiMessages.length > 0 && (
-            <button onClick={() => setMessages([])}
+            <button onClick={() => setUiMessages([])}
               className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-white/10 text-zinc-500 hover:text-white hover:border-white/20 transition-all text-[10px] font-mono">
               <RotateCcw size={9} /> clear
             </button>
@@ -532,12 +640,12 @@ export default function AgentPanel() {
         <AnimatePresence mode="wait">
           {mode === 'ops' ? (
             <motion.div key="ops" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="h-full flex flex-col">
-              <OperationsView messages={uiMessages} status={status} inputRef={inputRef} input={input} setInput={setInput} />
+              <OperationsView messages={uiMessages} status={isLoading ? 'streaming' : 'idle'} inputRef={inputRef} input={input} setInput={setInput} />
             </motion.div>
           ) : (
             <motion.div key="arch" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="h-full flex flex-col">
               <ArchitectView
-                code={code} setCode={setCode} messages={uiMessages} status={status}
+                code={code} setCode={setCode} messages={uiMessages} status={isLoading ? 'streaming' : 'idle'}
                 view={view} setView={setView} device={device} setDevice={setDevice}
                 inputRef={inputRef} input={input} setInput={setInput}
               />
