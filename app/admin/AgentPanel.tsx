@@ -520,6 +520,7 @@ export default function AgentPanel() {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
+        console.log('[agent stream raw]', chunk);
         const lines = chunk.split('\n');
 
         for (const line of lines) {
@@ -530,6 +531,7 @@ export default function AgentPanel() {
           let evt: Record<string, unknown>;
           try { evt = JSON.parse(raw); } catch { continue; }
 
+          console.log('[agent evt]', evt);
           const type = evt.type as string;
 
           if (type === 'text-delta' && typeof evt.delta === 'string') {
