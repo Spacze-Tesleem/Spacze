@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let modelMessages: any;
   try {
-    modelMessages = convertToModelMessages(normalized);
+    modelMessages = await convertToModelMessages(normalized);
     console.log('[agent] modelMessages count:', modelMessages.length);
   } catch (e) {
     console.error('[agent] convertToModelMessages error:', e);
