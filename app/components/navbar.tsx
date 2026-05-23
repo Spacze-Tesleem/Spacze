@@ -13,6 +13,7 @@ import {
 
 // Navigation Data
 const navLinks = [
+  { name: 'Product', href: '/product' },
   { name: 'Services', href: '/services' },
   { name: 'About Us', href: '/about' },
   { name: 'Portfolio', href: '/portfolio' },
