@@ -532,8 +532,8 @@ export default function AgentPanel() {
 
           const type = evt.type as string;
 
-          if (type === 'text-delta' && typeof evt.textDelta === 'string') {
-            assistantText += evt.textDelta;
+          if (type === 'text-delta' && typeof evt.delta === 'string') {
+            assistantText += evt.delta;
           } else if (type === 'tool-input-available') {
             const id = evt.toolCallId as string;
             toolPartsMap[id] = {
