@@ -86,7 +86,6 @@ function getModels() {
 
 export async function POST(req: NextRequest) {
   const { messages } = await req.json();
-  console.log('[agent] providers configured:', getModels().map(m => m.name));
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return new Response(JSON.stringify({ error: 'messages array required' }), {
