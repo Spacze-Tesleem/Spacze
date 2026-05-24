@@ -105,6 +105,7 @@ export async function POST(req: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const modelMessages = await convertToModelMessages(messages as any);
   let lastError: unknown;
+  const providerErrors: string[] = [];
 
   for (const { name, model } of providers) {
     // Skip providers whose keys have already failed auth in this process.
@@ -129,18 +130,22 @@ export async function POST(req: NextRequest) {
         if (err.statusCode === 401 || err.statusCode === 403) {
           invalidProviders.add(name);
           console.warn(`[agent] ${name}: auth error (${err.statusCode}), blacklisting`);
+          providerErrors.push(`${name}: auth error (${err.statusCode})`);
         } else {
-          // 429 rate limit, 400 invalid_request (bad tool schema for this model), 5xx — all fall through
           console.warn(`[agent] ${name}: API error (${err.statusCode}), trying next provider:`, err.message.slice(0, 120));
+          providerErrors.push(`${name}: ${err.statusCode} — ${err.message.slice(0, 80)}`);
         }
       } else {
-        console.warn(`[agent] ${name}: unexpected error, trying next provider:`, err instanceof Error ? err.message.slice(0, 120) : err);
+        const msg = err instanceof Error ? err.message.slice(0, 120) : String(err);
+        console.warn(`[agent] ${name}: unexpected error, trying next provider:`, msg);
+        providerErrors.push(`${name}: ${msg}`);
       }
     }
   }
 
   const msg = lastError instanceof Error ? lastError.message : 'All AI providers failed';
-  return new Response(JSON.stringify({ error: msg }), {
+  console.error('[agent] all providers failed:', providerErrors);
+  return new Response(JSON.stringify({ error: msg, providers: providerErrors }), {
     status: 500,
     headers: { 'Content-Type': 'application/json' },
   });
