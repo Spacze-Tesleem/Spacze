@@ -14,7 +14,7 @@
  * Provider fallback: OpenAI → Groq → Gemini (same order as other routes).
  */
 
-import { streamText, stepCountIs, convertToModelMessages, generateText, APICallError } from 'ai';
+import { streamText, stepCountIs, convertToModelMessages, APICallError } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
@@ -57,16 +57,20 @@ BEHAVIOUR RULES:
 10. You are operating inside the Spacze admin — the user is the Spacze team, not a client.
 11. NEVER respond with only text when a tool call is needed. If the user asks for data, call the tool first, then respond with the results.`;
 
-// ── Provider key validation cache ─────────────────────────────────────────────
-// Validated provider names persist for the lifetime of the server process so
-// the probe call only fires once per provider, not on every request.
-const validatedProviders = new Set<string>();
+// Providers whose keys have permanently failed auth in this process lifetime.
 const invalidProviders = new Set<string>();
 
 // ── Provider list (ordered: OpenAI → Groq → Gemini) ──────────────────────────
 
+// Provider order: Gemini → OpenAI → Groq
+// Gemini is listed first because it has a generous free tier and supports
+// tool calling reliably. Groq is last due to strict rate limits.
 function getModels() {
   const models = [];
+  if (process.env.GEMINI_API_KEY) {
+    const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
+    models.push({ name: 'gemini', model: google('gemini-2.0-flash') });
+  }
   if (process.env.OPENAI_API_KEY) {
     const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
     models.push({ name: 'openai', model: openai('gpt-4o') });
@@ -75,10 +79,6 @@ function getModels() {
     const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
     models.push({ name: 'groq', model: groq('llama-3.3-70b-versatile') });
   }
-  if (process.env.GEMINI_API_KEY) {
-    const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
-    models.push({ name: 'gemini', model: google('gemini-2.0-flash') });
-  }
   return models;
 }
 
@@ -86,6 +86,7 @@ function getModels() {
 
 export async function POST(req: NextRequest) {
   const { messages } = await req.json();
+  console.log('[agent] providers configured:', getModels().map(m => m.name));
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return new Response(JSON.stringify({ error: 'messages array required' }), {
@@ -111,14 +112,6 @@ export async function POST(req: NextRequest) {
     if (invalidProviders.has(name)) continue;
 
     try {
-      // If this provider hasn't been validated yet in this process, run a
-      // minimal probe to catch auth errors before committing to a stream.
-      // The result is cached so subsequent requests skip the probe entirely.
-      if (!validatedProviders.has(name)) {
-        await generateText({ model, prompt: 'hi', maxOutputTokens: 1, maxRetries: 0 });
-        validatedProviders.add(name);
-      }
-
       const result = streamText({
         model,
         system: SYSTEM_PROMPT,
